@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const courseData = {
   id: 1,
   title: 'R&D 시스템 Overview',
-  subtitle: 'R&D 업무의 시스템적 접근에 대한 이해',
+  subtitle: 'R&D 업무의 시스템적 접근에 대한 이 해',
   description: 'R&D 시스템의 전반적인 이해와 실제 구축 사례를 통해 기업에 적합한 R&D 시스템을 구축하고 운영하는 방법을 학습합니다.',
   topics: [
     {
