@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "startProd": "cross-env PORT=4000 next start",
+    "startDev": "PORT=4000 next start",
+    "startWin": "cross-env PORT=4000 next start",
     "lint": "next lint"
   },
   "dependencies": {
