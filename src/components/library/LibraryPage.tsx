@@ -44,15 +44,28 @@ export default function LibraryPage({ categories, resources }: LibraryPageProps)
       <Navigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <FiBook className="w-6 h-6 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Library</h1>
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-800 to-blue-900 text-white">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#2563eb,#3b82f6)] opacity-30">
+            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)"></rect>
+            </svg>
           </div>
-          <p className="text-lg text-gray-600 max-w-3xl">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+              <FiBook className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-white">Library</h1>
+          </div>
+          <p className="text-lg text-blue-50 max-w-3xl">
             MOT(Management of Technology)와 관련된 전문 자료를 제공하는 공간입니다.
             기술전략, 연구기획, 자원관리 등 다양한 분야의 자료를 찾아보고 다운로드할 수 있습니다.
             전문가들이 검증한 양질의 콘텐츠로 여러분의 업무와 연구를 지원합니다.

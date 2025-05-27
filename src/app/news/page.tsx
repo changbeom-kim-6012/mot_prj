@@ -80,27 +80,28 @@ export default function NewsPage() {
       <Navigation />
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-slate-50">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-rose-800 to-rose-900 text-white">
         <div className="absolute inset-0">
-          <svg className="absolute w-full h-full opacity-[0.07]" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M-100 300 C 200 300, 300 100, 600 100 S 1000 300, 1300 300" 
-              className="text-indigo-600" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M-100 350 C 200 350, 300 150, 600 150 S 1000 350, 1300 350" 
-              className="text-purple-600" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" className="text-gray-200" stroke="currentColor" strokeWidth="0.5"/>
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#grid)"/>
-          </svg>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#e11d48,#f43f5e)] opacity-30">
+            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)"></rect>
+            </svg>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
         <div className="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <FiFileText className="w-6 h-6 text-indigo-600" />
+            <div className="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+              <FiFileText className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">뉴스</h1>
+            <h1 className="text-3xl font-bold text-white">뉴스</h1>
           </div>
-          <p className="mt-4 max-w-3xl text-lg text-gray-600">
+          <p className="text-lg text-rose-100 max-w-3xl">
             MOT 플랫폼의 최신 소식과 기술경영 관련 뉴스를 확인하세요. 주요 공지사항부터 최신 동향, 세미나 정보까지 다양한 소식을 전해드립니다.
           </p>
         </div>
