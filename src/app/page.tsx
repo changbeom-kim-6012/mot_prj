@@ -54,6 +54,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <Navigation />
+      <div className="pt-28">
       
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-fuchsia-800 to-purple-900 text-white">
@@ -70,114 +71,112 @@ export default function Home() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex items-end gap-4 mb-6">
             <div className="w-12 h-12 bg-fuchsia-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiGlobe className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">MOT Platform</h1>
+            <h1 className="text-3xl font-bold text-white">MOT Club</h1>
+            <span className="flex-1" />
+            <span className="text-xl font-bold text-white pb-1 self-end whitespace-nowrap shadow-lg" style={{minWidth: '320px', textAlign: 'right'}}>
+              MOT Initiative Platform
+            </span>
           </div>
-          <p className="text-lg text-fuchsia-100 max-w-3xl">
-            Management of Technology 관련 지식 공유 플랫폼
-          </p>
-          <p className="text-lg text-fuchsia-200 max-w-3xl mt-4">
-            기술경영, 연구기획 및 관리업무에 대한 전문성을 함께 연구하고 공유하는 공간
-          </p>
+          <div className="flex justify-end">
+            <div style={{ maxWidth: 'calc(100% - 320px - 20px)', width: '100%' }}>
+              <p className="text-lg text-fuchsia-200 leading-relaxed text-right" style={{wordBreak: 'keep-all'}}>
+                MOT Club은 한국산업기술진흥협회와 함께하는 기술경영 지식공유 커뮤니티입니다.<br/>
+                교육참가자, 업무종사자 및 기술경영에 관심을 가진 모든 분들이 함께하는 한마당입니다.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Services Grid */}
-      <div className="py-24 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
-        <div className="max-w-[90rem] mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              MOT 서비스
-            </h2>
-            <p className="mt-4 text-lg text-slate-600">
-              기술경영의 모든 것을 한 곳에서 경험하세요
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+      <div className="py-20 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
             {/* Library Card */}
             <Link href="/library" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-500">
-                    <FiBook className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-500">
+                    <FiBook className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-blue-600 transition-colors mb-2">Library</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">기술전략, 연구기획, 자원관리 등 전문 자료실</p>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-4">Library</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT 교육, 기술과혁신 웹진 등 MOT 관련 자료 Repository</p>
                 </div>
               </div>
             </Link>
 
             {/* Learning Card */}
             <Link href="/learning" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-500 transition-all duration-500">
-                    <FiUsers className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-green-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-500 transition-all duration-500">
+                    <FiUsers className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-green-600 transition-colors mb-2">Learning</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">맞춤형 교육과정 및 전문가 강의</p>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-green-600 transition-colors mb-4">Learning</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">산기협에서 수행하는 기술경영 교육과정에 대한 전반적인 소개</p>
                 </div>
               </div>
             </Link>
 
             {/* Q&A Card */}
             <Link href="/qna" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-500 transition-all duration-500">
-                    <FiMessageSquare className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors" />
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-purple-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-500 transition-all duration-500">
+                    <FiMessageSquare className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-purple-600 transition-colors mb-2">Q&A</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">MOT 관련 궁금한 점을 전문가에게 물어보세요</p>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors mb-4">Q&A</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영, R&D 기획 및 관리에 대한 이슈, 타사 사례 등 MOT 관련 정보 한마당</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Agora Card (was Opinions) */}
+            <Link href="/opinions" className="group">
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-amber-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500 transition-all duration-500">
+                    <FiEdit3 className="w-8 h-8 text-amber-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-amber-600 transition-colors mb-4">Agora</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT, R&D 분야에서 다양한 새로운 관점의 Opinion 제기, Initiative 활동 등을 위한 한마당</p>
+                </div>
+              </div>
+            </Link>
+
+            {/* Community Card (was News) */}
+            <Link href="/news" className="group">
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-rose-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-rose-500 transition-all duration-500">
+                    <FiGlobe className="w-8 h-8 text-rose-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-rose-600 transition-colors mb-4">Community</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">공지사항, Library, Learning, Q&A, Agora 메뉴의 등록 정보 등 각종 새소식 공유 창</p>
                 </div>
               </div>
             </Link>
 
             {/* Expert Card */}
             <Link href="/expert" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-indigo-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-500 transition-all duration-500">
-                    <FiAward className="w-6 h-6 text-indigo-600 group-hover:text-white transition-colors" />
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-500 transition-all duration-500">
+                    <FiAward className="w-8 h-8 text-indigo-600 group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors mb-2">Expert</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">분야별 전문가 프로필 및 상담</p>
-                </div>
-              </div>
-            </Link>
-
-            {/* News Card */}
-            <Link href="/news" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-rose-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-rose-500 transition-all duration-500">
-                    <FiGlobe className="w-6 h-6 text-rose-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-rose-600 transition-colors mb-2">News</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">기술정책 변화 및 최신 동향</p>
-                </div>
-              </div>
-            </Link>
-
-            {/* Opinions Card */}
-            <Link href="/opinions" className="group">
-              <div className="relative bg-white rounded-2xl p-6 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 overflow-hidden h-full">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                <div className="relative">
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl mb-4 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500 transition-all duration-500">
-                    <FiEdit3 className="w-6 h-6 text-amber-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-amber-600 transition-colors mb-2">Opinions</h3>
-                  <p className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">전문가 칼럼 및 의견</p>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-4">Expert</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT Club에 동참하여 실무적 경험과 지식을 나누며 함께 성장하는 전문가</p>
                 </div>
               </div>
             </Link>
@@ -241,6 +240,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 }

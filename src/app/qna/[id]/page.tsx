@@ -1,123 +1,403 @@
-import { FiArrowLeft, FiMessageSquare } from 'react-icons/fi';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
+import AnswerList from '@/components/qna/AnswerList';
+import { useAuth } from '@/context/AuthContext';
 
-type Props = {
-  params: {
-    id: string;
+interface Question {
+  id: number;
+  title: string;
+  content: string;
+  authorEmail: string;
+  createdAt: string;
+  category1: string;
+  viewCount: number;
+  answerCount: number;
+  status: string;
+  isPublic: boolean;
+  contactInfo?: string;
+  filePath?: string;
+}
+
+interface Answer {
+  id: number;
+  content: string;
+  authorEmail: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  isExpertAnswer: boolean;
+}
+
+export default function QnaDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [newAnswer, setNewAnswer] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
+
+  const questionId = params.id as string;
+
+  // 질문 상세 정보 불러오기
+  useEffect(() => {
+    if (questionId) {
+      fetchQuestionDetail();
+    }
+  }, [questionId]);
+
+  const fetchQuestionDetail = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/questions/${questionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 비공개 질문에 대한 접근 제어
+        if (!data.isPublic) {
+          // 로그인하지 않은 사용자는 접근 불가
+          if (!isAuthenticated || !user) {
+            setError('비공개 질문은 로그인이 필요합니다.');
+            setLoading(false);
+            return;
+          }
+          
+          // 질문 작성자가 아니고 관리자도 아닌 경우 접근 불가
+          if (data.authorEmail !== user.email && user.role !== 'ADMIN') {
+            setError('비공개 질문은 작성자와 관리자만 볼 수 있습니다.');
+            setLoading(false);
+            return;
+          }
+        }
+        
+        setQuestion(data);
+        // 답변 목록도 함께 불러오기 (실제로는 별도 API일 수 있음)
+        fetchAnswers();
+      } else {
+        setError('질문을 찾을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('질문 조회 중 오류:', error);
+      setError('질문을 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
-};
 
-export default function QnADetailPage({ params }: Props) {
-  return (
-    <main className="min-h-screen bg-white">
-      <Navigation />
-      
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
-        <Link href="/qna" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6">
-          <FiArrowLeft className="mr-2" />
-          목록으로 돌아가기
-        </Link>
+  const fetchAnswers = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/questions/${questionId}/answers`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnswers(data);
+      }
+    } catch (error) {
+      console.error('답변 조회 중 오류:', error);
+    }
+  };
 
-        {/* Question Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="p-6">
-            {/* Question Header */}
-            <div className="border-b border-gray-200 pb-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">MOT 시스템 구축 관련 문의드립니다.</h1>
-                <span className="text-sm text-gray-500">2024-03-19</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">작성자: 홍길동</span>
-                  <span className="text-sm text-gray-600">구분: 기술전략</span>
-                  <span className="text-sm text-gray-600">공개</span>
-                </div>
-              </div>
-            </div>
+  const handleSubmitAnswer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !newAnswer.trim()) return;
 
-            {/* Question Content */}
-            <div className="prose max-w-none">
-              <p>안녕하세요,</p>
-              <p className="mt-4">
-                MOT 시스템 구축과 관련하여 몇 가지 문의사항이 있어 글을 남깁니다.
-                현재 저희 회사는 R&D 프로젝트 관리를 위한 시스템을 구축하려고 하는데,
-                다음과 같은 부분들에 대해 조언을 구하고 싶습니다.
-              </p>
-              <ol className="list-decimal pl-4 mt-4">
-                <li>프로젝트 관리 시스템의 핵심 기능은 어떤 것들이 있나요?</li>
-                <li>시스템 구축 시 주의해야 할 점은 무엇인가요?</li>
-                <li>일반적인 구축 기간과 비용은 어느 정도인가요?</li>
-              </ol>
-              <p className="mt-4">
-                답변 부탁드립니다. 감사합니다.
-              </p>
-            </div>
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`http://localhost:8080/api/questions/${questionId}/answers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: newAnswer,
+          authorEmail: user.email,
+          authorId: user.email,
+          authorName: user.name || user.email,
+          isExpertAnswer: false
+        }),
+      });
+
+      if (response.ok) {
+        setNewAnswer('');
+        setIsAnswerModalOpen(false);
+        fetchAnswers(); // 답변 목록 새로고침
+        alert('답변이 등록되었습니다.');
+      } else {
+        alert('답변 등록에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('답변 등록 중 오류:', error);
+      alert('답변 등록 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openAnswerModal = () => {
+    setIsAnswerModalOpen(true);
+  };
+
+  const closeAnswerModal = () => {
+    setIsAnswerModalOpen(false);
+    setNewAnswer('');
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'bg-gray-100 text-gray-800';
+      case 'APPROVED': return 'bg-green-100 text-green-800';
+      case 'REJECTED': return 'bg-red-100 text-red-800';
+      case 'OPEN': return 'bg-blue-100 text-blue-800';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return '작성중';
+      case 'APPROVED': return '승인';
+      case 'REJECTED': return '거절';
+      case 'OPEN': return '진행중';
+      case 'CLOSED': return '완료';
+      default: return '진행중';
+    }
+  };
+
+  const handleFileDownload = (filePath: string) => {
+    const link = document.createElement('a');
+    link.href = `http://localhost:8080/api/attachments/download/${filePath}`;
+    link.download = filePath;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">질문을 불러오는 중...</p>
           </div>
         </div>
+      </main>
+    );
+  }
 
-        {/* Comments Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <FiMessageSquare className="mr-2" />
-              답변 (2)
-            </h2>
-
-            {/* Comment List */}
-            <div className="space-y-6">
-              {/* Comment 1 */}
-              <div className="border-b border-gray-200 pb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900">김전문</span>
-                    <span className="text-sm text-gray-500">2024-03-19 14:30</span>
-                  </div>
-                </div>
-                <p className="text-gray-600">
-                  프로젝트 관리 시스템의 핵심 기능으로는 일정관리, 자원관리, 예산관리, 
-                  위험관리 등이 있습니다. 특히 R&D 프로젝트의 특성상 연구 성과물 관리와 
-                  지식재산권 관리 기능도 중요합니다.
-                </p>
-              </div>
-
-              {/* Comment 2 */}
-              <div className="pb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900">이컨설턴트</span>
-                    <span className="text-sm text-gray-500">2024-03-19 15:45</span>
-                  </div>
-                </div>
-                <p className="text-gray-600">
-                  구축 기간은 보통 3-6개월 정도 소요되며, 비용은 시스템의 규모와 
-                  요구사항에 따라 크게 달라질 수 있습니다. 
-                </p>
-              </div>
-            </div>
-
-            {/* Comment Form */}
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">답변 작성</h3>
-              <div className="space-y-4">
-                <textarea
-                  rows={4}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="답변을 작성해주세요..."
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    답변 등록
-                  </button>
-                </div>
-              </div>
-            </div>
+  if (error || !question) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">접근 제한</h2>
+            <p className="text-gray-600 mb-6">{error || '질문을 찾을 수 없습니다.'}</p>
+            <Link
+              href="/qna"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <FiArrowLeft className="w-4 h-4 mr-2" />
+              Q&A 목록으로 돌아가기
+            </Link>
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <Navigation />
+      <div className="py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 뒤로가기 버튼 */}
+          <div className="mb-6">
+            <Link
+              href="/qna"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <FiArrowLeft className="w-4 h-4 mr-2" />
+              Q&A 목록으로 돌아가기
+            </Link>
+          </div>
+
+          {/* 질문 상세 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+            {/* 질문 헤더 */}
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-3">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
+                    {getStatusText(question.status)}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {question.category1}
+                  </span>
+                  {!question.isPublic && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      비공개
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">{question.title}</h1>
+                <div className="flex items-center space-x-6 text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <FiUser className="w-4 h-4 mr-1" />
+                    <span>{question.authorEmail}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiCalendar className="w-4 h-4 mr-1" />
+                    <span>{formatDate(question.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiEye className="w-4 h-4 mr-1" />
+                    <span>조회 {question.viewCount}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiMessageSquare className="w-4 h-4 mr-1" />
+                    <span>답변 {question.answerCount}개</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 질문 내용 */}
+            <div className="prose max-w-none mb-6">
+              <div className="whitespace-pre-wrap text-gray-700">{question.content}</div>
+            </div>
+
+            {/* 첨부파일 */}
+            {question.filePath && (
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
+                <button
+                  onClick={() => handleFileDownload(question.filePath!)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiDownload className="w-4 h-4 mr-2" />
+                  {question.filePath}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 답변 작성 버튼 */}
+          {isAuthenticated && (
+            // 관리자, 전문가, 질문 작성자만 답변 작성 가능
+            (user?.role === 'ADMIN' || 
+             user?.role === 'EXPERT' || 
+             user?.email === question?.authorEmail) && (
+              <div className="flex justify-center mb-8">
+                <button
+                  onClick={openAnswerModal}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiMessageSquare className="w-5 h-5 mr-2" />
+                  답변 작성
+                </button>
+              </div>
+            )
+          )}
+
+          {/* 답변 목록 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                답변 ({answers.length}개)
+              </h2>
+            </div>
+            
+            {answers.length === 0 ? (
+              <div className="text-center py-8">
+                <FiMessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-gray-500">아직 답변이 없습니다.</p>
+              </div>
+            ) : (
+              <AnswerList
+                answers={answers}
+                onAnswerUpdate={fetchAnswers}
+              />
+            )}
+          </div>
+
+          {/* 답변 작성 모달 */}
+          {isAnswerModalOpen && (
+            <div className="fixed inset-0 z-50 overflow-y-auto">
+              <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                  <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={closeAnswerModal}></div>
+                </div>
+
+                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg leading-6 font-medium text-gray-900">
+                            답변 작성
+                          </h3>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <FiUser className="w-4 h-4 mr-1" />
+                            <span>답변자: {user?.email}</span>
+                          </div>
+                        </div>
+                        <form onSubmit={handleSubmitAnswer}>
+                          <div className="mb-4">
+                            <textarea
+                              value={newAnswer}
+                              onChange={(e) => setNewAnswer(e.target.value)}
+                              rows={12}
+                              className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="답변을 입력해주세요..."
+                              required
+                            />
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button
+                      type="button"
+                      onClick={handleSubmitAnswer}
+                      disabled={isSubmitting || !newAnswer.trim()}
+                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      {isSubmitting ? '등록 중...' : '답변 등록'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeAnswerModal}
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>

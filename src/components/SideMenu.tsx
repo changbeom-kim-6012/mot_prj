@@ -38,28 +38,28 @@ const menuItems = [
     gradientTo: 'to-violet-600'
   },
   { 
-    icon: FiAward, 
-    label: 'Expert', 
-    href: '/expert',
-    color: 'text-indigo-500',
-    gradientFrom: 'from-indigo-500',
-    gradientTo: 'to-indigo-600'
+    icon: FiEdit3, 
+    label: 'Agora', 
+    href: '/opinions',
+    color: 'text-amber-500',
+    gradientFrom: 'from-amber-500',
+    gradientTo: 'to-amber-600'
   },
   { 
     icon: FiGlobe, 
-    label: 'News', 
+    label: 'Community', 
     href: '/news',
     color: 'text-rose-500',
     gradientFrom: 'from-rose-500',
     gradientTo: 'to-rose-600'
   },
   { 
-    icon: FiEdit3, 
-    label: 'Opinions', 
-    href: '/opinions',
-    color: 'text-amber-500',
-    gradientFrom: 'from-amber-500',
-    gradientTo: 'to-amber-600'
+    icon: FiAward, 
+    label: 'Expert', 
+    href: '/expert',
+    color: 'text-indigo-500',
+    gradientFrom: 'from-indigo-500',
+    gradientTo: 'to-indigo-600'
   }
 ];
 

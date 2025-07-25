@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Q&A - MOT Platform',
+  title: 'Q&A - MOT Club',
   description: 'MOT 관련 궁금한 점을 전문가에게 물어보세요',
 };
 

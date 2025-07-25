@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import SideMenu from "@/components/SideMenu";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -9,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MOT Platform",
+  title: "MOT Club",
   description: "Management of Technology 관련 지식 공유 플랫폼",
 };
 
@@ -21,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${inter.className} antialiased`}>
-        <SideMenu />
-        {children}
+        <AuthProvider>
+          <SideMenu />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
