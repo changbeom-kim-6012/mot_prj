@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import { FiArrowLeft, FiFileText, FiDownload, FiEye, FiCalendar, FiUser, FiTag, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
 
 interface NewsDetail {
   id: string;
@@ -28,6 +29,7 @@ interface Attachment {
 export default function NewsDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { user, isAuthenticated } = useAuth();
   const newsId = params.id as string;
   
   const [news, setNews] = useState<NewsDetail | null>(null);
@@ -219,12 +221,12 @@ export default function NewsDetailPage() {
               </div>
             </div>
 
-            {/* Attached Files */}
+            {/* 참고문헌 */}
             {attachments.length > 0 && (
               <div className="mt-8 pt-8 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <FiFileText className="mr-2 h-5 w-5 text-rose-600" />
-                  첨부파일 ({attachments.length})
+                  참고문헌 ({attachments.length})
                 </h3>
                 <div className="space-y-3">
                   {attachments.map((att) => (
@@ -237,13 +239,29 @@ export default function NewsDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleFileView(att.id.toString(), att.fileName)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors duration-200"
-                        >
-                          <FiEye className="mr-1 h-3 w-3" />
-                          보기
-                        </button>
+                        {isAuthenticated ? (
+                          <button
+                            onClick={() => handleFileView(att.id.toString(), att.fileName)}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors duration-200"
+                          >
+                            <FiEye className="mr-1 h-3 w-3" />
+                            파일보기
+                          </button>
+                        ) : (
+                          <div className="relative group">
+                            <button
+                              disabled
+                              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed transition-colors duration-200"
+                            >
+                              <FiEye className="mr-1 h-3 w-3" />
+                              파일보기
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                              로그인이 필요합니다
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                            </div>
+                          </div>
+                        )}
                         <button
                           onClick={() => handleFileDownload(att.id.toString(), att.fileName)}
                           className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-rose-600 border border-transparent rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors duration-200"

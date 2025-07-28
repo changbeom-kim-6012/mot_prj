@@ -89,18 +89,49 @@ export default function Navigation() {
 
           {/* 데스크톱 메인 메뉴 */}
           <div className="hidden md:flex items-center space-x-12">
-            {navigation.map((item, index) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-gray-900 hover:text-blue-600 px-4 py-2 text-lg font-medium transition-colors duration-200 relative"
-              >
-                {item.name}
-                {index < navigation.length - 1 && (
-                  <span className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-gray-300">·</span>
-                )}
-              </Link>
-            ))}
+            {navigation.map((item, index) => {
+              // Expert 메뉴는 로그인된 상태에서만 접근 가능
+              if (item.name === 'Expert') {
+                return isAuthenticated ? (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="text-gray-900 hover:text-blue-600 px-4 py-2 text-lg font-medium transition-colors duration-200 relative"
+                  >
+                    {item.name}
+                    {index < navigation.length - 1 && (
+                      <span className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-gray-300">·</span>
+                    )}
+                  </Link>
+                ) : (
+                  <div key={item.name} className="relative group">
+                    <span className="text-gray-400 px-4 py-2 text-lg font-medium cursor-not-allowed relative">
+                      {item.name}
+                      {index < navigation.length - 1 && (
+                        <span className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-gray-300">·</span>
+                      )}
+                    </span>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      로그인이 필요합니다
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-900 hover:text-blue-600 px-4 py-2 text-lg font-medium transition-colors duration-200 relative"
+                >
+                  {item.name}
+                  {index < navigation.length - 1 && (
+                    <span className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-gray-300">·</span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* 우측 아이콘 영역 */}
@@ -130,16 +161,42 @@ export default function Navigation() {
       {isOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              // Expert 메뉴는 로그인된 상태에서만 접근 가능
+              if (item.name === 'Expert') {
+                return isAuthenticated ? (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <div key={item.name} className="relative group">
+                    <span className="text-gray-400 block px-3 py-2 rounded-md text-base font-medium cursor-not-allowed">
+                      {item.name}
+                    </span>
+                    <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      로그인이 필요합니다
+                      <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-1 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-gray-800"></div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

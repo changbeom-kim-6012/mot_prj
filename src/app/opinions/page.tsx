@@ -46,6 +46,7 @@ export default function OpinionsPage() {
         console.log('Fetching opinions from API...');
         console.log('Request URL:', 'http://localhost:8080/api/opinions');
         console.log('Current origin:', window.location.origin);
+        console.log('Auth state:', { isAuthenticated, user: user?.email });
         
         const res = await axios.get('http://localhost:8080/api/opinions', {
           headers: {
@@ -55,12 +56,23 @@ export default function OpinionsPage() {
         });
         console.log('API Response:', res.data);
         
-        // 승인된 기고만 필터링
-        const approvedArticles = res.data.filter((article: Article) => article.status === '등록승인');
-        console.log('Approved articles:', approvedArticles);
+        // 승인된 기고와 로그인한 사용자의 임시저장 기고 필터링
+        let filteredArticles = res.data.filter((article: Article) => {
+          // 승인된 기고는 모두 표시
+          if (article.status === '등록승인') {
+            return true;
+          }
+          // 로그인한 사용자의 임시저장 기고도 표시
+          if (isAuthenticated && user && article.status === '임시저장' && article.authorName.includes(user.email)) {
+            return true;
+          }
+          return false;
+        });
         
-        setArticles(approvedArticles);
-        setFilteredArticles(approvedArticles); // 최초 전체 목록
+        console.log('Filtered articles:', filteredArticles);
+        
+        setArticles(filteredArticles);
+        setFilteredArticles(filteredArticles); // 최초 전체 목록
         setError(null);
       } catch (e: any) {
         console.error('Error fetching opinions:', e);
@@ -71,7 +83,12 @@ export default function OpinionsPage() {
       }
     }
     fetchArticles();
-  }, []);
+  }, [isAuthenticated, user]); // 의존성 배열에 isAuthenticated와 user 추가
+
+  // 검색어나 카테고리가 변경될 때 자동으로 필터링 적용
+  useEffect(() => {
+    handleSearch();
+  }, [searchTerm, selectedCategory, isAuthenticated, user]);
 
   // Agora 카테고리 불러오기
   useEffect(() => {
@@ -104,7 +121,21 @@ export default function OpinionsPage() {
 
   // 검색 및 필터링
   const handleSearch = () => {
-    const filtered = articles.filter(article => {
+    // 먼저 현재 로그인 상태에 맞게 전체 articles를 다시 필터링
+    const currentUserArticles = articles.filter(article => {
+      // 승인된 기고는 모두 표시
+      if (article.status === '등록승인') {
+        return true;
+      }
+      // 로그인한 사용자의 임시저장 기고도 표시
+      if (isAuthenticated && user && article.status === '임시저장' && article.authorName.includes(user.email)) {
+        return true;
+      }
+      return false;
+    });
+
+    // 그 다음 검색 및 카테고리 필터링 적용
+    const filtered = currentUserArticles.filter(article => {
       const matchesSearch = searchTerm.trim() === '' || 
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         article.abstractText.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -301,11 +332,27 @@ export default function OpinionsPage() {
             >
               <div className="flex flex-col gap-4">
                 <div>
-                  <Link href={`/opinions/${article.id}`}>
-                    <h3 className="text-lg font-medium text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
-                      {article.title}
-                    </h3>
-                  </Link>
+                  <div className="flex items-center gap-2 mb-1">
+                    {/* 임시저장된 기고는 제목 클릭 시 수정 페이지로 이동 */}
+                    {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
+                      <Link href={`/opinions/register?edit=${article.id}`}>
+                        <h3 className="text-lg font-medium text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
+                          {article.title}
+                        </h3>
+                      </Link>
+                    ) : (
+                      <Link href={`/opinions/${article.id}`}>
+                        <h3 className="text-lg font-medium text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
+                          {article.title}
+                        </h3>
+                      </Link>
+                    )}
+                    {article.status === '임시저장' && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        작성중
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm text-gray-500">
                     {article.authorName}
                   </p>
@@ -315,30 +362,42 @@ export default function OpinionsPage() {
                     {article.references}
                   </div>
                   <div className="flex items-center space-x-2">
-                    {isAuthenticated && user ? (
-                      <button 
-                        onClick={() => handleAbstractView(article)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                      >
-                        <FiFileText className="mr-2 h-4 w-4" />
-                        초록/요약 보기
-                      </button>
+                    {/* 임시저장된 기고는 수정 버튼 표시 */}
+                    {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
+                      <Link href={`/opinions/register?edit=${article.id}`}>
+                        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
+                          <FiUser className="mr-2 h-4 w-4" />
+                          계속 작성
+                        </button>
+                      </Link>
                     ) : (
-                      <div className="relative group">
+                      /* 승인된 기고는 기존 버튼들 표시 */
+                      isAuthenticated && user ? (
                         <button 
-                          disabled
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                          onClick={() => handleAbstractView(article)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
                         >
                           <FiFileText className="mr-2 h-4 w-4" />
                           초록/요약 보기
                         </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          로그인 후 확인할 수 있습니다
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      ) : (
+                        <div className="relative group">
+                          <button 
+                            disabled
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                          >
+                            <FiFileText className="mr-2 h-4 w-4" />
+                            초록/요약 보기
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                            로그인 후 확인할 수 있습니다
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
                         </div>
-                      </div>
+                      )
                     )}
-                    {article.fullText && (
+                    {/* 임시저장된 기고가 아니고 전문이 있는 경우에만 전문 보기 버튼 표시 */}
+                    {article.status !== '임시저장' && article.fullText && (
                       isAuthenticated && user ? (
                         <button 
                           onClick={() => handleFullTextView(article)}

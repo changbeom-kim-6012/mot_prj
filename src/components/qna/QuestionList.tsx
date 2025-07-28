@@ -114,15 +114,32 @@ export default function QuestionList({
             {questions.length > 0 ? (
               questions.map((question) => (
                 <tr key={question.id} className="hover:bg-gray-50">
-                  {/* 카테고리: 1단계만 */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-semibold text-gray-800">{question.category1}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-800">{question.category1}</span>
+                      <span className="text-xs text-gray-500">{question.category2}</span>
+                    </div>
                   </td>
-                  {/* 제목: 1줄만, 말줄임 */}
-                  <td className="px-6 py-4 max-w-xs truncate">
-                    <Link href={`/qna/${question.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer block truncate">
+                  <td className="px-6 py-4">
+                    <Link href={`/qna/${question.id}`} className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer">
                       {question.title}
                     </Link>
+                    {question.tags.length > 0 && (
+                      <div className="mt-1 flex gap-1">
+                        {question.tags.slice(0, 2).map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-50 text-violet-600 text-xs"
+                          >
+                            <FiTag className="w-3 h-3" />
+                            {tag}
+                          </span>
+                        ))}
+                        {question.tags.length > 2 && (
+                          <span className="text-xs text-gray-400">+{question.tags.length - 2}</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {getUsernameFromEmail(question.authorEmail)}
@@ -142,15 +159,23 @@ export default function QuestionList({
                       <span>{question.viewCount}</span>
                     </div>
                   </td>
-                  {/* 상태: 작성중, 승인, 거절, 공개, 비공개 중 1개만 노출 */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {(() => {
-                      // mock 데이터 기준: status: 'OPEN' | 'CLOSED', isPublic: boolean
-                      if (question.status === 'OPEN') return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">진행중</span>;
-                      if (question.status === 'CLOSED') return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">완료</span>;
-                      if (question.isPublic) return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">공개</span>;
-                      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">비공개</span>;
-                    })()}
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        question.isPublic 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {question.isPublic ? '공개' : '비공개'}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        question.status === 'OPEN' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {question.status === 'OPEN' ? '진행중' : '완료'}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))

@@ -123,11 +123,9 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\./g, '.').replace(/\s/g, '');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day}`;
   };
 
   // 상태별 스타일
@@ -302,29 +300,29 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
             {searchTerm || statusFilter !== 'all' ? '검색 결과가 없습니다.' : '등록된 전문가가 없습니다.'}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div>
+            <table className="w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/6 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     전문가 정보
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/8 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     소속/직책
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/3 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     전문분야
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/12 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     가입일
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/12 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     최근 로그인
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/12 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     상태
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="w-1/12 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     관리
                   </th>
                 </tr>
@@ -340,72 +338,77 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
                       transition={{ delay: index * 0.1 }}
                       className="hover:bg-gray-50 transition-colors duration-150"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <FiUser className="h-5 w-5 text-blue-600" />
-                            </div>
+                      <td className="px-2 py-4">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{expert.name}</div>
+                          <div className="flex items-center text-xs text-gray-500 truncate">
+                            <FiMail className="mr-1 h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{expert.email}</span>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{expert.name}</div>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <FiMail className="mr-1 h-3 w-3" />
-                              {expert.email}
+                          {expert.phone && (
+                            <div className="flex items-center text-xs text-gray-500 truncate">
+                              <FiPhone className="mr-1 h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{expert.phone}</span>
                             </div>
-                            {expert.phone && (
-                              <div className="flex items-center text-sm text-gray-500">
-                                <FiPhone className="mr-1 h-3 w-3" />
-                                {expert.phone}
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-2 py-4">
                         <div className="text-sm text-gray-900">
-                                                     {expert.organization && (
-                             <div className="flex items-center">
-                               <FiMapPin className="mr-1 h-3 w-3 text-gray-400" />
-                               {expert.organization}
-                             </div>
-                           )}
+                          {expert.organization && (
+                            <div className="flex items-center">
+                              <FiMapPin className="mr-1 h-3 w-3 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">{expert.organization}</span>
+                            </div>
+                          )}
                           {expert.position && (
-                            <div className="text-sm text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500 mt-1 truncate">
                               {expert.position}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{expert.field || '-'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{formatDate(expert.createdAt)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {expert.lastLogin ? formatDate(expert.lastLogin) : '-'}
+                      <td className="px-2 py-4">
+                        <div className="text-sm text-gray-900 leading-tight" style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: '1.2',
+                          maxHeight: '3.6rem'
+                        }}>
+                          {expert.field || '-'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(expert.status)}`}>
+                      <td className="px-2 py-4">
+                        <div className="text-sm text-gray-900">{formatDate(expert.createdAt)}</div>
+                      </td>
+                      <td className="px-2 py-4">
+                        <div className="text-sm text-gray-900">
+                          {expert.lastLogin ? formatDate(expert.lastLogin) : '-'}    
+                        </div>
+                      </td>
+                      <td className="px-2 py-4">
+                        <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${getStatusStyle(expert.status)}`}>
                           {getStatusText(expert.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-2 py-4 text-sm font-medium">
+                        <div className="flex items-center space-x-1">
                           <button
                             onClick={() => onEditExpert(expert)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                            className="text-blue-600 hover:text-blue-900 transition-colors duration-200 p-1"
+                            title="수정"
                           >
-                            <FiEdit2 className="h-4 w-4" />
+                            <FiEdit2 className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDeleteExpert(expert.id, expert.name)}
-                            className="text-red-600 hover:text-red-900 transition-colors duration-200"
+                            className="text-red-600 hover:text-red-900 transition-colors duration-200 p-1"
+                            title="삭제"
                           >
-                            <FiTrash2 className="h-4 w-4" />
+                            <FiTrash2 className="h-3 w-3" />
                           </button>
                         </div>
                       </td>
