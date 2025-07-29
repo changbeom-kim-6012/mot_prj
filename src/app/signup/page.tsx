@@ -7,7 +7,6 @@ import Link from 'next/link';
 import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
 
 export default function SignupPage() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -35,7 +34,7 @@ export default function SignupPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ email, password, role }),
       });
 
       if (!response.ok) {
@@ -65,7 +64,7 @@ export default function SignupPage() {
         <h3 className="font-semibold text-gray-800">2. 수집하는 개인정보의 항목</h3>
         <p>회사는 회원가입, 상담, 서비스 신청 등등을 위해 아래와 같은 개인정보를 수집하고 있습니다.</p>
         <ul className="list-disc list-inside mt-1">
-          <li>수집항목: 이름, 이메일, 비밀번호</li>
+          <li>수집항목: 이메일, 비밀번호</li>
           <li>개인정보 수집방법: 홈페이지(회원가입)</li>
         </ul>
       </section>
@@ -85,10 +84,10 @@ export default function SignupPage() {
     <>
       <div className="min-h-screen bg-gray-50">
         <Navigation />
-        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-md">
+        <div className="flex items-center justify-center py-32 px-4 sm:px-6 lg:px-8" style={{ marginTop: '60px' }}>
+          <div className="max-w-md w-full space-y-6 bg-white p-10 rounded-lg shadow-md">
             <div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                              <h2 className="text-center text-3xl font-extrabold text-gray-900">
                 MOT Club 가입
               </h2>
               <p className="mt-2 text-center text-sm text-gray-600">
@@ -100,21 +99,7 @@ export default function SignupPage() {
             </div>
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="sr-only">
-                    이름
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="block w-full p-3 border-gray-300 bg-gray-50 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="이름"
-                  />
-                </div>
+
 
                 <div>
                   <label htmlFor="email-address" className="sr-only">

@@ -386,7 +386,7 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
                       </td>
                       <td className="px-2 py-4">
                         <div className="text-sm text-gray-900">
-                          {expert.lastLogin ? formatDate(expert.lastLogin) : '-'}    
+                          {expert.lastLogin ? formatDate(expert.lastLogin) : '-'}
                         </div>
                       </td>
                       <td className="px-2 py-4">
