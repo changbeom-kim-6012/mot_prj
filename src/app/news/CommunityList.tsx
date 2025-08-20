@@ -67,7 +67,7 @@ export default function CommunityList({ communities, loading, searchTerm, select
         >
           <div className="col-span-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-              {item.category?.codeName || '기타'}
+              {item.categoryName || '기타'}
             </span>
           </div>
           <div className="col-span-7">

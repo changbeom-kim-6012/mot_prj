@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { FiPlus, FiSearch, FiEye, FiDownload, FiCalendar, FiUser, FiX, FiBookOpen, FiTrash2, FiEdit } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
-import RegisterLibraryItemPage from '@/app/library/register/page';
+import RegisterLibraryItemForm from './RegisterLibraryItemForm';
 import { useAuth } from '@/context/AuthContext';
 
 interface LibraryItem {
@@ -606,7 +606,7 @@ export default function LibraryPage() {
               </div>
 
               {/* 수정 폼 */}
-              <RegisterLibraryItemPage 
+              <RegisterLibraryItemForm 
                 editItem={editingItem} 
                 onClose={handleCloseEditModal}
                 onSuccess={handleEditSuccess}
@@ -633,7 +633,7 @@ export default function LibraryPage() {
               </div>
 
               {/* 등록 폼 */}
-              <RegisterLibraryItemPage 
+              <RegisterLibraryItemForm 
                 onClose={handleCloseRegisterModal}
                 onSuccess={handleRegisterSuccess}
               />
