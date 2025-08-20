@@ -59,7 +59,7 @@ function CourseDetailModal({ isOpen, onClose, course }: CourseDetailModalProps) 
               onClick={onClose}
               className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
-              닫기
+              닫기aaa
             </button>
           </div>
         </div>
