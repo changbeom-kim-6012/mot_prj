@@ -24,13 +24,7 @@ interface FileWithType {
   fileType: 'view-only' | 'downloadable';
 }
 
-type Props = {
-  editItem?: LibraryItem | null;
-  onClose?: () => void;
-  onSuccess?: () => void;
-};
-
-export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }: Props) {
+export default function RegisterLibraryItemPage() {
   const [category, setCategory] = useState('');
   const [categoryEtc, setCategoryEtc] = useState('');
   const [title, setTitle] = useState('');
@@ -55,59 +49,77 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
   const titleRef = useRef<HTMLInputElement>(null);
   const fileUploadRef = useRef<HTMLDivElement>(null);
 
-  // editItem이 있으면 폼을 해당 값으로 초기화
+  // URL 파라미터에서 editItem 정보를 가져오는 로직 추가
   useEffect(() => {
-    if (editItem) {
-      setTitle(editItem.title);
-      setAuthor(editItem.author);
-      setDescription(editItem.description);
-      setKeywords(editItem.keywords);
-      setFiles([]); // 파일은 새로 업로드해야 함
-      
-      // 카테고리 처리: 기타 카테고리인 경우 키워드 부분만 추출
-      if (editItem.category.includes('기타')) {
-        setCategory('기타');
-        // "기타"가 포함된 카테고리에서 "기타" 부분을 제거하여 키워드 추출
-        let keywordPart = '';
-        if (editItem.category.startsWith('기타')) {
-          // "기타"로 시작하는 경우
-          keywordPart = editItem.category.replace(/^기타\s*-\s*/, '').trim();
-        } else {
-          // "기타"가 중간에 포함된 경우 (예: "키인한 기타")
-          keywordPart = editItem.category.replace(/.*기타\s*/, '').trim();
-        }
-        setCategoryEtc(keywordPart);
-      } else {
-        // 일반 카테고리인 경우
-        setCategory(editItem.category);
-        setCategoryEtc('');
-      }
-      setExistingFileName(editItem.fileNames || '');
-      
-      // 기존 파일명들을 배열로 분리하여 저장
-      if (editItem.fileNames) {
-        setExistingFileNames(editItem.fileNames.split(',').map(name => name.trim()));
-      } else {
-        setExistingFileNames([]);
-      }
-      
-      // 기존 파일 경로들을 배열로 분리하여 저장
-      if (editItem.filePaths) {
-        setExistingFilePaths(editItem.filePaths.split(',').map(path => path.trim()));
-      } else {
-        setExistingFilePaths([]);
-      }
-      
-      // 기존 파일 타입들을 배열로 분리하여 저장
-      if (editItem.fileTypes) {
-        setExistingFileTypes(editItem.fileTypes.split(',').map(type => type.trim()));
-      } else {
-        setExistingFileTypes([]);
-      }
-      
-      setDeletedFileNames([]);
+    // URL에서 id 파라미터 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('id');
+    
+    if (editId) {
+      // 수정 모드: 기존 데이터를 가져와서 폼 초기화
+      fetchLibraryItem(parseInt(editId));
     }
-  }, [editItem]);
+  }, []);
+
+  const fetchLibraryItem = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:8082/api/library/${id}`);
+      if (response.ok) {
+        const editItem: LibraryItem = await response.json();
+        
+        setTitle(editItem.title);
+        setAuthor(editItem.author);
+        setDescription(editItem.description);
+        setKeywords(editItem.keywords);
+        setFiles([]); // 파일은 새로 업로드해야 함
+        
+        // 카테고리 처리: 기타 카테고리인 경우 키워드 부분만 추출
+        if (editItem.category.includes('기타')) {
+          setCategory('기타');
+          // "기타"가 포함된 카테고리에서 "기타" 부분을 제거하여 키워드 추출
+          let keywordPart = '';
+          if (editItem.category.startsWith('기타')) {
+            // "기타"로 시작하는 경우
+            keywordPart = editItem.category.replace(/^기타\s*-\s*/, '').trim();
+          } else {
+            // "기타"가 중간에 포함된 경우 (예: "키인한 기타")
+            keywordPart = editItem.category.replace(/.*기타\s*/, '').trim();
+          }
+          setCategoryEtc(keywordPart);
+        } else {
+          // 일반 카테고리인 경우
+          setCategory(editItem.category);
+          setCategoryEtc('');
+        }
+        setExistingFileName(editItem.fileNames || '');
+        
+        // 기존 파일명들을 배열로 분리하여 저장
+        if (editItem.fileNames) {
+          setExistingFileNames(editItem.fileNames.split(',').map(name => name.trim()));
+        } else {
+          setExistingFileNames([]);
+        }
+        
+        // 기존 파일 경로들을 배열로 분리하여 저장
+        if (editItem.filePaths) {
+          setExistingFilePaths(editItem.filePaths.split(',').map(path => path.trim()));
+        } else {
+          setExistingFilePaths([]);
+        }
+        
+        // 기존 파일 타입들을 배열로 분리하여 저장
+        if (editItem.fileTypes) {
+          setExistingFileTypes(editItem.fileTypes.split(',').map(type => type.trim()));
+        } else {
+          setExistingFileTypes([]);
+        }
+        
+        setDeletedFileNames([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch library item:', error);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -176,7 +188,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
       return;
     }
     
-    if (files.length === 0 && !editItem && !existingFileName) {
+    if (files.length === 0 && !existingFileName) {
       setError('문서 파일을 등록해주세요.');
       fileUploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
@@ -202,9 +214,13 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
       }
 
       let response;
-      if (editItem) {
+      // URL에서 id 파라미터 확인
+      const urlParams = new URLSearchParams(window.location.search);
+      const editId = urlParams.get('id');
+
+      if (editId) {
         // 수정(UPDATE)
-        response = await fetch(`http://localhost:8082/api/library/${editItem.id}`, {
+        response = await fetch(`http://localhost:8082/api/library/${editId}`, {
           method: 'PUT',
           body: formData,
         });
@@ -218,17 +234,11 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
 
       if (response.ok) {
         const result = await response.json();
-        alert(editItem ? '자료가 성공적으로 수정되었습니다.' : '자료가 성공적으로 등록되었습니다.');
-        if (onSuccess) {
-          onSuccess();
-        } else if (onClose) {
-          onClose();
-        } else {
-          router.push('/library');
-        }
+        alert(editId ? '자료가 성공적으로 수정되었습니다.' : '자료가 성공적으로 등록되었습니다.');
+        router.push('/library');
       } else {
         const errorData = await response.text();
-        setError(editItem ? '자료 수정에 실패했습니다. 다시 시도해주세요.' : '자료 등록에 실패했습니다. 다시 시도해주세요.');
+        setError(editId ? '자료 수정에 실패했습니다. 다시 시도해주세요.' : '자료 등록에 실패했습니다. 다시 시도해주세요.');
       }
     } catch (error) {
       setError('서버 연결에 실패했습니다. 다시 시도해주세요.');
@@ -350,7 +360,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
               </label>
               
               {/* 기존 파일 정보 표시 (수정 모드일 때만) */}
-              {editItem && existingFileNames.length > 0 && (
+              {existingFileNames.length > 0 && (
                 <div className="mt-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
@@ -419,7 +429,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
               )}
               
               {/* 삭제된 파일 복원 섹션 */}
-              {editItem && deletedFileNames.length > 0 && (
+              {deletedFileNames.length > 0 && (
                 <div className="mt-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center">
@@ -494,7 +504,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <FiUpload className="mr-2 h-4 w-4" />
-                  {editItem ? '새 파일 선택' : '파일 선택'}
+                  {existingFileName ? '새 파일 선택' : '파일 선택'}
                   <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} multiple />
                 </label>
               </div>
@@ -549,7 +559,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
               <div className="flex justify-end">
                 <button
                   type="button"
-                onClick={() => { if (onClose) onClose(); else router.push('/library'); }}
+                onClick={() => router.push('/library')}
                   className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   취소
