@@ -32,22 +32,22 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     const screenHeight = window.innerHeight;
     
     // 모달 크기 (실제 View창 크기)
-    const modalWidth = screenWidth * 0.92; // w-11/12 (92%)
-    const modalHeight = screenHeight; // h-full (100%)
+    const modalWidth = screenWidth * 0.90; // w-11/12 (90%)
+    const modalHeight = screenHeight * 0.95; // h-[95vh] (95%)
     
     // 헤더와 패딩을 제외한 실제 사용 가능한 영역 (콘텐츠 박스 크기)
-    const availableWidth = modalWidth - 20; // 좌우 패딩 (p-1 = 4px * 2) + 여유 공간
-    const availableHeight = modalHeight - 80; // 헤더와 상하 패딩 + 여유 공간
+    const availableWidth = modalWidth - 10; // 여백 최소화
+    const availableHeight = modalHeight - 40; // 헤더와 여백 최소화
     
     // 캔버스 크기를 콘텐츠 크기와 동일하게 맞추기
     const widthScale = availableWidth / actualWidth;
     const heightScale = availableHeight / actualHeight;
     
-    // 콘텐츠 크기에 정확히 맞추기 위해 더 작은 스케일 선택
+    // 높이를 우선으로 하여 PDF가 컨테이너 높이 안에 완전히 들어가도록 조정
     const optimalScale = Math.min(widthScale, heightScale);
     
     // 최소 스케일 제한 (너무 작아지지 않도록)
-    const finalScale = Math.max(optimalScale, 0.3);
+    const finalScale = Math.max(optimalScale, 1.64);
     
     console.log('캔버스 크기 콘텐츠 크기 동일화 계산:', {
       screenWidth,
@@ -166,6 +166,16 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
       // 첫 페이지 렌더링
       await renderPage(1);
+      
+      // PDF 로딩 완료 후 자동으로 1회 확대 실행
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          const newScale = Math.min(initialScale + 0.2, 5);
+          setScale(newScale);
+          renderPage(1);
+          console.log('자동 확대 실행:', newScale);
+        }
+      }, 500); // 0.5초 후 자동 확대
     } catch (err) {
       if (!isMountedRef.current) return;
       
@@ -211,7 +221,10 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       const canvas = document.createElement('canvas');
       canvas.className = 'shadow-lg border border-gray-200';
       canvas.style.maxWidth = '100%';
+      canvas.style.maxHeight = '100%';
+      canvas.style.width = 'auto';
       canvas.style.height = 'auto';
+      canvas.style.objectFit = 'contain';
       container.appendChild(canvas);
       
       const context = canvas.getContext('2d');
@@ -327,7 +340,7 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
-      <div className="w-11/12 h-full bg-white rounded-lg flex flex-col">
+      <div className="w-11/12 h-[95vh] bg-white rounded-lg flex flex-col">
         <div className="flex justify-between items-center p-1 border-b">
           <h3 className="text-lg font-medium">{fileName}</h3>
           <div className="flex items-center space-x-2">
@@ -395,7 +408,7 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
           </div>
         </div>
         
-        <div className="flex-1 p-1 relative overflow-auto">
+        <div className="flex-1 p-2 relative overflow-hidden">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
               <div className="text-center">
@@ -430,8 +443,8 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
             </div>
           )}
           
-          <div className="flex justify-center">
-            <div ref={canvasContainerRef} className="flex justify-center">
+          <div className="w-full h-full flex items-center justify-center">
+            <div ref={canvasContainerRef} className="w-full h-full flex items-center justify-center">
               {/* Canvas가 여기에 동적으로 생성됩니다 */}
             </div>
           </div>

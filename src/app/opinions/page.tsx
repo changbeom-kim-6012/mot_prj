@@ -289,7 +289,7 @@ export default function OpinionsPage() {
               <FiSearch className="mr-2 h-4 w-4" />
               검색
             </button>
-            {user ? (
+            {user && (user.role === 'EXPERT' || user.role === 'ADMIN') ? (
               <Link href="/opinions/register">
                 <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
                   <FiBookOpen className="mr-2 h-4 w-4" />
@@ -303,7 +303,7 @@ export default function OpinionsPage() {
                   Opinion 등록
                 </button>
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                  로그인 후 작성할 수 있습니다
+                  {!user ? '로그인 후 작성할 수 있습니다' : '전문가 또는 관리자만 작성할 수 있습니다'}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                 </div>
               </div>
@@ -372,29 +372,13 @@ export default function OpinionsPage() {
                       </Link>
                     ) : (
                       /* 승인된 기고는 기존 버튼들 표시 */
-                      isAuthenticated && user ? (
-                        <button 
-                          onClick={() => handleAbstractView(article)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                        >
-                          <FiFileText className="mr-2 h-4 w-4" />
-                          초록/요약 보기
-                        </button>
-                      ) : (
-                        <div className="relative group">
-                          <button 
-                            disabled
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
-                          >
-                            <FiFileText className="mr-2 h-4 w-4" />
-                            초록/요약 보기
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                            로그인 후 확인할 수 있습니다
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                          </div>
-                        </div>
-                      )
+                      <button 
+                        onClick={() => handleAbstractView(article)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      >
+                        <FiFileText className="mr-2 h-4 w-4" />
+                        초록/요약 보기
+                      </button>
                     )}
                     {/* 임시저장된 기고가 아니고 전문이 있는 경우에만 전문 보기 버튼 표시 */}
                     {article.status !== '임시저장' && article.fullText && (
@@ -446,11 +430,11 @@ export default function OpinionsPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[80vh] overflow-hidden"
+              className="relative bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className={`text-white p-6 ${modalType === 'abstract' ? 'bg-gradient-to-r from-green-600 to-green-700' : 'bg-gradient-to-r from-blue-600 to-blue-700'}`}>
+              <div className={`text-white p-4 ${modalType === 'abstract' ? 'bg-gradient-to-r from-green-600 to-green-700' : 'bg-gradient-to-r from-blue-600 to-blue-700'}`}>
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold">
                     {modalType === 'abstract' ? '초록/내용' : '전문 (Full Text)'}
@@ -471,7 +455,7 @@ export default function OpinionsPage() {
               </div>
 
               {/* Content */}
-              <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <div className="p-3 max-h-[75vh] overflow-y-auto">
                 {modalType === 'abstract' ? (
                   <>
                     <div className="bg-gray-50 rounded-lg p-4">
@@ -498,17 +482,33 @@ export default function OpinionsPage() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+              <div className="bg-gray-50 px-4 py-2 flex justify-between items-center">
                 <div></div>
                 <div className="flex items-center space-x-3">
                   {modalType === 'abstract' && selectedArticle.fullText && (
-                    <button
-                      onClick={handleFullTextFromModal}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                    >
-                      <FiList className="mr-2 h-4 w-4" />
-                      전문보기
-                    </button>
+                    isAuthenticated && user ? (
+                      <button
+                        onClick={handleFullTextFromModal}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                      >
+                        <FiList className="mr-2 h-4 w-4" />
+                        전문보기
+                      </button>
+                    ) : (
+                      <div className="relative group">
+                        <button
+                          disabled
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                        >
+                          <FiList className="mr-2 h-4 w-4" />
+                          전문보기
+                        </button>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                          로그인 후 확인할 수 있습니다
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    )
                   )}
                   {modalType === 'fulltext' && (
                     <button

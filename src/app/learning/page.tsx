@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus } from 'react-icons/fi';
+import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
+import CourseOverviewModal from '@/components/common/CourseOverviewModal';
 
 interface RelatedMaterial {
   id: number;
@@ -24,6 +25,7 @@ export default function LearningPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isAdmin] = useState(true); // 임시로 true로 설정, 실제로는 AuthContext에서 가져와야 함
+  const [overviewModalOpen, setOverviewModalOpen] = useState(false);
 
   // 관련자료 목록 불러오기
   useEffect(() => {
@@ -136,11 +138,20 @@ export default function LearningPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-700 to-transparent"></div>
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
-              <FiUsers className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                <FiUsers className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Learning</h1>
             </div>
-            <h1 className="text-3xl font-bold text-white">Learning</h1>
+            <button
+              onClick={() => setOverviewModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
+            >
+              <FiInfo className="w-5 h-5" />
+              과정 Overview
+            </button>
           </div>
           <p className="text-lg text-emerald-50 max-w-[1150px]">
             한국산업기술진흥협회에서 제공하는 MOT(기술경영) 실무역량 강화 및 전문가 양성을 위한 교육프로그램으로,<br/>
@@ -259,6 +270,12 @@ export default function LearningPage() {
           />
         </div>
       )}
+
+      {/* 과정 Overview 모달 */}
+      <CourseOverviewModal
+        isOpen={overviewModalOpen}
+        onClose={() => setOverviewModalOpen(false)}
+      />
       </div>
     </main>
   );
