@@ -78,7 +78,7 @@ export default function QnaWritePage() {
         console.log(`${key}: ${value}`);
       }
 
-      const response = await fetch('http://localhost:8080/api/questions', {
+      const response = await fetch('http://localhost:8082/api/questions', {
         method: 'POST',
         body: formData
       });

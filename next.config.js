@@ -15,7 +15,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
               "worker-src 'self' blob:",
-              "connect-src 'self' http://localhost:8080",
+              "connect-src 'self' http://localhost:8082",
               "img-src 'self' data: blob:",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
@@ -31,7 +31,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8080/api/:path*',
+        destination: 'http://localhost:8082/api/:path*',
       },
     ];
   },

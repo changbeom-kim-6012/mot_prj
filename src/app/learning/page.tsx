@@ -34,7 +34,7 @@ export default function LearningPage() {
 
   const fetchRelatedMaterials = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/library');
+      const response = await fetch('http://localhost:8082/api/library');
       if (response.ok) {
         const data = await response.json();
         // MOT 이론 및 방법론 관련 자료만 필터링
@@ -64,7 +64,7 @@ export default function LearningPage() {
     const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8080/api/library/view/${encodedPath}`;
+    const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
     
     console.log('=== Learning 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);

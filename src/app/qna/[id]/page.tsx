@@ -57,7 +57,7 @@ export default function QnaDetailPage() {
 
   const fetchQuestionDetail = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/questions/${questionId}`);
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`);
       if (response.ok) {
         const data = await response.json();
         
@@ -94,7 +94,7 @@ export default function QnaDetailPage() {
 
   const fetchAnswers = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/questions/${questionId}/answers`);
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`);
       if (response.ok) {
         const data = await response.json();
         setAnswers(data);
@@ -110,7 +110,7 @@ export default function QnaDetailPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/questions/${questionId}/answers`, {
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +184,7 @@ export default function QnaDetailPage() {
 
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:8080/api/attachments/download/${filePath}`;
+    link.href = `http://localhost:8082/api/attachments/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();

@@ -21,7 +21,7 @@ export default function SimpleFileViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://localhost:8080';
+    const baseUrl = 'http://localhost:8082';
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';

@@ -204,13 +204,13 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
       let response;
       if (editItem) {
         // 수정(UPDATE)
-        response = await fetch(`http://localhost:8080/api/library/${editItem.id}`, {
+        response = await fetch(`http://localhost:8082/api/library/${editItem.id}`, {
           method: 'PUT',
           body: formData,
         });
       } else {
         // 신규 등록(CREATE)
-        response = await fetch('http://localhost:8080/api/library', {
+        response = await fetch('http://localhost:8082/api/library', {
         method: 'POST',
         body: formData,
       });
@@ -381,7 +381,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
                                 const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                   return '%' + c.charCodeAt(0).toString(16);
                                 });
-                                const fileUrl = `http://localhost:8080/api/library/view/${encodedPath}`;
+                                const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
@@ -395,7 +395,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
                                   const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                     return '%' + c.charCodeAt(0).toString(16);
                                   });
-                                  window.open(`http://localhost:8080/api/library/download/${encodedPath}`, '_blank');
+                                  window.open(`http://localhost:8082/api/library/download/${encodedPath}`, '_blank');
                                 }}
                                 className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                               >
@@ -451,7 +451,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
                                 const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                   return '%' + c.charCodeAt(0).toString(16);
                                 });
-                                const fileUrl = `http://localhost:8080/api/library/view/${encodedPath}`;
+                                const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
@@ -465,7 +465,7 @@ export default function RegisterLibraryItemPage({ editItem, onClose, onSuccess }
                                   const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                     return '%' + c.charCodeAt(0).toString(16);
                                   });
-                                  window.open(`http://localhost:8080/api/library/download/${encodedPath}`, '_blank');
+                                  window.open(`http://localhost:8082/api/library/download/${encodedPath}`, '_blank');
                                 }}
                                 className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                               >
