@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { FiPlus, FiSearch, FiEye, FiDownload, FiCalendar, FiUser, FiX, FiBookOpen, FiTrash2, FiEdit } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
-import RegisterLibraryItemForm from './RegisterLibraryItemForm';
+import RegisterLibraryItemForm from '@/components/library/RegisterLibraryItemForm';
 import { useAuth } from '@/context/AuthContext';
 
 interface LibraryItem {
