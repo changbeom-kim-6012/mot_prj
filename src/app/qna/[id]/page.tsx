@@ -34,17 +34,6 @@ interface Answer {
   isExpertAnswer: boolean;
 }
 
-// 정적 내보내기를 위한 generateStaticParams 함수
-export async function generateStaticParams() {
-  // 빌드 시점에 생성할 QnA ID들을 정의
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    // 필요한 만큼 ID를 추가
-  ];
-}
-
 export default function QnaDetailPage() {
   const params = useParams();
   const router = useRouter();

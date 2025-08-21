@@ -3,12 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
-  output: 'export',
-  trailingSlash: true,
+  output: 'standalone',
   distDir: 'dist',
-  images: {
-    unoptimized: true
-  },
   async headers() {
     return [
       {

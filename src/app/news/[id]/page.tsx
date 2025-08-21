@@ -26,18 +26,6 @@ interface Attachment {
   fileSize: number;
 }
 
-// 정적 내보내기를 위한 generateStaticParams 함수
-export async function generateStaticParams() {
-  // 빌드 시점에 생성할 뉴스 ID들을 정의
-  // 실제로는 API에서 가져오거나 미리 정의된 ID들을 사용
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    // 필요한 만큼 ID를 추가
-  ];
-}
-
 export default function NewsDetailPage() {
   const router = useRouter();
   const params = useParams();

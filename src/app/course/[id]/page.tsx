@@ -7,17 +7,6 @@ export const metadata: Metadata = {
   description: 'MOT 과정별 상세 정보',
 };
 
-// 정적 내보내기를 위한 generateStaticParams 함수
-export async function generateStaticParams() {
-  // 빌드 시점에 생성할 과정 ID들을 정의
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    // 필요한 만큼 ID를 추가
-  ];
-}
-
 const courseDataMap: Record<string, any> = {
   '1': {
     title: 'MOT 이론 및 방법론',
