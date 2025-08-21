@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && next export",
+    "build": "next build",
     "start": "next start",
     "startDev": "PORT=13000 next start",
     "startWin": "cross-env PORT=13000 next start",

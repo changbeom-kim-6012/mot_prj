@@ -28,6 +28,17 @@ interface Attachment {
   fileSize: number;
 }
 
+// 정적 내보내기를 위한 generateStaticParams 함수
+export async function generateStaticParams() {
+  // 빌드 시점에 생성할 의견 ID들을 정의
+  return [
+    { id: '1' },
+    { id: '2' },
+    { id: '3' },
+    // 필요한 만큼 ID를 추가
+  ];
+}
+
 export default function OpinionDetailPage() {
   const params = useParams();
   const router = useRouter();
