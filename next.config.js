@@ -3,31 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
-  output: 'standalone',
-  distDir: 'dist',
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
-              "worker-src 'self' blob:",
-              "connect-src 'self' http://ernsdev.iptime.org:8082",
-              "img-src 'self' data: blob:",
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self' data:",
-              "object-src 'none'",
-              "base-uri 'self'"
-            ].join('; ')
-          }
-        ]
-      }
-    ];
-  },
   async rewrites() {
     return [
       {
