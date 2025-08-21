@@ -7,14 +7,14 @@ module.exports = {
       cwd: "/var/lib/jenkins/workspace/mot-front",  // 작업 디렉토리
       env: {
         NODE_ENV: "development",
-        PORT: 13000,
+        PORT: 14000,
         NODE_OPTIONS: "--openssl-legacy-provider"
       },
       watch: false,
       autorestart: true,
       log_date_format: "YYYY-MM-DD HH:mm Z",
-      error_file: "/data/app_data/erns/mot/dev/logs/err.log",
-      out_file: "/data/app_data/erns/mot/dev/logs/out.log"
+      error_file: "/data/app_data/erns/mot/hub/logs/err.log",
+      out_file: "/data/app_data/erns/mot/hub/logs/out.log"
     }
   ]
 }
