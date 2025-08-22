@@ -50,7 +50,7 @@ export default function OpinionDetailPage() {
     const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedPath}`;
+    const fileUrl = `http://192.168.0.101:8082/api/attachments/view/${encodedPath}`;
     setViewingFile({ fileName: fileName.trim(), fileUrl });
     setViewModalOpen(true);
   };
@@ -64,7 +64,7 @@ export default function OpinionDetailPage() {
     async function fetchDetail() {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:8082/api/opinions/${articleId}`);
+        const res = await axios.get(`http://192.168.0.101:8082/api/opinions/${articleId}`);
         const articleData = res.data;
         
         // 승인된 기고만 표시
@@ -76,7 +76,7 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attRes = await axios.get('http://localhost:8082/api/attachments', {
+        const attRes = await axios.get('http://192.168.0.101:8082/api/attachments', {
           params: { refTable: 'opinions', refId: articleId }
         });
         setAttachments(attRes.data);
@@ -205,7 +205,7 @@ export default function OpinionDetailPage() {
                           const encodedPath = encodeURIComponent(attachments[0].filePath.trim()).replace(/[!'()*]/g, function(c) {
                             return '%' + c.charCodeAt(0).toString(16);
                           });
-                          window.open(`http://localhost:8082/api/attachments/download/${encodedPath}`, '_blank');
+                          window.open(`http://192.168.0.101:8082/api/attachments/download/${encodedPath}`, '_blank');
                         }}
                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                       >
