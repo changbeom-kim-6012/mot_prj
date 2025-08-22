@@ -7,6 +7,7 @@ import Link from 'next/link';
 import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
 
 export default function SignupPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -29,17 +30,21 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://192.168.0.101:8082/api/users', {
+      const response = await fetch('http://localhost:8082/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify({ name, email, password, role }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '회원가입에 실패했습니다.');
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || '회원가입에 실패했습니다.');
+        } catch (parseError) {
+          throw new Error(`서버 오류 (${response.status}): ${response.statusText}`);
+        }
       }
 
       // 회원가입 성공
@@ -47,7 +52,11 @@ export default function SignupPage() {
       router.push('/login');
 
     } catch (err: any) {
-      setError(err.message);
+      if (err.message === 'Failed to fetch') {
+        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -100,6 +109,22 @@ export default function SignupPage() {
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">
 
+                <div>
+                  <label htmlFor="name" className="sr-only">
+                    이름
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoComplete="name"
+                    required
+                    className="block w-full p-3 border-gray-300 bg-gray-50 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="이름"
+                  />
+                </div>
 
                 <div>
                   <label htmlFor="email-address" className="sr-only">
