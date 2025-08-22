@@ -80,7 +80,7 @@ export default function LibraryPage() {
 
   // 카테고리 불러오기
   useEffect(() => {
-    fetch('http://localhost:8082/api/codes/menu/Library/details')
+    fetch('http://192.168.0.101:8082/api/codes/menu/Library/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -97,7 +97,7 @@ export default function LibraryPage() {
 
   const fetchLibraryItems = async () => {
     try {
-      const response = await fetch('http://localhost:8082/api/library');
+      const response = await fetch('http://192.168.0.101:8082/api/library');
       if (response.ok) {
         const data = await response.json();
         setLibraryItems(data);
@@ -141,7 +141,7 @@ export default function LibraryPage() {
     const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+    const fileUrl = `http://192.168.0.101:8082/api/library/view/${encodedPath}`;
     
     console.log('=== 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);
@@ -175,7 +175,7 @@ export default function LibraryPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8082/api/library/${item.id}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/library/${item.id}`, {
         method: 'DELETE',
       });
 
@@ -509,7 +509,7 @@ export default function LibraryPage() {
                                   const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                     return '%' + c.charCodeAt(0).toString(16);
                                   });
-                                  const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+                                  const fileUrl = `http://192.168.0.101:8082/api/library/view/${encodedPath}`;
                                   setViewingFile({ fileName: fileName.trim(), fileUrl });
                                   setViewModalOpen(true);
                                 } : undefined}
@@ -532,7 +532,7 @@ export default function LibraryPage() {
                                     const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                       return '%' + c.charCodeAt(0).toString(16);
                                     });
-                                    window.open(`http://localhost:8082/api/library/download/${encodedPath}`, '_blank');
+                                    window.open(`http://192.168.0.101:8082/api/library/download/${encodedPath}`, '_blank');
                                   } : undefined}
                                   disabled={!isAuthenticated || !user}
                                   className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${

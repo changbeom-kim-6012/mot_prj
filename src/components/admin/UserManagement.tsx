@@ -41,7 +41,7 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://localhost:8082/api/users');
+        const response = await fetch('http://192.168.0.101:8082/api/users');
         if (!response.ok) {
           throw new Error('사용자 목록을 불러오는데 실패했습니다.');
         }
@@ -77,7 +77,7 @@ export default function UserManagement() {
     if (!editingUser) return;
 
     try {
-      const response = await fetch(`http://localhost:8082/api/users/${userId}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingUser),
@@ -112,7 +112,7 @@ export default function UserManagement() {
     // 비밀번호는 항상 '12345'로 자동 설정
     const password = '12345';
     try {
-      const response = await fetch('http://localhost:8082/api/users', {
+      const response = await fetch('http://192.168.0.101:8082/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...addingUser, password }),
@@ -151,7 +151,7 @@ export default function UserManagement() {
     // 비밀번호는 항상 '12345'로 자동 설정
     const usersToAdd = bulkUsers.map(u => ({ ...u, password: '12345' }));
     try {
-      const response = await fetch('http://localhost:8082/api/users/bulk', {
+      const response = await fetch('http://192.168.0.101:8082/api/users/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(usersToAdd),
@@ -176,7 +176,7 @@ export default function UserManagement() {
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const response = await fetch(`http://localhost:8082/api/users/${userId}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/users/${userId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('회원 삭제에 실패했습니다.');
