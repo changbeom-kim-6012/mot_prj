@@ -5,6 +5,8 @@ const nextConfig = {
   poweredByHeader: false,
   output: 'standalone',
   distDir: 'dist',
+  assetPrefix: '',
+  trailingSlash: false,
   typescript: {
     // 빌드 시 TypeScript 에러가 있어도 빌드를 계속 진행
     ignoreBuildErrors: true,

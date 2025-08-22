@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "startDev": "PORT=13000 next start",
-    "startHub": "PORT=14000 next start",
+    "startHub": "PORT=14000 HOSTNAME=0.0.0.0 next start",
     "startWin": "cross-env PORT=13000 next start",
     "lint": "next lint"
   },

@@ -8,6 +8,7 @@ module.exports = {
       env: {
         NODE_ENV: "development",
         PORT: 14000,
+        HOSTNAME: "0.0.0.0",
         NODE_OPTIONS: "--openssl-legacy-provider"
       },
       watch: false,
