@@ -6,7 +6,7 @@ module.exports = {
       args: "run startHub",              // 실행할 npm 스크립트 수정
       cwd: "/var/lib/jenkins/workspace/mot_front",  // 작업 디렉토리 수정
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
         PORT: 14000,
         HOSTNAME: "0.0.0.0",
         NODE_OPTIONS: "--openssl-legacy-provider"
