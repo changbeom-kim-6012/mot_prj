@@ -3,12 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
-  output: 'export',
+  output: 'standalone',
   distDir: 'dist',
-  trailingSlash: true,
-  images: {
-    unoptimized: true
-  },
+  trailingSlash: false,
   typescript: {
     // 빌드 시 TypeScript 에러가 있어도 빌드를 계속 진행
     ignoreBuildErrors: true,
