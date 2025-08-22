@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: "MOT_HUB",                  // PM2에서 식별할 이름
-      script: "npm",
-      args: "run startHub",              // 실행할 npm 스크립트 수정
-      cwd: "/var/lib/jenkins/workspace/mot_front",  // 작업 디렉토리 수정
+      script: "node",                    // 직접 node로 실행
+      args: "server.js",                 // standalone 모드의 server.js 실행
+      cwd: "/var/lib/jenkins/workspace/mot_front/dist",  // dist 폴더에서 실행
       env: {
         NODE_ENV: "production",
         PORT: 14000,
