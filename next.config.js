@@ -17,7 +17,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://ernsdev.iptime.org:8082/api/:path*',
+        destination: 'http://localhost:8082/api/:path*',
       },
     ];
   },
