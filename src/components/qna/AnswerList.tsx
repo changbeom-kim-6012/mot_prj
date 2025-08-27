@@ -53,7 +53,7 @@ export default function AnswerList({
 
     try {
       setIsUpdating(true);
-      await axios.put(`http://192.168.0.101:8082/api/answers/${answerId}`, {
+      await axios.put(`http://localhost:8082/api/answers/${answerId}`, {
         content: editContent
       });
       

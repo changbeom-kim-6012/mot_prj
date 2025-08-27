@@ -53,7 +53,7 @@ export default function QnaPage() {
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
-    fetch('http://192.168.0.101:8082/api/codes/menu/Q&A/details')
+    fetch('http://localhost:8082/api/codes/menu/Q&A/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -70,7 +70,7 @@ export default function QnaPage() {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('http://192.168.0.101:8082/api/questions');
+      const response = await fetch('http://localhost:8082/api/questions');
       
       if (response.ok) {
         const data = await response.json();
@@ -111,7 +111,7 @@ export default function QnaPage() {
     
     try {
       // 질문 상세 정보 불러오기
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
+      const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
       if (response.ok) {
         const data = await response.json();
         
@@ -147,7 +147,7 @@ export default function QnaPage() {
   // 답변 목록 불러오기
   const fetchAnswers = async (questionId: number) => {
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}/answers`);
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`);
       if (response.ok) {
         const data = await response.json();
         setQuestionAnswers(data);
@@ -185,7 +185,7 @@ export default function QnaPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${selectedQuestion.id}/answers`, {
+      const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export default function QnaPage() {
 
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
-    link.href = `http://192.168.0.101:8082/api/attachments/download/${filePath}`;
+    link.href = `http://localhost:8082/api/attachments/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();

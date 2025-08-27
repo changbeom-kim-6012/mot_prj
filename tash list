@@ -1,0 +1,34 @@
+[33m9807386[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/stg[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33m9807386[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/stg[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33mcab3e51[m HEAD@{2}: reset: moving to HEAD
+[33mcab3e51[m HEAD@{3}: commit: 회원가입 이름추가
+[33m773d11a[m HEAD@{4}: commit: 회원가입 이름 추가
+[33mac419fd[m HEAD@{5}: commit: 회원가입 이름 추가
+[33m84ad676[m HEAD@{6}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m979dd56[m HEAD@{7}: reset: moving to HEAD
+[33m979dd56[m HEAD@{8}: commit: Update frontend
+[33mf7a29cb[m HEAD@{9}: commit: update frontend changes
+[33m25eaf1e[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{10}: checkout: moving from dev to main
+[33m25eaf1e[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{11}: merge main: Fast-forward
+[33m5e755e2[m HEAD@{12}: reset: moving to HEAD
+[33m5e755e2[m HEAD@{13}: checkout: moving from main to dev
+[33m25eaf1e[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{14}: commit: 수정사항 반영
+[33m92a4b4f[m HEAD@{15}: commit: 7월 29일 12시
+[33mcba253a[m HEAD@{16}: commit: Rev 0.1
+[33m2648fb7[m HEAD@{17}: commit: Rev 0: Frontend 초기 개발 완료 - Q&A, Community, Library, Expert 메뉴 및 파일뷰어 기능 구현
+[33m5e755e2[m HEAD@{18}: checkout: moving from dev to main
+[33m5e755e2[m HEAD@{19}: merge main: Fast-forward
+[33m21348bc[m HEAD@{20}: checkout: moving from main to dev
+[33m5e755e2[m HEAD@{21}: commit: 커밋 테스트
+[33m21348bc[m HEAD@{22}: checkout: moving from dev to main
+[33m21348bc[m HEAD@{23}: merge main: Fast-forward
+[33m9037f9a[m HEAD@{24}: checkout: moving from main to dev
+[33m21348bc[m HEAD@{25}: commit: Update page.tsx
+[33m9037f9a[m HEAD@{26}: checkout: moving from dev to main
+[33m9037f9a[m HEAD@{27}: merge main: Fast-forward
+[33mdc01e2d[m HEAD@{28}: checkout: moving from main to dev
+[33m9037f9a[m HEAD@{29}: commit: 커밋
+[33mdc01e2d[m HEAD@{30}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m6fba4bb[m HEAD@{31}: reset: moving to HEAD
+[33m6fba4bb[m HEAD@{32}: commit: Initial version
+[33mb15d45e[m HEAD@{33}: commit (initial): Initial commit
