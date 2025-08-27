@@ -356,75 +356,64 @@ export default function LearningPage() {
       return;
     }
     
-    // 파일 경로가 없는 경우 여러 대체 경로 시도
+    // filePath가 없는 경우
     if (!filePath) {
-      console.log('filePath가 null입니다. 여러 대체 경로 시도...');
-      
-      // 대체 경로들 시도
-      const fallbackPaths = [
-        `uploads/course-materials/${fileName}`,
-        `uploads/subjects/${fileName}`,
-        `uploads/curriculum/${fileName}`,
-        fileName // 파일명만으로도 시도
-      ];
-      
-      console.log('시도할 대체 경로들:', fallbackPaths);
-      
-      // 각 대체 경로로 파일 존재 여부 확인
-      for (const fallbackPath of fallbackPaths) {
-        try {
-          const encodedPath = encodeURIComponent(fallbackPath).replace(/[!'()*]/g, function(c) {
-            return '%' + c.charCodeAt(0).toString(16);
-          });
-          
-          const checkUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
-          console.log(`대체 경로 확인 중: ${checkUrl}`);
-          
-          const response = await fetch(checkUrl, { method: 'HEAD' });
-          if (response.ok) {
-            console.log(`파일 발견: ${fallbackPath}`);
-            setViewingFile({ fileName, fileUrl: checkUrl });
-            setViewModalOpen(true);
-            return;
-          }
-        } catch (error) {
-          console.log(`경로 ${fallbackPath} 확인 실패:`, error);
-        }
-      }
-      
-      console.log('모든 대체 경로에서 파일을 찾을 수 없습니다.');
-      alert('파일을 찾을 수 없습니다. 파일 경로를 확인해주세요.');
+      console.log('filePath가 null입니다.');
+      alert('파일 경로 정보가 없습니다. 파일을 다시 업로드해주세요.');
       return;
     }
     
-    // 원본 filePath가 있는 경우
-    console.log('원본 filePath 사용:', filePath);
-    
-    // 파일 경로 정규화 (상대 경로인 경우 처리)
-    let normalizedPath = filePath;
-    if (!filePath.startsWith('uploads/') && !filePath.startsWith('/')) {
-      normalizedPath = `uploads/${filePath}`;
-      console.log('정규화된 경로:', normalizedPath);
+    // LibraryPage와 동일한 방식으로 파일 경로 처리
+    try {
+      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
+        return '%' + c.charCodeAt(0).toString(16);
+      });
+      
+      const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+      
+      console.log('=== Curriculum 파일 보기 디버깅 ===');
+      console.log('원본 fileName:', fileName);
+      console.log('원본 filePath:', filePath);
+      console.log('인코딩된 filePath:', encodedPath);
+      console.log('생성된 fileUrl:', fileUrl);
+      console.log('========================');
+      
+      // 파일 존재 여부 먼저 확인
+      try {
+        const checkUrl = `http://localhost:8082/api/library/check/${encodeURIComponent(fileName)}`;
+        console.log('파일 존재 확인 URL:', checkUrl);
+        
+        const checkResponse = await fetch(checkUrl, {
+          credentials: 'omit' // CORS 문제 방지
+        });
+        if (checkResponse.ok) {
+          const checkResult = await checkResponse.json();
+          console.log('파일 존재 확인 결과:', checkResult);
+          
+          if (checkResult.exists) {
+            console.log('파일 존재 확인됨');
+            setViewingFile({ fileName, fileUrl });
+            setViewModalOpen(true);
+          } else {
+            console.log('파일이 존재하지 않음');
+            alert('파일을 찾을 수 없습니다. 파일 경로를 확인해주세요.');
+          }
+        } else {
+          console.log('파일 존재 확인 실패:', checkResponse.status);
+          // 파일 존재 확인이 실패해도 파일 조회 시도
+          setViewingFile({ fileName, fileUrl });
+          setViewModalOpen(true);
+        }
+      } catch (error) {
+        console.error('파일 확인 중 오류:', error);
+        // 파일 존재 확인이 실패해도 파일 조회 시도
+        setViewingFile({ fileName, fileUrl });
+        setViewModalOpen(true);
+      }
+    } catch (error) {
+      console.error('파일 경로 처리 중 오류:', error);
+      alert('파일 경로 처리 중 오류가 발생했습니다.');
     }
-    
-    // Library와 동일한 방식으로 파일 경로 처리
-    const encodedPath = encodeURIComponent(normalizedPath).replace(/[!'()*]/g, function(c) {
-      return '%' + c.charCodeAt(0).toString(16);
-    });
-    
-    // Library API 엔드포인트 사용
-    const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
-    
-    console.log('=== Curriculum 파일 보기 디버깅 ===');
-    console.log('원본 fileName:', fileName);
-    console.log('원본 filePath:', filePath);
-    console.log('정규화된 경로:', normalizedPath);
-    console.log('인코딩된 filePath:', encodedPath);
-    console.log('생성된 fileUrl:', fileUrl);
-    console.log('========================');
-    
-    setViewingFile({ fileName, fileUrl });
-    setViewModalOpen(true);
   };
 
   // 현재 선택된 탭의 Subject 필터링
@@ -588,6 +577,17 @@ export default function LearningPage() {
                                 <FiDownload className="w-4 h-4" />
                                 <span>{subject.curriculumFileName}</span>
                               </div>
+                              
+                              {/* 디버깅 정보 (개발자용) */}
+                              {isAdmin && subject.curriculumFilePath && (
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 max-w-xs">
+                                  <div className="font-medium">파일 경로 정보:</div>
+                                  <div className="text-gray-300 break-all">
+                                    경로: {subject.curriculumFilePath}
+                                  </div>
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                              )}
                               
                               {/* 툴팁 */}
                               {!isAdmin && (
