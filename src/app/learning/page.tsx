@@ -6,6 +6,8 @@ import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo, FiS
 import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
 import CourseOverviewModal from '@/components/common/CourseOverviewModal';
+import SubjectCreateModal from '@/components/learning/SubjectCreateModal';
+import SubjectEditModal from '@/components/learning/SubjectEditModal';
 
 interface RelatedMaterial {
   id: number;
@@ -51,6 +53,9 @@ export default function LearningPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isAdmin] = useState(true); // 임시로 true로 설정, 실제로는 AuthContext에서 가져와야 함
   const [overviewModalOpen, setOverviewModalOpen] = useState(false);
+  const [subjectCreateModalOpen, setSubjectCreateModalOpen] = useState(false);
+  const [subjectEditModalOpen, setSubjectEditModalOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState<any>(null);
   
   // Learning 카테고리 및 Subject 관련 상태
   const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 탭
@@ -204,6 +209,23 @@ export default function LearningPage() {
         console.log('=== Subject 데이터 ===');
         console.log('Subject 개수:', data.length);
         console.log('Subject 데이터:', data);
+        
+        // Curriculum 파일 경로 정보 확인
+        data.forEach((subject: any, index: number) => {
+          console.log(`Subject ${index + 1}:`, {
+            id: subject.id,
+            subjectCode: subject.subjectCode,
+            subjectDescription: subject.subjectDescription,
+            curriculumFileName: subject.curriculumFileName,
+            curriculumFilePath: subject.curriculumFilePath,
+            // 파일 경로 상세 분석
+            hasFileName: !!subject.curriculumFileName,
+            hasFilePath: !!subject.curriculumFilePath,
+            fileNameLength: subject.curriculumFileName?.length || 0,
+            filePathLength: subject.curriculumFilePath?.length || 0
+          });
+        });
+        
         setSubjects(data);
       } else {
         console.error('Subject 조회 실패:', response.status);
@@ -302,6 +324,109 @@ export default function LearningPage() {
     fetchSubjects(categoryId);
   };
 
+  // Subject 추가 성공 시 목록 새로고침
+  const handleSubjectCreateSuccess = () => {
+    if (activeTab) {
+      fetchSubjects(activeTab);
+    }
+  };
+
+  // Subject 수정 성공 시 목록 새로고침
+  const handleSubjectEditSuccess = () => {
+    if (activeTab) {
+      fetchSubjects(activeTab);
+    }
+  };
+
+  // Subject Description 클릭 시 수정 모달 열기
+  const handleSubjectDescriptionClick = (subject: any) => {
+    setSelectedSubject(subject);
+    setSubjectEditModalOpen(true);
+  };
+
+  // Curriculum 파일 보기 처리
+  const handleViewCurriculumFile = async (fileName: string, filePath: string | null) => {
+    console.log('=== Curriculum 파일 보기 시작 ===');
+    console.log('isAdmin:', isAdmin);
+    console.log('fileName:', fileName);
+    console.log('filePath:', filePath);
+    
+    if (!isAdmin) {
+      console.log('관리자가 아닙니다. 파일 보기 불가.');
+      return;
+    }
+    
+    // 파일 경로가 없는 경우 여러 대체 경로 시도
+    if (!filePath) {
+      console.log('filePath가 null입니다. 여러 대체 경로 시도...');
+      
+      // 대체 경로들 시도
+      const fallbackPaths = [
+        `uploads/course-materials/${fileName}`,
+        `uploads/subjects/${fileName}`,
+        `uploads/curriculum/${fileName}`,
+        fileName // 파일명만으로도 시도
+      ];
+      
+      console.log('시도할 대체 경로들:', fallbackPaths);
+      
+      // 각 대체 경로로 파일 존재 여부 확인
+      for (const fallbackPath of fallbackPaths) {
+        try {
+          const encodedPath = encodeURIComponent(fallbackPath).replace(/[!'()*]/g, function(c) {
+            return '%' + c.charCodeAt(0).toString(16);
+          });
+          
+          const checkUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+          console.log(`대체 경로 확인 중: ${checkUrl}`);
+          
+          const response = await fetch(checkUrl, { method: 'HEAD' });
+          if (response.ok) {
+            console.log(`파일 발견: ${fallbackPath}`);
+            setViewingFile({ fileName, fileUrl: checkUrl });
+            setViewModalOpen(true);
+            return;
+          }
+        } catch (error) {
+          console.log(`경로 ${fallbackPath} 확인 실패:`, error);
+        }
+      }
+      
+      console.log('모든 대체 경로에서 파일을 찾을 수 없습니다.');
+      alert('파일을 찾을 수 없습니다. 파일 경로를 확인해주세요.');
+      return;
+    }
+    
+    // 원본 filePath가 있는 경우
+    console.log('원본 filePath 사용:', filePath);
+    
+    // 파일 경로 정규화 (상대 경로인 경우 처리)
+    let normalizedPath = filePath;
+    if (!filePath.startsWith('uploads/') && !filePath.startsWith('/')) {
+      normalizedPath = `uploads/${filePath}`;
+      console.log('정규화된 경로:', normalizedPath);
+    }
+    
+    // Library와 동일한 방식으로 파일 경로 처리
+    const encodedPath = encodeURIComponent(normalizedPath).replace(/[!'()*]/g, function(c) {
+      return '%' + c.charCodeAt(0).toString(16);
+    });
+    
+    // Library API 엔드포인트 사용
+    const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+    
+    console.log('=== Curriculum 파일 보기 디버깅 ===');
+    console.log('원본 fileName:', fileName);
+    console.log('원본 filePath:', filePath);
+    console.log('정규화된 경로:', normalizedPath);
+    console.log('인코딩된 filePath:', encodedPath);
+    console.log('생성된 fileUrl:', fileUrl);
+    console.log('========================');
+    
+    setViewingFile({ fileName, fileUrl });
+    setViewModalOpen(true);
+  };
+
   // 현재 선택된 탭의 Subject 필터링
   const getCurrentTabSubjects = () => {
     return subjects.filter(subject => subject.categoryId === activeTab);
@@ -344,13 +469,22 @@ export default function LearningPage() {
               </div>
               <h1 className="text-3xl font-bold text-white">Learning</h1>
             </div>
-            <button
-              onClick={() => setOverviewModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
-            >
-              <FiInfo className="w-5 h-5" />
-              과정 Overview
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSubjectCreateModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+              >
+                <FiPlus className="w-5 h-5" />
+                Subject 추가
+              </button>
+              <button
+                onClick={() => setOverviewModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
+              >
+                <FiInfo className="w-5 h-5" />
+                과정 Overview
+              </button>
+            </div>
           </div>
           <p className="text-lg text-emerald-50 max-w-[1150px]">
             한국산업기술진흥협회에서 제공하는 MOT(기술경영) 실무역량 강화 및 전문가 양성을 위한 교육프로그램으로,<br/>
@@ -427,16 +561,42 @@ export default function LearningPage() {
                           <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full">
                             {subject.subjectCode}
                           </span>
-                          <h4 className="text-lg font-semibold text-gray-900">
+                          <h4 
+                            className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-emerald-600 transition-colors"
+                            onClick={() => handleSubjectDescriptionClick(subject)}
+                            title="클릭하여 수정"
+                          >
                             {subject.subjectDescription}
                           </h4>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           {subject.curriculumFileName ? (
-                            <>
-                              <FiDownload className="w-4 h-4" />
-                              <span>{subject.curriculumFileName}</span>
-                            </>
+                            <div className="relative group">
+                              <div 
+                                className={`flex items-center gap-2 cursor-pointer transition-colors ${
+                                  isAdmin 
+                                    ? 'hover:text-emerald-600 hover:underline' 
+                                    : 'text-gray-400 cursor-not-allowed'
+                                }`}
+                                onClick={() => {
+                                  if (isAdmin) {
+                                    handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath);
+                                  }
+                                }}
+                                title={isAdmin ? "클릭하여 파일 보기" : "로그인이 필요합니다"}
+                              >
+                                <FiDownload className="w-4 h-4" />
+                                <span>{subject.curriculumFileName}</span>
+                              </div>
+                              
+                              {/* 툴팁 */}
+                              {!isAdmin && (
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                  로그인이 필요합니다
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-400">파일 없음</span>
                           )}
@@ -473,12 +633,29 @@ export default function LearningPage() {
         </div>
       )}
 
-      {/* 과정 Overview 모달 */}
-      <CourseOverviewModal
-        isOpen={overviewModalOpen}
-        onClose={() => setOverviewModalOpen(false)}
-      />
-      </div>
-    </main>
-  );
+             {/* 과정 Overview 모달 */}
+       <CourseOverviewModal
+         isOpen={overviewModalOpen}
+         onClose={() => setOverviewModalOpen(false)}
+       />
+
+       {/* Subject 추가 모달 */}
+       <SubjectCreateModal
+         isOpen={subjectCreateModalOpen}
+         onClose={() => setSubjectCreateModalOpen(false)}
+         onSuccess={handleSubjectCreateSuccess}
+         categories={categories}
+       />
+
+       {/* Subject 수정 모달 */}
+       <SubjectEditModal
+         isOpen={subjectEditModalOpen}
+         onClose={() => setSubjectEditModalOpen(false)}
+         onSuccess={handleSubjectEditSuccess}
+         subject={selectedSubject}
+         categories={categories}
+       />
+       </div>
+     </main>
+   );
 } 
