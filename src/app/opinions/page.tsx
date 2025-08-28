@@ -230,10 +230,10 @@ export default function OpinionsPage() {
             </div>
             <h1 className="text-2xl font-bold text-white">기고 안내</h1>
           </div>
-          <p className="text-base text-amber-100 max-w-3xl ml-16">
-            R&D 및 MOT 관련 주제에 대한 여러분의 기고를 환영합니다.<br/>
-            다양한 관점과 혁신적인 아이디어를 자유롭게 공유해 주세요.
-          </p>
+                     <p className="text-base text-amber-100 max-w-[1150px] text-right">
+             R&D 및 MOT 관련 주제에 대한 여러분의 기고를 환영합니다.<br/>
+             다양한 관점과 혁신적인 아이디어를 자유롭게 공유해 주세요.
+           </p>
         </div>
       </div>
 

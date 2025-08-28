@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiEye } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiUser, FiMail, FiCalendar, FiEye } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { Expert, ExpertCreate, ExpertUpdate, ExpertSearchParams } from '@/types/expert';
@@ -9,15 +9,16 @@ import { Expert, ExpertCreate, ExpertUpdate, ExpertSearchParams } from '@/types/
 interface ExpertManagementProps {
   onEditExpert: (expert: Expert) => void;
   onCreateExpert: () => void;
+  showExpertModal?: boolean;
 }
 
-export default function ExpertManagement({ onEditExpert, onCreateExpert }: ExpertManagementProps) {
+export default function ExpertManagement({ onEditExpert, onCreateExpert, showExpertModal }: ExpertManagementProps) {
   const [experts, setExperts] = useState<Expert[]>([]);
   const [filteredExperts, setFilteredExperts] = useState<Expert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchField, setSearchField] = useState<'name' | 'email' | 'organization' | 'field'>('name');
+  const [searchField, setSearchField] = useState<'name' | 'email' | 'field'>('name');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isSearching, setIsSearching] = useState(false);
 
@@ -55,9 +56,6 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
           break;
         case 'email':
           response = await axios.get(`/api/experts/search?email=${encodeURIComponent(searchTerm)}`);
-          break;
-        case 'organization':
-          response = await axios.get(`/api/experts/search/organization?organization=${encodeURIComponent(searchTerm)}`);
           break;
         case 'field':
           response = await axios.get(`/api/experts/search/field?field=${encodeURIComponent(searchTerm)}`);
@@ -160,6 +158,17 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
     fetchExperts();
   }, []);
 
+  // 모달이 닫힐 때 목록 새로고침
+  useEffect(() => {
+    if (showExpertModal === false) {
+      // 모달이 닫힌 후 약간의 지연을 두고 목록 새로고침
+      const timer = setTimeout(() => {
+        fetchExperts();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [showExpertModal]);
+
   if (loading && experts.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -177,16 +186,15 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* 검색 필드 선택 */}
-          <select
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="name">이름</option>
-            <option value="email">이메일</option>
-            <option value="organization">소속</option>
-            <option value="field">전문분야</option>
-          </select>
+                     <select
+             value={searchField}
+             onChange={(e) => setSearchField(e.target.value as any)}
+             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+           >
+             <option value="name">이름</option>
+             <option value="email">이메일</option>
+             <option value="field">전문분야</option>
+           </select>
 
           {/* 검색 입력 */}
           <div className="relative flex-grow">
@@ -307,9 +315,9 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
                   <th className="w-1/6 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     전문가 정보
                   </th>
-                  <th className="w-1/8 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    소속/직책
-                  </th>
+                                     <th className="w-1/8 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                     직책
+                   </th>
                   <th className="w-1/3 px-2 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
                     전문분야
                   </th>
@@ -345,24 +353,12 @@ export default function ExpertManagement({ onEditExpert, onCreateExpert }: Exper
                             <FiMail className="mr-1 h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{expert.email}</span>
                           </div>
-                          {expert.phone && (
-                            <div className="flex items-center text-xs text-gray-500 truncate">
-                              <FiPhone className="mr-1 h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">{expert.phone}</span>
-                            </div>
-                          )}
                         </div>
                       </td>
                       <td className="px-2 py-4">
                         <div className="text-sm text-gray-900">
-                          {expert.organization && (
-                            <div className="flex items-center">
-                              <FiMapPin className="mr-1 h-3 w-3 text-gray-400 flex-shrink-0" />
-                              <span className="truncate">{expert.organization}</span>
-                            </div>
-                          )}
                           {expert.position && (
-                            <div className="text-xs text-gray-500 mt-1 truncate">
+                            <div className="text-xs text-gray-500 truncate">
                               {expert.position}
                             </div>
                           )}

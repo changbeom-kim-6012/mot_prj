@@ -475,7 +475,7 @@ export default function LearningPage() {
               </button>
             </div>
           </div>
-          <p className="text-lg text-emerald-50 max-w-[1150px]">
+          <p className="text-lg text-emerald-50 max-w-[1150px] text-right">
             한국산업기술진흥협회에서 제공하는 MOT(기술경영) 실무역량 강화 및 전문가 양성을 위한 교육프로그램으로,<br/>
             변화하는 기업환경을 반영한 최신의 이론 및 방법론과 R&D 조직차원의 MOT 체계에 대한 실무기반의 교육체계를 제공합니다.
           </p>

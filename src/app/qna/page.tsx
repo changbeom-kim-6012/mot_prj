@@ -296,7 +296,7 @@ export default function QnaPage() {
             </div>
             <h1 className="text-3xl font-bold text-white">Q&A</h1>
           </div>
-          <p className="text-lg text-purple-50 max-w-3xl">
+          <p className="text-lg text-purple-50 max-w-[1150px] text-right">
             기술경영, R&D 기획 및 관리에 대한 이슈, 타사 사례 등 MOT 관련 정보 한마당<br/>
             전문가에게 질문하고 답변을 받아보세요.
           </p>

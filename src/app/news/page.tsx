@@ -222,9 +222,10 @@ export default function NewsPage() {
               </div>
               <h1 className="text-2xl font-bold text-white">정보마당</h1>
             </div>
-            <p className="text-base text-rose-100 max-w-3xl ml-16">
-              MOT 플랫폼의 최신 소식과 기술경영 관련 뉴스를 확인하세요. 주요 공지사항부터 최신 동향, 세미나 정보까지 다양한 소식을 전해드립니다.
-            </p>
+                         <p className="text-base text-rose-100 max-w-[1150px] text-right">
+               MOT Club 회원들과 나누고 싶은 소식을 자유롭게 등록할 수 있습니다.<br/>
+               등록 내용이 본 사이트의 취지에 맞지 않는 경우에는 사전통지 없이 삭제될 수 있습니다.
+             </p>
           </div>
         </div>
       </div>

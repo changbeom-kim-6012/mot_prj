@@ -298,7 +298,7 @@ export default function LibraryPage() {
             </div>
             <h1 className="text-3xl font-bold text-white">자료실</h1>
           </div>
-          <p className="text-lg text-blue-50 max-w-[1150px]">
+          <p className="text-lg text-blue-50 max-w-[1150px] text-right">
             MOT 관련 자료를 검색하고 조회할 수 있습니다.<br/>
             기술경영, 연구기획 및 관리업무에 대한 다양한 자료를 찾아보고 활용하세요.
           </p>

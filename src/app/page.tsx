@@ -86,7 +86,7 @@ export default function Home() {
             <div style={{ maxWidth: 'calc(100% - 320px - 20px)', width: '100%' }}>
               <p className="text-lg text-fuchsia-200 leading-relaxed text-right" style={{wordBreak: 'keep-all'}}>
                 MOT Club은 한국산업기술진흥협회와 함께하는 기술경영 지식공유 커뮤니티입니다.<br/>
-                교육참가자, 업무종사자 및 기술경영에 관심을 가진 모든 분들이 함께하는 한마당입니다.
+                교육참가자 및 기술경영에 관심을 가진 모든 분들이 함께 만들어가는 공유마당입니다.
               </p>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function Home() {
                     <FiUsers className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 group-hover:text-green-600 transition-colors mb-4">Learning</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">산기협에서 수행하는 기술경영 교육과정에 대한 전반적인 소개</p>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영(MOT) 교육과목 구성에 대한 전반적인 소개와 개설된 교육프로그램 소개</p>
                 </div>
               </div>
             </Link>
@@ -134,7 +134,7 @@ export default function Home() {
                     <FiMessageSquare className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors mb-4">Q&A</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영, R&D 기획 및 관리에 대한 이슈, 타사 사례 등 MOT 관련 정보 한마당</p>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영, R&D 시스템 관련한 다양한 이슈, 타사 사례 등에 대한 정보공유 장터</p>
                 </div>
               </div>
             </Link>
@@ -148,7 +148,7 @@ export default function Home() {
                     <FiEdit3 className="w-8 h-8 text-amber-600 group-hover:text-white transition-colors" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 group-hover:text-amber-600 transition-colors mb-4">Agora</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT, R&D 분야에서 다양한 새로운 관점의 Opinion 제기, Initiative 활동 등을 위한 한마당</p>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT/R&D 관련한 다양한 의견교환 및 Initiative 활동을 위한 토론마당</p>
                 </div>
               </div>
             </Link>

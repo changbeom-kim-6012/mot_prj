@@ -213,6 +213,12 @@ export default function SubjectCreateModal({
     }
   };
 
+  const handleDeleteFile = () => {
+    setCurriculumFile(null);
+    setErrors({ ...errors, curriculumFile: '' });
+    console.log('파일이 성공적으로 삭제되었습니다.');
+  };
+
   const handleInputChange = (field: keyof SubjectFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // 에러 메시지 제거
@@ -375,6 +381,17 @@ export default function SubjectCreateModal({
                      className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                    >
                      파일 제거
+                   </button>
+                 )}
+                 
+                 {/* 파일 삭제 버튼 (기존 파일이 있는 경우) */}
+                 {!curriculumFile && (
+                   <button
+                     type="button"
+                     onClick={handleDeleteFile}
+                     className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                   >
+                     파일 삭제
                    </button>
                  )}
                </div>

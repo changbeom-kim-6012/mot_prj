@@ -9,10 +9,9 @@ import { Expert, ExpertCreate, ExpertUpdate } from '@/types/expert';
 interface ExpertFormModalProps {
   expert?: Expert | null;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
-export default function ExpertFormModal({ expert, onClose, onSuccess }: ExpertFormModalProps) {
+export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProps) {
   const [formData, setFormData] = useState<ExpertCreate>({
     name: '',
     email: '',
@@ -74,7 +73,7 @@ export default function ExpertFormModal({ expert, onClose, onSuccess }: ExpertFo
       }
       
       alert(isEditMode ? '전문가 정보가 성공적으로 수정되었습니다.' : '전문가가 성공적으로 등록되었습니다.');
-      onSuccess();
+      onClose();
     } catch (error: any) {
       console.error('전문가 저장 실패:', error);
       setError(error.response?.data?.message || '저장에 실패했습니다.');

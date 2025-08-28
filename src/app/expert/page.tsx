@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiLinkedin, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiUser, FiMail, FiSearch, FiFilter } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { Expert } from '@/types/expert';
@@ -133,10 +133,10 @@ export default function ExpertPage() {
               </div>
               <h1 className="text-2xl font-bold text-white">전문가 프로필</h1>
             </div>
-            <p className="text-base text-blue-100 max-w-3xl ml-16">
+            <p className="text-base text-blue-100 max-w-[1150px] text-right">
               MOT 플랫폼의 각 분야 전문가들을 소개합니다.
             </p>
-            <p className="text-base text-blue-100 max-w-3xl ml-16">
+            <p className="text-base text-blue-100 max-w-3xl text-right">
               기술경영 여정에 함께할 전문가 정보를 확인하세요.
             </p>
           </div>
@@ -268,18 +268,6 @@ export default function ExpertPage() {
                         <FiMail className="mr-3 h-4 w-4 text-gray-400" />
                         <span className="truncate">{expert.email}</span>
                       </div>
-                      {expert.phone && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FiPhone className="mr-3 h-4 w-4 text-gray-400" />
-                          <span>{expert.phone}</span>
-                        </div>
-                      )}
-                      {expert.organization && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FiMapPin className="mr-3 h-4 w-4 text-gray-400" />
-                          <span className="truncate">{expert.organization}</span>
-                        </div>
-                      )}
                     </div>
 
                     {/* 학력 및 경력 */}

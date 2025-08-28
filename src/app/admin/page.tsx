@@ -128,6 +128,7 @@ export default function AdminPage() {
             <ExpertManagement 
               onEditExpert={handleEditExpert}
               onCreateExpert={handleCreateExpert}
+              showExpertModal={showExpertModal}
             />
           )}
           {activeTab === 'opinions' && <OpinionManagement />}
@@ -140,11 +141,6 @@ export default function AdminPage() {
         <ExpertFormModal
           expert={editingExpert}
           onClose={handleCloseExpertModal}
-          onSuccess={() => {
-            handleCloseExpertModal();
-            // 페이지 새로고침 또는 상태 업데이트
-            window.location.reload();
-          }}
         />
       )}
     </main>
