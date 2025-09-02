@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FiX, FiArrowRight, FiBookOpen, FiSettings, FiUsers, FiTrendingUp, FiTarget, FiZap, FiDollarSign, FiDatabase } from 'react-icons/fi';
+import PDFViewerModal from './PDFViewerModal';
 
 interface CourseOverviewModalProps {
   isOpen: boolean;
@@ -72,6 +73,9 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
   const [selectedCourse, setSelectedCourse] = useState<CourseDetailModalProps['course']>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string>('');
+  const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>('');
 
   const courses = [
     {
@@ -114,6 +118,18 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
     setSelectedCourse(null);
   };
 
+  const handlePdfViewerOpen = (pdfUrl: string, title: string) => {
+    setSelectedPdfUrl(pdfUrl);
+    setSelectedPdfTitle(title);
+    setPdfViewerOpen(true);
+  };
+
+  const handlePdfViewerClose = () => {
+    setPdfViewerOpen(false);
+    setSelectedPdfUrl('');
+    setSelectedPdfTitle('');
+  };
+
   const handleAreaClick = (area: string) => {
     setSelectedArea(selectedArea === area ? null : area);
   };
@@ -131,7 +147,19 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                  <div className="flex min-h-full items-center justify-center p-4">
            <div className="relative bg-white rounded-2xl shadow-xl max-w-7xl w-full h-[90vh] flex flex-col">
              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-               <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
+               <div className="flex items-center gap-4">
+                 <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
+                 <button
+                   onClick={() => handlePdfViewerOpen(
+                     'http://localhost:8082/api/library/view/MOT%20교육과정%20Overview.pdf',
+                     'MOT 교육과정 Overview'
+                   )}
+                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                 >
+                   <FiBookOpen className="w-4 h-4" />
+                   PDF 보기
+                 </button>
+               </div>
                <button
                  onClick={onClose}
                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -434,6 +462,14 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
         isOpen={detailModalOpen}
         onClose={handleDetailModalClose}
         course={selectedCourse}
+      />
+
+      {/* PDF 뷰어 모달 */}
+      <PDFViewerModal
+        isOpen={pdfViewerOpen}
+        onClose={handlePdfViewerClose}
+        pdfUrl={selectedPdfUrl}
+        title={selectedPdfTitle}
       />
     </>
   );

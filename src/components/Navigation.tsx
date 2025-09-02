@@ -66,9 +66,7 @@ export default function Navigation() {
                   </Link>
                 </>
               )}
-              <Link href="/sitemap" className="hover:text-gray-900 transition-colors">
-                사이트맵
-              </Link>
+
               <Link href="/en" className="hover:text-gray-900 transition-colors">
                 ENGLISH
               </Link>

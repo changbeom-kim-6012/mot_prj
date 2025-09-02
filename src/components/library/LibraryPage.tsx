@@ -7,6 +7,7 @@ import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
 import RegisterLibraryItemForm from '@/components/library/RegisterLibraryItemForm';
 import { useAuth } from '@/context/AuthContext';
+import { formatDate } from '@/utils/dateUtils';
 
 interface LibraryItem {
   id: number;
@@ -100,6 +101,20 @@ export default function LibraryPage() {
       const response = await fetch('http://localhost:8082/api/library');
       if (response.ok) {
         const data = await response.json();
+        
+        // 날짜 데이터 검증 및 로깅
+        if (Array.isArray(data)) {
+          data.forEach((item, index) => {
+            console.log(`Library Item ${index}:`, {
+              id: item.id,
+              title: item.title,
+              createdAt: item.createdAt,
+              createdAtType: typeof item.createdAt,
+              createdAtValid: item.createdAt ? !isNaN(new Date(item.createdAt).getTime()) : false
+            });
+          });
+        }
+        
         setLibraryItems(data);
         setFilteredItems(data); // 최초 전체 목록
       } else {
@@ -223,10 +238,7 @@ export default function LibraryPage() {
     fetchLibraryItems(); // 목록 새로고침
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR');
-  };
+
 
   if (loading) {
     return (
@@ -299,8 +311,8 @@ export default function LibraryPage() {
             <h1 className="text-3xl font-bold text-white">자료실</h1>
           </div>
           <p className="text-lg text-blue-50 max-w-[1150px] text-right">
-            MOT 관련 자료를 검색하고 조회할 수 있습니다.<br/>
-            기술경영, 연구기획 및 관리업무에 대한 다양한 자료를 찾아보고 활용하세요.
+            기술경영 및 R&D 관련 교육교재, 기술과 혁신 웹진 등 MOT 관련된 자료 공유방<br/>
+            연구관리 및 기술경영과 관련된 모든 자료를 축적하고, 회원들의 자유로운 접근이 가능한 공간입니다.
           </p>
         </div>
       </div>
@@ -446,115 +458,129 @@ export default function LibraryPage() {
 
               {/* 자료 정보 */}
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {selectedItem.category}
-                  </span>
-                </div>
+                                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">카테고리</label>
+                   <div className="pl-4">
+                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                       {selectedItem.category}
+                     </span>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-                  <p className="text-sm text-gray-900">{selectedItem.title}</p>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">제목</label>
+                   <div className="pl-4">
+                     <p className="text-sm text-gray-900">{selectedItem.title}</p>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">작성자</label>
-                  <div className="flex items-center">
-                    <FiUser className="h-4 w-4 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-900">{selectedItem.author}</span>
-                  </div>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">작성자</label>
+                   <div className="pl-4">
+                     <div className="flex items-center">
+                       <FiUser className="h-4 w-4 text-gray-400 mr-2" />
+                       <span className="text-sm text-gray-900">{selectedItem.author}</span>
+                     </div>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedItem.description}</p>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">설명</label>
+                   <div className="pl-4">
+                     <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedItem.description}</p>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">키워드</label>
-                  <p className="text-sm text-gray-900">{selectedItem.keywords}</p>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">키워드</label>
+                   <div className="pl-4">
+                     <p className="text-sm text-gray-900">{selectedItem.keywords}</p>
+                   </div>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">등록일</label>
-                  <div className="flex items-center">
-                    <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-900">{formatDate(selectedItem.createdAt)}</span>
-                  </div>
-                </div>
+                 <div>
+                   <label className="block text-sm font-bold text-gray-700 mb-1">등록일</label>
+                   <div className="pl-4">
+                     <div className="flex items-center">
+                       <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
+                       <span className="text-sm text-gray-900">{formatDate(selectedItem.createdAt)}</span>
+                     </div>
+                   </div>
+                 </div>
 
-                {selectedItem.fileNames && selectedItem.filePaths && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">첨부파일</label>
-                    <div className="space-y-2">
-                      {selectedItem.fileNames.split(',').map((fileName, index) => {
-                        const filePath = selectedItem.filePaths.split(',')[index];
-                        const fileType = selectedItem.fileTypes ? selectedItem.fileTypes.split(',')[index]?.trim() : 'downloadable';
-                        const isViewOnly = fileType === 'view-only';
-                        
-                        return (
-                          <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-900">{fileName.trim()}</span>
-                              {isViewOnly && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                  보기만
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={isAuthenticated && user ? () => {
-                                  const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
-                                    return '%' + c.charCodeAt(0).toString(16);
-                                  });
-                                  const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
-                                  setViewingFile({ fileName: fileName.trim(), fileUrl });
-                                  setViewModalOpen(true);
-                                } : undefined}
-                                disabled={!isAuthenticated || !user}
-                                className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${
-                                  isAuthenticated && user
-                                    ? 'text-blue-700 bg-blue-100 hover:bg-blue-200 border-transparent cursor-pointer'
-                                    : 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed'
-                                }`}
-                                title={isAuthenticated && user ? "파일 보기" : "자료 보기는 로그인이 필요합니다"}
-                                onMouseEnter={handleTooltipMouseEnter}
-                                onMouseLeave={handleTooltipMouseLeave}
-                              >
-                                <FiEye className="mr-1" />
-                                파일보기
-                              </button>
-                              {!isViewOnly && (
-                                <button
-                                  onClick={isAuthenticated && user ? () => {
-                                    const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
-                                      return '%' + c.charCodeAt(0).toString(16);
-                                    });
-                                    window.open(`http://localhost:8082/api/library/download/${encodedPath}`, '_blank');
-                                  } : undefined}
-                                  disabled={!isAuthenticated || !user}
-                                  className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${
-                                    isAuthenticated && user
-                                      ? 'text-green-700 bg-green-100 hover:bg-green-200 border-transparent cursor-pointer'
-                                      : 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed'
-                                  }`}
-                                  title={isAuthenticated && user ? "다운로드" : "자료 보기는 로그인이 필요합니다"}
-                                  onMouseEnter={handleTooltipMouseEnter}
-                                  onMouseLeave={handleTooltipMouseLeave}
-                                >
-                                  <FiDownload className="mr-1" />
-                                  다운로드
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                 {selectedItem.fileNames && selectedItem.filePaths && (
+                   <div>
+                     <label className="block text-sm font-bold text-gray-700 mb-2">첨부파일</label>
+                     <div className="pl-4">
+                       <div className="space-y-2">
+                         {selectedItem.fileNames.split(',').map((fileName, index) => {
+                           const filePath = selectedItem.filePaths.split(',')[index];
+                           const fileType = selectedItem.fileTypes ? selectedItem.fileTypes.split(',')[index]?.trim() : 'downloadable';
+                           const isViewOnly = fileType === 'view-only';
+                           
+                           return (
+                             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-sm text-gray-900">{fileName.trim()}</span>
+                                 {isViewOnly && (
+                                   <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                     보기만
+                                   </span>
+                                 )}
+                               </div>
+                               <div className="flex space-x-2">
+                                 <button
+                                   onClick={isAuthenticated && user ? () => {
+                                     const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
+                                       return '%' + c.charCodeAt(0).toString(16);
+                                     });
+                                     const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+                                     setViewingFile({ fileName: fileName.trim(), fileUrl });
+                                     setViewModalOpen(true);
+                                   } : undefined}
+                                   disabled={!isAuthenticated || !user}
+                                   className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${
+                                     isAuthenticated && user
+                                       ? 'text-blue-700 bg-blue-100 hover:bg-blue-200 border-transparent cursor-pointer'
+                                       : 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed'
+                                   }`}
+                                   title={isAuthenticated && user ? "파일 보기" : "자료 보기는 로그인이 필요합니다"}
+                                   onMouseEnter={handleTooltipMouseEnter}
+                                   onMouseLeave={handleTooltipMouseLeave}
+                                 >
+                                   <FiEye className="mr-1" />
+                                   파일보기
+                                 </button>
+                                 {!isViewOnly && (
+                                   <button
+                                     onClick={isAuthenticated && user ? () => {
+                                       const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
+                                         return '%' + c.charCodeAt(0).toString(16);
+                                       });
+                                       window.open(`http://localhost:8082/api/library/download/${encodedPath}`, '_blank');
+                                     } : undefined}
+                                     disabled={!isAuthenticated || !user}
+                                     className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${
+                                       isAuthenticated && user
+                                         ? 'text-green-700 bg-green-100 hover:bg-green-200 border-transparent cursor-pointer'
+                                         : 'text-gray-400 bg-gray-100 border-gray-300 cursor-not-allowed'
+                                     }`}
+                                     title={isAuthenticated && user ? "다운로드" : "자료 보기는 로그인이 필요합니다"}
+                                     onMouseEnter={handleTooltipMouseEnter}
+                                     onMouseLeave={handleTooltipMouseLeave}
+                                   >
+                                     <FiDownload className="mr-1" />
+                                     다운로드
+                                   </button>
+                                 )}
+                               </div>
+                             </div>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   </div>
+                 )}
               </div>
 
               {/* 모달 푸터 */}

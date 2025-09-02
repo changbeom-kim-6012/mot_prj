@@ -133,12 +133,12 @@ export default function ExpertPage() {
               </div>
               <h1 className="text-2xl font-bold text-white">전문가 프로필</h1>
             </div>
-            <p className="text-base text-blue-100 max-w-[1150px] text-right">
-              MOT 플랫폼의 각 분야 전문가들을 소개합니다.
-            </p>
-            <p className="text-base text-blue-100 max-w-3xl text-right">
-              기술경영 여정에 함께할 전문가 정보를 확인하세요.
-            </p>
+                         <p className="text-base text-blue-100 max-w-[1150px] text-right">
+               기술경영 지식을 나누며 함께 성장하는 MOT Club입니다.
+             </p>
+             <p className="text-base text-blue-100 max-w-[1150px] text-right">
+               여러분의 귀한 경험과 통찰을 지식 나눔을 통해 함께 발전해 나갈 분들 환영합니다.
+             </p>
           </div>
         </div>
       </div>

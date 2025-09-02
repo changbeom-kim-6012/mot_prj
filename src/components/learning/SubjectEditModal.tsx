@@ -142,6 +142,9 @@ export default function SubjectEditModal({
         const result = await response.json();
         console.log('Subject 수정 성공:', result);
         
+        // 수정 성공 alert 표시
+        alert('Subject가 성공적으로 수정되었습니다.');
+        
         // 성공 콜백 호출
         onSuccess();
         onClose();

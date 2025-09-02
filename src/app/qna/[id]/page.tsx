@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload, FiTrash2 } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
+import { formatDate } from '@/utils/dateUtils';
 
 interface Question {
   id: number;
@@ -110,6 +111,15 @@ export default function QnaDetailPage() {
 
     setIsSubmitting(true);
     try {
+      console.log('답변 등록 요청 데이터:', {
+        questionId: questionId,
+        content: newAnswer,
+        authorEmail: user.email,
+        authorId: user.email,
+        authorName: user.name || user.email,
+        isExpertAnswer: false
+      });
+
       const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`, {
         method: 'POST',
         headers: {
@@ -124,17 +134,23 @@ export default function QnaDetailPage() {
         }),
       });
 
+      console.log('답변 등록 응답 상태:', response.status, response.statusText);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('답변 등록 성공:', result);
         setNewAnswer('');
         setIsAnswerModalOpen(false);
         fetchAnswers(); // 답변 목록 새로고침
         alert('답변이 등록되었습니다.');
       } else {
-        alert('답변 등록에 실패했습니다.');
+        const errorText = await response.text();
+        console.error('답변 등록 실패:', response.status, errorText);
+        alert(`답변 등록에 실패했습니다.\n상태: ${response.status}\n오류: ${errorText}`);
       }
     } catch (error) {
       console.error('답변 등록 중 오류:', error);
-      alert('답변 등록 중 오류가 발생했습니다.');
+      alert(`답변 등록 중 오류가 발생했습니다.\n오류: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -149,16 +165,30 @@ export default function QnaDetailPage() {
     setNewAnswer('');
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // 질문 삭제
+  const handleDeleteQuestion = async () => {
+    if (!confirm('정말로 이 질문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('질문이 성공적으로 삭제되었습니다.');
+        router.push('/qna'); // Q&A 목록으로 이동
+      } else {
+        alert('질문 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('질문 삭제 중 오류:', error);
+      alert('질문 삭제 중 오류가 발생했습니다.');
+    }
   };
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -184,7 +214,8 @@ export default function QnaDetailPage() {
 
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:8082/api/attachments/download/${filePath}`;
+    // Q&A 전용 파일 다운로드 API 사용
+    link.href = `http://localhost:8082/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
@@ -247,6 +278,18 @@ export default function QnaDetailPage() {
             {/* 질문 헤더 */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
+                {/* 관리자 삭제 버튼 */}
+                {isAuthenticated && user?.role === 'ADMIN' && (
+                  <div className="flex justify-end mb-4">
+                    <button
+                      onClick={handleDeleteQuestion}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      <FiTrash2 className="w-4 h-4 mr-2" />
+                      질문 삭제
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center space-x-3 mb-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
                     {getStatusText(question.status)}

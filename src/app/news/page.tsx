@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { CommunityItem, CommonCode } from '@/types/community';
 import { useAuth } from '@/context/AuthContext';
+import { formatDate } from '@/utils/dateUtils';
 
 export default function NewsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -51,6 +52,17 @@ export default function NewsPage() {
       console.log('Community 데이터:', data);
       
       if (Array.isArray(data)) {
+        // 날짜 데이터 검증 및 로깅
+        data.forEach((item, index) => {
+          console.log(`Item ${index}:`, {
+            id: item.id,
+            title: item.title,
+            createdAt: item.createdAt,
+            createdAtType: typeof item.createdAt,
+            createdAtValid: item.createdAt ? !isNaN(new Date(item.createdAt).getTime()) : false
+          });
+        });
+        
         setCommunities(data);
         console.log('Community 데이터 설정 완료:', data.length, '개');
       } else {
@@ -169,14 +181,7 @@ export default function NewsPage() {
     return communities.filter(item => item.categoryName === categoryName).length;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\./g, '.').replace(/\s/g, '');
-  };
+
 
   if (loading && communities.length === 0) {
     return (

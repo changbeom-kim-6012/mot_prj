@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
+import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
+import { formatDate } from '@/utils/dateUtils';
 
 interface Question {
   id: number;
@@ -40,6 +42,11 @@ export default function QnaPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState<{id:number, name:string}[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
+
+  // 페이지 로드 시 사용자 정보 출력
+  console.log('QnaPage 컴포넌트 로드됨');
+  console.log('인증 상태:', isAuthenticated);
+  console.log('사용자 정보:', user);
   
   // Q&A 상세 조회 모달 상태
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -75,11 +82,18 @@ export default function QnaPage() {
       if (response.ok) {
         const data = await response.json();
         
+        console.log('서버에서 받은 원본 데이터:', data);
+        
         // 데이터 타입 확인 및 변환
-        const processedData = data.map((question: any) => ({
-          ...question,
-          isPublic: Boolean(question.isPublic)
-        }));
+        const processedData = data.map((question: any) => {
+          console.log(`질문 ID ${question.id}: isPublic = ${question.isPublic}, 타입 = ${typeof question.isPublic}`);
+          return {
+            ...question,
+            isPublic: Boolean(question.isPublic)
+          };
+        });
+        
+        console.log('처리된 데이터:', processedData);
         
         setQuestions(processedData);
         setFilteredQuestions(processedData);
@@ -178,6 +192,32 @@ export default function QnaPage() {
     setNewAnswer('');
   };
 
+  // 질문 삭제
+  const handleDeleteQuestion = async (questionId: number) => {
+    if (!confirm('정말로 이 질문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('질문이 성공적으로 삭제되었습니다.');
+        // 상세 모달 닫기
+        handleCloseDetailModal();
+        // 질문 목록 새로고침
+        fetchQuestions();
+      } else {
+        alert('질문 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('질문 삭제 중 오류:', error);
+      alert('질문 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   // 답변 제출
   const handleSubmitAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,6 +225,15 @@ export default function QnaPage() {
 
     setIsSubmitting(true);
     try {
+      console.log('답변 등록 요청 데이터:', {
+        questionId: selectedQuestion.id,
+        content: newAnswer,
+        authorEmail: user.email,
+        authorId: user.email,
+        authorName: user.name || user.email,
+        isExpertAnswer: false
+      });
+
       const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
@@ -199,30 +248,29 @@ export default function QnaPage() {
         }),
       });
 
+      console.log('답변 등록 응답 상태:', response.status, response.statusText);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('답변 등록 성공:', result);
         setNewAnswer('');
         setIsAnswerModalOpen(false);
         fetchAnswers(selectedQuestion.id); // 답변 목록 새로고침
         alert('답변이 등록되었습니다.');
       } else {
-        alert('답변 등록에 실패했습니다.');
+        const errorText = await response.text();
+        console.error('답변 등록 실패:', response.status, errorText);
+        alert(`답변 등록에 실패했습니다.\n상태: ${response.status}\n오류: ${errorText}`);
       }
     } catch (error) {
       console.error('답변 등록 중 오류:', error);
-      alert('답변 등록 중 오류가 발생했습니다.');
+      alert(`답변 등록 중 오류가 발생했습니다.\n오류: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -248,7 +296,8 @@ export default function QnaPage() {
 
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:8082/api/attachments/download/${filePath}`;
+    // Q&A 전용 파일 다운로드 API 사용
+    link.href = `http://localhost:8082/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
@@ -256,10 +305,10 @@ export default function QnaPage() {
   };
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      return (
+    <main className="min-h-screen bg-gray-50">
+      <Navigation />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">질문 목록을 불러오는 중...</p>
@@ -450,8 +499,12 @@ export default function QnaPage() {
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Q&A 상세</h3>
-                <button onClick={handleCloseDetailModal} className="text-gray-400 hover:text-gray-600">
-                  <FiX className="h-6 w-6" />
+                <button 
+                  onClick={handleCloseDetailModal} 
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiArrowLeft className="w-4 h-4 mr-2" />
+                  목록으로 돌아가기
                 </button>
               </div>
               
@@ -576,22 +629,41 @@ export default function QnaPage() {
                     )}
                   </div>
 
-                  {/* 답변 작성 버튼 */}
-                  {isAuthenticated && (
-                    (user?.role === 'ADMIN' || 
-                     user?.role === 'EXPERT' || 
-                     user?.email === selectedQuestion?.authorEmail) && (
-                      <div className="flex justify-center">
+                  {/* 답변 작성 버튼과 삭제 버튼 */}
+                  <div className="flex justify-between items-center">
+                    {/* 왼쪽 공간 */}
+                    <div className="w-20"></div>
+                    
+                    {/* 답변 작성 버튼 - 중앙 */}
+                    <div className="flex justify-center flex-1">
+                      {isAuthenticated && (
+                        (user?.role === 'ADMIN' || 
+                         user?.role === 'EXPERT' || 
+                         user?.email === selectedQuestion?.authorEmail) && (
+                          <button
+                            onClick={openAnswerModal}
+                            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <FiMessageSquare className="w-5 h-5 mr-2" />
+                            답변 작성
+                          </button>
+                        )
+                      )}
+                    </div>
+                    
+                    {/* 관리자 삭제 버튼 - 오른쪽 */}
+                    <div>
+                      {isAuthenticated && user && user.role === 'ADMIN' && (
                         <button
-                          onClick={openAnswerModal}
-                          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          onClick={() => handleDeleteQuestion(selectedQuestion!.id)}
+                          className="inline-flex items-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
-                          <FiMessageSquare className="w-5 h-5 mr-2" />
-                          답변 작성
+                          <FiTrash2 className="w-5 h-5 mr-2" />
+                          삭제
                         </button>
-                      </div>
-                    )
-                  )}
+                      )}
+                    </div>
+                  </div>
 
                   {/* 답변 목록 */}
                   <div className="bg-gray-50 rounded-lg p-6">
@@ -607,24 +679,10 @@ export default function QnaPage() {
                         <p className="text-gray-500">아직 답변이 없습니다.</p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {questionAnswers.map((answer) => (
-                          <div key={answer.id} className="bg-white rounded-lg p-4 border border-gray-200">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-gray-900">{answer.authorName}</span>
-                                {answer.isExpertAnswer && (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    전문가 답변
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-sm text-gray-500">{formatDate(answer.createdAt)}</span>
-                            </div>
-                            <div className="text-gray-700 whitespace-pre-wrap">{answer.content}</div>
-                          </div>
-                        ))}
-                      </div>
+                      <AnswerList
+                        answers={questionAnswers}
+                        onAnswerUpdate={() => fetchAnswers(selectedQuestion!.id)}
+                      />
                     )}
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { Question } from '@/types/qna';
 import Link from 'next/link';
 import { FiMessageSquare, FiEye, FiTag, FiSearch } from 'react-icons/fi';
+import { formatDate } from '@/utils/dateUtils';
 
 interface QuestionListProps {
   questions: Question[];
@@ -17,13 +18,7 @@ export default function QuestionList({
   showSearchResults = false,
   searchTerm = ''
 }: QuestionListProps) {
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric'
-    });
-  };
+
 
   const getUsernameFromEmail = (email: string) => {
     return email.split('@')[0];

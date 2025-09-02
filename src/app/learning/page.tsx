@@ -8,6 +8,7 @@ import FileViewer from '@/components/common/FileViewer';
 import CourseOverviewModal from '@/components/common/CourseOverviewModal';
 import SubjectCreateModal from '@/components/learning/SubjectCreateModal';
 import SubjectEditModal from '@/components/learning/SubjectEditModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface RelatedMaterial {
   id: number;
@@ -44,6 +45,7 @@ interface Subject {
 }
 
 export default function LearningPage() {
+  const { user, isAuthenticated } = useAuth();
   const [relatedMaterials, setRelatedMaterials] = useState<RelatedMaterial[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<RelatedMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,6 @@ export default function LearningPage() {
   const [viewingFile, setViewingFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isAdmin] = useState(true); // 임시로 true로 설정, 실제로는 AuthContext에서 가져와야 함
   const [overviewModalOpen, setOverviewModalOpen] = useState(false);
   const [subjectCreateModalOpen, setSubjectCreateModalOpen] = useState(false);
   const [subjectEditModalOpen, setSubjectEditModalOpen] = useState(false);
@@ -347,12 +348,12 @@ export default function LearningPage() {
   // Curriculum 파일 보기 처리
   const handleViewCurriculumFile = async (fileName: string, filePath: string | null) => {
     console.log('=== Curriculum 파일 보기 시작 ===');
-    console.log('isAdmin:', isAdmin);
+    console.log('isAuthenticated:', isAuthenticated);
     console.log('fileName:', fileName);
     console.log('filePath:', filePath);
     
-    if (!isAdmin) {
-      console.log('관리자가 아닙니다. 파일 보기 불가.');
+    if (!isAuthenticated) {
+      console.log('로그인이 필요합니다. 파일 보기 불가.');
       return;
     }
     
@@ -416,19 +417,21 @@ export default function LearningPage() {
     }
   };
 
-  // 현재 선택된 탭의 Subject 필터링
+  // 현재 선택된 탭의 Subject 필터링 및 subjectCode 순서로 정렬
   const getCurrentTabSubjects = () => {
-    return subjects.filter(subject => subject.categoryId === activeTab);
+    const filteredSubjects = subjects.filter(subject => subject.categoryId === activeTab);
+    // subjectCode 순서로 정렬
+    return filteredSubjects.sort((a, b) => a.subjectCode.localeCompare(b.subjectCode));
   };
 
   // 디버깅용 useEffect
   useEffect(() => {
     console.log('=== Learning 페이지 디버깅 ===');
-    console.log('isAdmin 상태:', isAdmin);
+    console.log('isAuthenticated 상태:', isAuthenticated);
     console.log('관련자료 개수:', relatedMaterials.length);
     console.log('필터링된 자료 개수:', filteredMaterials.length);
     console.log('========================');
-  }, [isAdmin, relatedMaterials.length, filteredMaterials.length]);
+  }, [isAuthenticated, relatedMaterials.length, filteredMaterials.length]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -459,25 +462,27 @@ export default function LearningPage() {
               <h1 className="text-3xl font-bold text-white">Learning</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSubjectCreateModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
-              >
-                <FiPlus className="w-5 h-5" />
-                Subject 추가
-              </button>
+              {isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') && (
+                <button
+                  onClick={() => setSubjectCreateModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+                >
+                  <FiPlus className="w-5 h-5" />
+                  Subject 추가
+                </button>
+              )}
               <button
                 onClick={() => setOverviewModalOpen(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
               >
                 <FiInfo className="w-5 h-5" />
-                과정 Overview
+                Program Overview
               </button>
             </div>
           </div>
           <p className="text-lg text-emerald-50 max-w-[1150px] text-right">
-            한국산업기술진흥협회에서 제공하는 MOT(기술경영) 실무역량 강화 및 전문가 양성을 위한 교육프로그램으로,<br/>
-            변화하는 기업환경을 반영한 최신의 이론 및 방법론과 R&D 조직차원의 MOT 체계에 대한 실무기반의 교육체계를 제공합니다.
+            협회에서 실시하는 MOT 관련 모든 교육과목 및 과정과 프로그램 정보를<br/>
+            체계적으로 관리하고, 이를 통해 회원들이 필요로하는 MOT 교육에 대한 정보를 제공합니다.
           </p>
         </div>
       </div>
@@ -563,36 +568,27 @@ export default function LearningPage() {
                             <div className="relative group">
                               <div 
                                 className={`flex items-center gap-2 cursor-pointer transition-colors ${
-                                  isAdmin 
+                                  isAuthenticated 
                                     ? 'hover:text-emerald-600 hover:underline' 
                                     : 'text-gray-400 cursor-not-allowed'
                                 }`}
                                 onClick={() => {
-                                  if (isAdmin) {
+                                  if (isAuthenticated) {
                                     handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath);
                                   }
                                 }}
-                                title={isAdmin ? "클릭하여 파일 보기" : "로그인이 필요합니다"}
+                                title={isAuthenticated ? "클릭하여 파일 보기" : "파일조회에는 로그인이 필요합니다"}
                               >
-                                <FiDownload className="w-4 h-4" />
+                                <FiEye className="w-4 h-4" />
                                 <span>{subject.curriculumFileName}</span>
                               </div>
                               
-                              {/* 디버깅 정보 (개발자용) */}
-                              {isAdmin && subject.curriculumFilePath && (
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 max-w-xs">
-                                  <div className="font-medium">파일 경로 정보:</div>
-                                  <div className="text-gray-300 break-all">
-                                    경로: {subject.curriculumFilePath}
-                                  </div>
-                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                </div>
-                              )}
+
                               
                               {/* 툴팁 */}
-                              {!isAdmin && (
+                              {!isAuthenticated && (
                                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                  로그인이 필요합니다
+                                  파일조회에는 로그인이 필요합니다
                                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                                 </div>
                               )}
@@ -633,7 +629,7 @@ export default function LearningPage() {
         </div>
       )}
 
-             {/* 과정 Overview 모달 */}
+             {/* Program Overview 모달 */}
        <CourseOverviewModal
          isOpen={overviewModalOpen}
          onClose={() => setOverviewModalOpen(false)}
