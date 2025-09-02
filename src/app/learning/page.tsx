@@ -381,7 +381,7 @@ export default function LearningPage() {
       
       // 파일 존재 여부 먼저 확인
       try {
-        const checkUrl = `http://localhost:8082/api/library/check/${encodeURIComponent(fileName)}`;
+        const checkUrl = `http://localhost:8082/api/library/check/${encodedPath}`;
         console.log('파일 존재 확인 URL:', checkUrl);
         
         const checkResponse = await fetch(checkUrl, {
