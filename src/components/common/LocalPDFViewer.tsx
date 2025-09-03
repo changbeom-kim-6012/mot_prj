@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { FiX, FiChevronLeft, FiChevronRight, FiZoomIn, FiZoomOut, FiRotateCw, FiMaximize2 } from 'react-icons/fi';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// PDF.js 워커 설정 - CDN 접근 문제로 인해 워커 비활성화
-// 메인 스레드에서 PDF 처리 (성능은 조금 느릴 수 있지만 안정적)
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
-console.log('PDF.js 워커 비활성화 - 메인 스레드에서 처리');
+// 워커 로드 실패 시 대안: 메인 스레드에서 처리
+const fallbackToMainThread = () => {
+  console.log('워커 로드 실패, 메인 스레드에서 처리');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
+  console.log('워커 fallback 설정 완료:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+};
 
 interface LocalPDFViewerProps {
   fileUrl: string;
@@ -21,6 +23,15 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
   const [scale, setScale] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
   const [autoRotation, setAutoRotation] = useState<boolean>(true); // 자동 회전 활성화 상태
+  
+  // PDF.js 워커 설정 - 컴포넌트 마운트 시 설정
+  useEffect(() => {
+    const workerSrc = `${window.location.origin}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+    console.log('PDF.js 워커 활성화 - 로컬 워커 파일 사용');
+    console.log('워커 경로:', workerSrc);
+    console.log('현재 origin:', window.location.origin);
+  }, []);
   
   // 화면 캡처처럼 보이도록 초기 스케일 계산 함수
   const calculateInitialScale = (pageWidth: number, pageHeight: number, currentRotation: number = 0) => {

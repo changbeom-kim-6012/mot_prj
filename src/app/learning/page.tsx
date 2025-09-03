@@ -351,6 +351,8 @@ export default function LearningPage() {
     console.log('isAuthenticated:', isAuthenticated);
     console.log('fileName:', fileName);
     console.log('filePath:', filePath);
+    console.log('현재 사용자:', user);
+    console.log('현재 시간:', new Date().toISOString());
     
     if (!isAuthenticated) {
       console.log('로그인이 필요합니다. 파일 보기 불가.');
