@@ -56,4 +56,33 @@ react.development.js:1426 Uncaught TypeError: Object.defineProperty called on no
     PS C:\dev\mot_prj> npm -version
 10.7.0
 PS C:\dev\mot_prj> node -v
-v22.2.0
+
+
+Unhandled Runtime Error
+TypeError: Object.defineProperty called on non-object
+
+Call Stack
+Object.defineProperty
+<anonymous>
+__webpack_require__.r
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (265:21)
+eval
+webpack-internal:/(app-pages-browser)/node_modules/pdfjs-dist/build/pdf.mjs (1:21)
+(app-pages-browser)/./node_modules/pdfjs-dist/build/pdf.mjs
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js (39:1)
+options.factory
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (716:31)
+__webpack_require__
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (37:33)
+fn
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (371:21)
+eval
+webpack-internal:/(app-pages-browser)/src/components/common/LocalPDFViewer.tsx (9:68)
+(app-pages-browser)/./src/components/common/LocalPDFViewer.tsx
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js (18:1)
+options.factory
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (716:31)
+__webpack_require__
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (37:33)
+fn
+file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (371:21)
