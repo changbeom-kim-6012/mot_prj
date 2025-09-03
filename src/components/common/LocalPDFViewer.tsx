@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { FiX, FiChevronLeft, FiChevronRight, FiZoomIn, FiZoomOut, FiRotateCw, FiMaximize2 } from 'react-icons/fi';
 import * as pdfjsLib from 'pdfjs-dist';
 
+// PDF.js 모듈 안전성 검사
+if (!pdfjsLib || typeof pdfjsLib !== 'object') {
+  console.error('PDF.js 모듈을 로드할 수 없습니다:', pdfjsLib);
+  throw new Error('PDF.js 모듈 로딩 실패');
+}
+
 // 워커 로드 실패 시 대안: 메인 스레드에서 처리
 const fallbackToMainThread = () => {
   console.log('워커 로드 실패, 메인 스레드에서 처리');
@@ -26,11 +32,24 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
   
   // PDF.js 워커 설정 - 컴포넌트 마운트 시 설정
   useEffect(() => {
-    const workerSrc = `${window.location.origin}/pdf.worker.min.js`;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-    console.log('PDF.js 워커 활성화 - 로컬 워커 파일 사용');
-    console.log('워커 경로:', workerSrc);
-    console.log('현재 origin:', window.location.origin);
+    try {
+      // PDF.js 모듈 상태 재확인
+      if (!pdfjsLib || !pdfjsLib.GlobalWorkerOptions) {
+        console.error('PDF.js 모듈이 제대로 로드되지 않았습니다');
+        return;
+      }
+      
+      const workerSrc = `${window.location.origin}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+      console.log('PDF.js 워커 활성화 - 로컬 워커 파일 사용');
+      console.log('워커 경로:', workerSrc);
+      console.log('현재 origin:', window.location.origin);
+      console.log('PDF.js 모듈 상태:', !!pdfjsLib);
+    } catch (error) {
+      console.error('워커 설정 중 오류:', error);
+      // 워커 설정 실패 시 fallback 사용
+      fallbackToMainThread();
+    }
   }, []);
   
   // 화면 캡처처럼 보이도록 초기 스케일 계산 함수
@@ -136,6 +155,11 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       setError(null);
 
       console.log('PDF 로딩 시작:', fileUrl);
+      
+      // PDF.js 모듈 상태 재확인
+      if (!pdfjsLib || typeof pdfjsLib.getDocument !== 'function') {
+        throw new Error('PDF.js 모듈이 제대로 로드되지 않았습니다');
+      }
 
       // PDF 문서 로드 - 워커 비활성화에 맞춘 설정
       const loadingTask = pdfjsLib.getDocument({
