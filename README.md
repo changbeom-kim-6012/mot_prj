@@ -52,3 +52,8 @@ react.development.js:1426 Uncaught TypeError: Object.defineProperty called on no
     at options.factory (webpack.js?v=1756872238620:716:31)
     at __webpack_require__ (webpack.js?v=1756872238620:37:33)
     at fn (webpack.js?v=1756872238620:371:21)
+
+    PS C:\dev\mot_prj> npm -version
+10.7.0
+PS C:\dev\mot_prj> node -v
+v22.2.0
