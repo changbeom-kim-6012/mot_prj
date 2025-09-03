@@ -7,6 +7,7 @@ import Navigation from '@/components/Navigation';
 import { FiDownload, FiEye, FiArrowLeft, FiX, FiFileText, FiList, FiUser, FiCalendar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import FileViewer from '@/components/common/FileViewer';
 
 interface Article {
   id: number;
@@ -39,25 +40,30 @@ export default function OpinionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFullTextModal, setShowFullTextModal] = useState(false);
-  const [viewingFile, setViewingFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
 
   const handleBack = () => {
     router.back();
   };
 
   const handleViewFile = (fileName: string, filePath: string) => {
-    const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
+    // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
+    const pathParts = filePath.split('\\');
+    const storedFileName = pathParts[pathParts.length - 1];
+    
+    // 한글 파일명을 올바르게 인코딩
+    const encodedFileName = encodeURIComponent(storedFileName).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedPath}`;
-    setViewingFile({ fileName: fileName.trim(), fileUrl });
-    setViewModalOpen(true);
+    
+    console.log('파일 조회 요청:', { fileName, filePath, storedFileName, encodedFileName });
+    
+    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedFileName}`;
+    setSelectedFile({ url: fileUrl, name: fileName.trim() });
   };
 
-  const handleCloseViewModal = () => {
-    setViewModalOpen(false);
-    setViewingFile(null);
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
   };
 
   useEffect(() => {
@@ -67,9 +73,9 @@ export default function OpinionDetailPage() {
         const res = await axios.get(`http://localhost:8082/api/opinions/${articleId}`);
         const articleData = res.data;
         
-        // 승인된 기고만 표시
-        if (articleData.status !== '등록승인') {
-          setError('승인되지 않은 기고입니다.');
+        // 등록승인 또는 등록대기 상태의 기고만 표시
+        if (articleData.status !== '등록승인' && articleData.status !== '등록대기') {
+          setError('조회할 수 없는 기고입니다.');
           setLoading(false);
           return;
         }
@@ -200,15 +206,17 @@ export default function OpinionDetailPage() {
                         <FiEye className="mr-1" />
                         파일보기
                       </button>
-                      <button
-                        onClick={() => {
-                          const encodedPath = encodeURIComponent(attachments[0].filePath.trim()).replace(/[!'()*]/g, function(c) {
-                            return '%' + c.charCodeAt(0).toString(16);
-                          });
-                          window.open(`http://localhost:8082/api/attachments/download/${encodedPath}`, '_blank');
-                        }}
-                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
-                      >
+                                             <button
+                         onClick={() => {
+                           // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
+                           const pathParts = attachments[0].filePath.split('\\');
+                           const storedFileName = pathParts[pathParts.length - 1];
+                           
+                           const encodedFileName = encodeURIComponent(storedFileName);
+                           window.open(`http://localhost:8082/api/attachments/download/${encodedFileName}`, '_blank');
+                         }}
+                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                       >
                         <FiDownload className="mr-1" />
                         다운로드
                       </button>
@@ -246,49 +254,14 @@ export default function OpinionDetailPage() {
         </motion.div>
       </div>
 
-      {/* File View Modal */}
-      {viewModalOpen && viewingFile && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">파일 보기</h2>
-                  <button
-                    onClick={handleCloseViewModal}
-                    className="text-white hover:text-opacity-80 transition-colors duration-200"
-                  >
-                    <FiX className="h-6 w-6" />
-                  </button>
-                </div>
-                <p className="text-sm text-opacity-80 mt-1">
-                  {viewingFile.fileName}
-                </p>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 max-h-[70vh] overflow-y-auto">
-                <iframe
-                  src={viewingFile.fileUrl}
-                  className="w-full h-96 border border-gray-300 rounded-lg"
-                  title={viewingFile.fileName}
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 flex justify-end">
-                <button
-                  onClick={handleCloseViewModal}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                >
-                  닫기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+             {/* File Viewer */}
+       {selectedFile && (
+         <FileViewer
+           fileUrl={selectedFile.url}
+           fileName={selectedFile.name}
+           onClose={handleCloseFileViewer}
+         />
+       )}
 
       {/* Full Text Modal */}
       {showFullTextModal && article && (

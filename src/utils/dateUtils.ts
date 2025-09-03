@@ -5,7 +5,7 @@
  * @returns 포맷팅된 날짜 문자열 또는 에러 메시지
  */
 export const formatDate = (
-  dateString: string | Date | null | undefined,
+  dateString: string | Date | null | undefined | number[],
   options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
@@ -15,7 +15,16 @@ export const formatDate = (
   if (!dateString) return '날짜 없음';
   
   try {
-    const date = new Date(dateString);
+    let date: Date;
+    
+    // 배열 형태의 날짜 처리 (Java LocalDateTime 직렬화 결과)
+    if (Array.isArray(dateString)) {
+      const [year, month, day, hour, minute, second, nano] = dateString;
+      // month는 0-based이므로 1을 빼야 함
+      date = new Date(year, month - 1, day, hour, minute, second);
+    } else {
+      date = new Date(dateString);
+    }
     
     // Invalid Date 체크
     if (isNaN(date.getTime())) {
@@ -37,11 +46,21 @@ export const formatDate = (
  * @param dateString - 날짜 문자열 또는 Date 객체
  * @returns 유효성 여부
  */
-export const isValidDate = (dateString: string | Date | null | undefined): boolean => {
+export const isValidDate = (dateString: string | Date | null | undefined | number[]): boolean => {
   if (!dateString) return false;
   
   try {
-    const date = new Date(dateString);
+    let date: Date;
+    
+    // 배열 형태의 날짜 처리 (Java LocalDateTime 직렬화 결과)
+    if (Array.isArray(dateString)) {
+      const [year, month, day, hour, minute, second, nano] = dateString;
+      // month는 0-based이므로 1을 빼야 함
+      date = new Date(year, month - 1, day, hour, minute, second);
+    } else {
+      date = new Date(dateString);
+    }
+    
     return !isNaN(date.getTime());
   } catch (error) {
     return false;
@@ -53,11 +72,20 @@ export const isValidDate = (dateString: string | Date | null | undefined): boole
  * @param dateString - 날짜 문자열 또는 Date 객체
  * @returns 상대적 시간 문자열
  */
-export const getRelativeTime = (dateString: string | Date | null | undefined): string => {
+export const getRelativeTime = (dateString: string | Date | null | undefined | number[]): string => {
   if (!dateString) return '날짜 없음';
   
   try {
-    const date = new Date(dateString);
+    let date: Date;
+    
+    // 배열 형태의 날짜 처리 (Java LocalDateTime 직렬화 결과)
+    if (Array.isArray(dateString)) {
+      const [year, month, day, hour, minute, second, nano] = dateString;
+      // month는 0-based이므로 1을 빼야 함
+      date = new Date(year, month - 1, day, hour, minute, second);
+    } else {
+      date = new Date(dateString);
+    }
     
     if (isNaN(date.getTime())) {
       return '날짜 오류';

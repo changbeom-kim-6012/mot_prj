@@ -23,6 +23,7 @@ export interface Answer {
   authorEmail: string;
   createdAt: string;
   updatedAt: string;
+  isExpertAnswer?: boolean;
 }
 
 export interface QuestionFormData {

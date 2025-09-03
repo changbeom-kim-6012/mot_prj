@@ -23,6 +23,16 @@ interface Question {
   filePath?: string;
 }
 
+interface PageInfo {
+  content: Question[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
 interface Answer {
   id: number;
   content: string;
@@ -42,6 +52,12 @@ export default function QnaPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState<{id:number, name:string}[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
+  
+  // 페이징 상태
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // 페이지 로드 시 사용자 정보 출력
   console.log('QnaPage 컴포넌트 로드됨');
@@ -73,19 +89,33 @@ export default function QnaPage() {
   // 질문 목록 불러오기
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [currentPage, selectedCategory, searchTerm]);
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('http://localhost:8082/api/questions');
+      setLoading(true);
+      
+      let url = `http://localhost:8082/api/questions?page=${currentPage}&size=${pageSize}`;
+      
+      // 카테고리 필터 적용
+      if (selectedCategory) {
+        url = `http://localhost:8082/api/questions/category/${encodeURIComponent(selectedCategory)}?page=${currentPage}&size=${pageSize}`;
+      }
+      
+      // 검색어 필터 적용
+      if (searchTerm.trim()) {
+        url = `http://localhost:8082/api/questions/search?keyword=${encodeURIComponent(searchTerm.trim())}&page=${currentPage}&size=${pageSize}`;
+      }
+      
+      const response = await fetch(url);
       
       if (response.ok) {
-        const data = await response.json();
+        const data: PageInfo = await response.json();
         
-        console.log('서버에서 받은 원본 데이터:', data);
+        console.log('서버에서 받은 페이징 데이터:', data);
         
         // 데이터 타입 확인 및 변환
-        const processedData = data.map((question: any) => {
+        const processedData = data.content.map((question: any) => {
           console.log(`질문 ID ${question.id}: isPublic = ${question.isPublic}, 타입 = ${typeof question.isPublic}`);
           return {
             ...question,
@@ -97,23 +127,33 @@ export default function QnaPage() {
         
         setQuestions(processedData);
         setFilteredQuestions(processedData);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
       } else {
         console.error('질문 목록 조회 실패:', response.status);
+        setQuestions([]);
+        setFilteredQuestions([]);
+        setTotalPages(0);
+        setTotalElements(0);
       }
     } catch (error) {
       console.error('질문 목록 조회 중 오류:', error);
+      setQuestions([]);
+      setFilteredQuestions([]);
+      setTotalPages(0);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = () => {
-    const filtered = questions.filter(question => {
-      const matchesSearch = searchTerm.trim() === '' || question.title.toLowerCase().includes(searchTerm.toLowerCase()) || question.content.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || question.category1 === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-    setFilteredQuestions(filtered);
+    setCurrentPage(0); // 검색 시 첫 페이지로 이동
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentPage(0); // 카테고리 변경 시 첫 페이지로 이동
   };
 
   // Q&A 상세 조회 모달 열기
@@ -129,20 +169,8 @@ export default function QnaPage() {
       if (response.ok) {
         const data = await response.json();
         
-        // 비공개 질문에 대한 접근 제어
-        if (!data.isPublic) {
-          if (!isAuthenticated || !user) {
-            setQuestionError('비공개 질문은 로그인이 필요합니다.');
-            setQuestionLoading(false);
-            return;
-          }
-          
-          if (data.authorEmail !== user.email && user.role !== 'ADMIN') {
-            setQuestionError('비공개 질문은 작성자와 관리자만 볼 수 있습니다.');
-            setQuestionLoading(false);
-            return;
-          }
-        }
+        // 비공개 질문도 모든 사람이 볼 수 있도록 접근 제어 제거
+        // (리스트와 상세 조회 모두 로그인에 관계없이 접근 가능)
         
         setSelectedQuestion(data);
         // 답변 목록도 함께 불러오기
@@ -225,13 +253,16 @@ export default function QnaPage() {
 
     setIsSubmitting(true);
     try {
+      // 전문가 답변 여부 설정
+      const isExpertAnswer = user.role?.toUpperCase() === 'EXPERT';
+      
       console.log('답변 등록 요청 데이터:', {
         questionId: selectedQuestion.id,
         content: newAnswer,
         authorEmail: user.email,
         authorId: user.email,
         authorName: user.name || user.email,
-        isExpertAnswer: false
+        isExpertAnswer: isExpertAnswer
       });
 
       const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
@@ -244,7 +275,7 @@ export default function QnaPage() {
           authorEmail: user.email,
           authorId: user.email,
           authorName: user.name || user.email,
-          isExpertAnswer: false
+          isExpertAnswer: isExpertAnswer
         }),
       });
 
@@ -256,7 +287,7 @@ export default function QnaPage() {
         setNewAnswer('');
         setIsAnswerModalOpen(false);
         fetchAnswers(selectedQuestion.id); // 답변 목록 새로고침
-        alert('답변이 등록되었습니다.');
+        alert(isExpertAnswer ? '전문가 답변이 등록되었습니다.' : '답변이 등록되었습니다.');
       } else {
         const errorText = await response.text();
         console.error('답변 등록 실패:', response.status, errorText);
@@ -361,7 +392,7 @@ export default function QnaPage() {
               <div>
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">모든 카테고리</option>
@@ -629,23 +660,25 @@ export default function QnaPage() {
                     )}
                   </div>
 
-                  {/* 답변 작성 버튼과 삭제 버튼 */}
-                  <div className="flex justify-between items-center">
-                    {/* 왼쪽 공간 */}
-                    <div className="w-20"></div>
+                  
+
+                    {/* 답변 작성 버튼과 삭제 버튼 */}
+                    <div className="flex justify-between items-center">
+                      {/* 왼쪽 공간 */}
+                      <div className="w-20"></div>
                     
                     {/* 답변 작성 버튼 - 중앙 */}
                     <div className="flex justify-center flex-1">
                       {isAuthenticated && (
-                        (user?.role === 'ADMIN' || 
-                         user?.role === 'EXPERT' || 
+                        (user?.role?.toUpperCase() === 'ADMIN' || 
+                         user?.role?.toUpperCase() === 'EXPERT' || 
                          user?.email === selectedQuestion?.authorEmail) && (
                           <button
                             onClick={openAnswerModal}
                             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                           >
                             <FiMessageSquare className="w-5 h-5 mr-2" />
-                            답변 작성
+                            {user?.role?.toUpperCase() === 'EXPERT' ? '전문가 답변 작성' : '답변 작성'}
                           </button>
                         )
                       )}
@@ -653,7 +686,7 @@ export default function QnaPage() {
                     
                     {/* 관리자 삭제 버튼 - 오른쪽 */}
                     <div>
-                      {isAuthenticated && user && user.role === 'ADMIN' && (
+                      {isAuthenticated && user && user.role?.toUpperCase() === 'ADMIN' && (
                         <button
                           onClick={() => handleDeleteQuestion(selectedQuestion!.id)}
                           className="inline-flex items-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -706,11 +739,11 @@ export default function QnaPage() {
                   <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        답변 작성
+                        {user?.role?.toUpperCase() === 'EXPERT' ? '전문가 답변 작성' : '답변 작성'}
                       </h3>
                       <div className="flex items-center text-sm text-gray-600">
                         <FiUser className="w-4 h-4 mr-1" />
-                        <span>답변자: {user?.email}</span>
+                        <span>답변자: {user?.email} ({user?.role?.toUpperCase() === 'EXPERT' ? '전문가' : user?.role?.toUpperCase() === 'ADMIN' ? '관리자' : '사용자'})</span>
                       </div>
                     </div>
                     <form onSubmit={handleSubmitAnswer}>
@@ -735,7 +768,7 @@ export default function QnaPage() {
                   disabled={isSubmitting || !newAnswer.trim()}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm"
                 >
-                  {isSubmitting ? '등록 중...' : '답변 등록'}
+                  {isSubmitting ? '등록 중...' : (user?.role?.toUpperCase() === 'EXPERT' ? '전문가 답변 등록' : '답변 등록')}
                 </button>
                 <button
                   type="button"
@@ -747,6 +780,64 @@ export default function QnaPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 페이징 컴포넌트 */}
+      {!loading && totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-8 mb-8">
+          {/* 이전 페이지 버튼 */}
+          <button
+            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+            disabled={currentPage === 0}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            이전
+          </button>
+
+          {/* 페이지 번호들 */}
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum;
+            if (totalPages <= 5) {
+              pageNum = i;
+            } else if (currentPage < 3) {
+              pageNum = i;
+            } else if (currentPage >= totalPages - 3) {
+              pageNum = totalPages - 5 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`px-3 py-2 text-sm font-medium rounded-md ${
+                  currentPage === pageNum
+                    ? 'text-white bg-blue-600 border border-blue-600'
+                    : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {pageNum + 1}
+              </button>
+            );
+          })}
+
+          {/* 다음 페이지 버튼 */}
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+            disabled={currentPage === totalPages - 1}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            다음
+          </button>
+        </div>
+      )}
+
+      {/* 전체 결과 수 표시 */}
+      {!loading && (
+        <div className="text-center text-sm text-gray-500 mb-4">
+          총 {totalElements}개의 질문 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalElements)}번째
         </div>
       )}
     </main>

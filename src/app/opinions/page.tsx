@@ -1,12 +1,13 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser } from 'react-icons/fi';
+import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import FileViewer from '@/components/common/FileViewer';
 
 interface Article {
   id: number;
@@ -19,6 +20,14 @@ interface Article {
   status: string;
   category: string;
   createdAt: string;
+}
+
+interface Attachment {
+  id: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  note?: string;
 }
 
 interface Category {
@@ -38,6 +47,8 @@ export default function OpinionsPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [attachments, setAttachments] = useState<{ [key: number]: Attachment[] }>({});
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     async function fetchArticles() {
@@ -56,14 +67,14 @@ export default function OpinionsPage() {
         });
         console.log('API Response:', res.data);
         
-        // 승인된 기고와 로그인한 사용자의 임시저장 기고 필터링
+        // 임시저장 이외의 모든 기고는 모든 사용자에게 표시, 임시저장은 작성자에게만 표시
         let filteredArticles = res.data.filter((article: Article) => {
-          // 승인된 기고는 모두 표시
-          if (article.status === '등록승인') {
+          // 임시저장이 아닌 모든 기고는 모든 사용자에게 표시
+          if (article.status !== '임시저장') {
             return true;
           }
-          // 로그인한 사용자의 임시저장 기고도 표시
-          if (isAuthenticated && user && article.status === '임시저장' && article.authorName.includes(user.email)) {
+          // 임시저장 기고는 작성자에게만 표시
+          if (article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email)) {
             return true;
           }
           return false;
@@ -74,6 +85,30 @@ export default function OpinionsPage() {
         setArticles(filteredArticles);
         setFilteredArticles(filteredArticles); // 최초 전체 목록
         setError(null);
+        
+        // 각 기고의 첨부파일 불러오기
+        const attachmentPromises = filteredArticles.map(async (article: Article) => {
+          try {
+            const attachmentRes = await axios.get(`http://localhost:8082/api/attachments`, {
+              params: {
+                refTable: 'opinions',
+                refId: article.id
+              }
+            });
+            return { articleId: article.id, attachments: attachmentRes.data };
+          } catch (error) {
+            console.error(`첨부파일 불러오기 실패 (기고 ID: ${article.id}):`, error);
+            return { articleId: article.id, attachments: [] };
+          }
+        });
+        
+        const attachmentResults = await Promise.all(attachmentPromises);
+        const attachmentMap: { [key: number]: Attachment[] } = {};
+        attachmentResults.forEach(result => {
+          attachmentMap[result.articleId] = result.attachments;
+        });
+        setAttachments(attachmentMap);
+        
       } catch (e: any) {
         console.error('Error fetching opinions:', e);
         console.error('Error details:', e.response?.data || e.message);
@@ -123,12 +158,12 @@ export default function OpinionsPage() {
   const handleSearch = () => {
     // 먼저 현재 로그인 상태에 맞게 전체 articles를 다시 필터링
     const currentUserArticles = articles.filter(article => {
-      // 승인된 기고는 모두 표시
-      if (article.status === '등록승인') {
+      // 임시저장이 아닌 모든 기고는 모든 사용자에게 표시
+      if (article.status !== '임시저장') {
         return true;
       }
-      // 로그인한 사용자의 임시저장 기고도 표시
-      if (isAuthenticated && user && article.status === '임시저장' && article.authorName.includes(user.email)) {
+      // 임시저장 기고는 작성자에게만 표시
+      if (article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email)) {
         return true;
       }
       return false;
@@ -195,6 +230,20 @@ export default function OpinionsPage() {
     if (selectedArticle && selectedArticle.fullText) {
       setModalType('fulltext');
     }
+  };
+
+  const handleFileView = (filePath: string, fileName: string) => {
+    // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
+    const pathParts = filePath.split('\\');
+    const storedFileName = pathParts[pathParts.length - 1];
+    
+    const encodedFileName = encodeURIComponent(storedFileName);
+    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedFileName}`;
+    setSelectedFile({ url: fileUrl, name: fileName });
+  };
+
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
   };
 
   const handleCloseModal = () => {
@@ -330,8 +379,9 @@ export default function OpinionsPage() {
               variants={itemVariants}
               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6 hover:shadow-md transition-shadow duration-200"
             >
-              <div className="flex flex-col gap-4">
-                <div>
+              <div className="flex justify-between items-start">
+                {/* 왼쪽: 제목, 작성자 */}
+                <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {/* 임시저장된 기고는 제목 클릭 시 수정 페이지로 이동 */}
                     {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
@@ -357,11 +407,9 @@ export default function OpinionsPage() {
                     {article.authorName}
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    {article.references}
-                  </div>
-                  <div className="flex items-center space-x-2">
+                
+                                  {/* 오른쪽: 버튼들 */}
+                  <div className="flex items-center space-x-2 ml-4">
                     {/* 임시저장된 기고는 수정 버튼 표시 */}
                     {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
                       <Link href={`/opinions/register?edit=${article.id}`}>
@@ -406,8 +454,17 @@ export default function OpinionsPage() {
                         </div>
                       )
                     )}
+                    {/* 첨부파일이 있는 경우 전문파일보기 버튼 표시 */}
+                    {attachments[article.id] && attachments[article.id].length > 0 && (
+                      <button 
+                        onClick={() => handleFileView(attachments[article.id][0].filePath, attachments[article.id][0].fileName)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-500 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                      >
+                        <FiPaperclip className="mr-2 h-4 w-4" />
+                        전문파일보기
+                      </button>
+                    )}
                   </div>
-                </div>
               </div>
             </motion.div>
           ))}
@@ -531,7 +588,16 @@ export default function OpinionsPage() {
           </div>
         </div>
       )}
+
+      {/* File Viewer */}
+      {selectedFile && (
+        <FileViewer
+          fileUrl={selectedFile.url}
+          fileName={selectedFile.name}
+          onClose={handleCloseFileViewer}
+        />
+      )}
       </div>
     </main>
   );
-} 
+}

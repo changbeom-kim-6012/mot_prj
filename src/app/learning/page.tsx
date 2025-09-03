@@ -379,38 +379,10 @@ export default function LearningPage() {
       console.log('생성된 fileUrl:', fileUrl);
       console.log('========================');
       
-      // 파일 존재 여부 먼저 확인
-      try {
-        const checkUrl = `http://localhost:8082/api/library/check/${encodedPath}`;
-        console.log('파일 존재 확인 URL:', checkUrl);
-        
-        const checkResponse = await fetch(checkUrl, {
-          credentials: 'omit' // CORS 문제 방지
-        });
-        if (checkResponse.ok) {
-          const checkResult = await checkResponse.json();
-          console.log('파일 존재 확인 결과:', checkResult);
-          
-          if (checkResult.exists) {
-            console.log('파일 존재 확인됨');
-            setViewingFile({ fileName, fileUrl });
-            setViewModalOpen(true);
-          } else {
-            console.log('파일이 존재하지 않음');
-            alert('파일을 찾을 수 없습니다. 파일 경로를 확인해주세요.');
-          }
-        } else {
-          console.log('파일 존재 확인 실패:', checkResponse.status);
-          // 파일 존재 확인이 실패해도 파일 조회 시도
-          setViewingFile({ fileName, fileUrl });
-          setViewModalOpen(true);
-        }
-      } catch (error) {
-        console.error('파일 확인 중 오류:', error);
-        // 파일 존재 확인이 실패해도 파일 조회 시도
-        setViewingFile({ fileName, fileUrl });
-        setViewModalOpen(true);
-      }
+      // 파일 존재 여부 확인 없이 바로 파일 조회 시도
+      console.log('파일 조회 시도:', fileUrl);
+      setViewingFile({ fileName, fileUrl });
+      setViewModalOpen(true);
     } catch (error) {
       console.error('파일 경로 처리 중 오류:', error);
       alert('파일 경로 처리 중 오류가 발생했습니다.');

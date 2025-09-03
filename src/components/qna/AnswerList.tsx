@@ -153,7 +153,14 @@ export default function AnswerList({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="mb-3 flex items-center gap-4">
-                <div className="text-sm text-gray-500">{answer.authorName}</div>
+                <div className="text-sm text-gray-500">
+                  {answer.authorName}
+                  {answer.isExpertAnswer && (
+                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      전문가
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-gray-400">
                   {formatDate(answer.createdAt)}
                 </div>

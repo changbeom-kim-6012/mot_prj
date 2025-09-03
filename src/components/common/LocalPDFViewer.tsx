@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { FiX, FiChevronLeft, FiChevronRight, FiZoomIn, FiZoomOut, FiRotateCw, FiMaximize2 } from 'react-icons/fi';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// PDF.js 워커 설정
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+// PDF.js 워커 설정 - CDN 접근 문제로 인해 워커 비활성화
+// 메인 스레드에서 PDF 처리 (성능은 조금 느릴 수 있지만 안정적)
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
+console.log('PDF.js 워커 비활성화 - 메인 스레드에서 처리');
 
 interface LocalPDFViewerProps {
   fileUrl: string;
@@ -124,12 +126,14 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
       console.log('PDF 로딩 시작:', fileUrl);
 
-      // PDF 문서 로드
+      // PDF 문서 로드 - 워커 비활성화에 맞춘 설정
       const loadingTask = pdfjsLib.getDocument({
         url: fileUrl,
         withCredentials: false,
         disableAutoFetch: false,
-        disableStream: false
+        disableStream: false,
+        isEvalSupported: false, // 워커 비활성화 시 필요
+        useSystemFonts: false   // 시스템 폰트 사용 비활성화
       });
 
       const pdf = await loadingTask.promise;

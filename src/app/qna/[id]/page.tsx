@@ -62,22 +62,8 @@ export default function QnaDetailPage() {
       if (response.ok) {
         const data = await response.json();
         
-        // 비공개 질문에 대한 접근 제어
-        if (!data.isPublic) {
-          // 로그인하지 않은 사용자는 접근 불가
-          if (!isAuthenticated || !user) {
-            setError('비공개 질문은 로그인이 필요합니다.');
-            setLoading(false);
-            return;
-          }
-          
-          // 질문 작성자가 아니고 관리자도 아닌 경우 접근 불가
-          if (data.authorEmail !== user.email && user.role !== 'ADMIN') {
-            setError('비공개 질문은 작성자와 관리자만 볼 수 있습니다.');
-            setLoading(false);
-            return;
-          }
-        }
+        // 비공개 질문도 모든 사람이 볼 수 있도록 접근 제어 제거
+        // (리스트와 상세 조회 모두 로그인에 관계없이 접근 가능)
         
         setQuestion(data);
         // 답변 목록도 함께 불러오기 (실제로는 별도 API일 수 있음)

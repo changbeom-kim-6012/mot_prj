@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiSave, FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '@/context/AuthContext';
 
 interface SubjectEditModalProps {
   isOpen: boolean;
@@ -46,6 +47,10 @@ export default function SubjectEditModal({
   subject,
   categories 
 }: SubjectEditModalProps) {
+  const { user, isAuthenticated } = useAuth();
+  
+  // 관리자 권한 확인
+  const isAdmin = isAuthenticated && user && user.role === 'ADMIN';
   const [formData, setFormData] = useState<SubjectFormData>({
     subjectCode: '',
     subjectDescription: '',
@@ -211,10 +216,19 @@ export default function SubjectEditModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Subject 수정</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Subject {isAdmin ? '수정' : '조회'}
+            </h2>
+            {!isAdmin && (
+              <p className="text-sm text-gray-500 mt-1">
+                관리자 권한이 필요합니다. 조회만 가능합니다.
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -235,9 +249,10 @@ export default function SubjectEditModal({
               <select
                 value={formData.categoryId}
                 onChange={(e) => handleInputChange('categoryId', Number(e.target.value))}
+                disabled={!isAdmin}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                   errors.categoryId ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               >
                 <option value="">카테고리를 선택하세요</option>
                 {categories.map((category) => (
@@ -263,9 +278,10 @@ export default function SubjectEditModal({
                 type="text"
                 value={formData.subjectCode}
                 onChange={(e) => handleInputChange('subjectCode', e.target.value)}
+                disabled={!isAdmin}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                   errors.subjectCode ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 placeholder="예: A-10, B-20"
               />
               {errors.subjectCode && (
@@ -286,9 +302,10 @@ export default function SubjectEditModal({
               type="text"
               value={formData.subjectDescription}
               onChange={(e) => handleInputChange('subjectDescription', e.target.value)}
+              disabled={!isAdmin}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                 errors.subjectDescription ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               placeholder="Subject에 대한 간단한 설명을 입력하세요"
             />
             {errors.subjectDescription && (
@@ -307,10 +324,11 @@ export default function SubjectEditModal({
             <textarea
               value={formData.subjectContent}
               onChange={(e) => handleInputChange('subjectContent', e.target.value)}
+              disabled={!isAdmin}
               rows={4}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                 errors.subjectContent ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
               placeholder="Subject의 주요 내용을 상세히 입력하세요"
             />
             {errors.subjectContent && (
@@ -327,13 +345,16 @@ export default function SubjectEditModal({
               커리큘럼 파일
             </label>
             <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <label className={`flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg transition-colors ${
+                isAdmin ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed bg-gray-100'
+              }`}>
                 <FiUpload className="w-5 h-5 text-gray-500" />
                 <span className="text-gray-700">파일 선택</span>
                 <input
                   type="file"
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  disabled={!isAdmin}
                   className="hidden"
                 />
               </label>
@@ -374,7 +395,10 @@ export default function SubjectEditModal({
                     e.target.value = ''; // 선택 후 드롭다운 초기화
                   }
                 }}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                disabled={!isAdmin}
+                className={`flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
+                  !isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
               >
                 <option value="">프로그램을 선택하세요</option>
                 {programs
@@ -394,7 +418,10 @@ export default function SubjectEditModal({
                     select.value = '';
                   }
                 }}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                disabled={!isAdmin}
+                className={`px-4 py-3 text-white rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  isAdmin ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-400 cursor-not-allowed'
+                }`}
               >
                 추가
               </button>
@@ -418,8 +445,11 @@ export default function SubjectEditModal({
                       <button
                         type="button"
                         onClick={() => handleProgramToggle(program.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                        title="제거"
+                        disabled={!isAdmin}
+                        className={`rounded-full p-1 transition-colors ${
+                          isAdmin ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={isAdmin ? "제거" : "관리자만 제거 가능"}
                       >
                         <FiX className="w-3 h-3" />
                       </button>
@@ -455,25 +485,27 @@ export default function SubjectEditModal({
               onClick={onClose}
               className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
             >
-              취소
+              {isAdmin ? '취소' : '닫기'}
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  수정 중...
-                </>
-              ) : (
-                <>
-                  <FiSave className="w-4 h-4" />
-                  Subject 수정
-                </>
-              )}
-            </button>
+            {isAdmin && (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    수정 중...
+                  </>
+                ) : (
+                  <>
+                    <FiSave className="w-4 h-4" />
+                    Subject 수정
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

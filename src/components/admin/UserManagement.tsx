@@ -2,6 +2,19 @@
 
 import { useState, useEffect } from 'react';
 
+// 날짜 포맷팅 함수
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('ko-KR');
+  } catch (error) {
+    return '-';
+  }
+};
+
 // 실제 User 모델에 activityLevel 추가
 interface User {
   id: number;
@@ -186,6 +199,27 @@ export default function UserManagement() {
     }
   };
 
+  // 가입일 업데이트 핸들러
+  const handleUpdateCreatedAt = async () => {
+    if (!window.confirm('가입일이 없는 사용자들의 가입일을 오늘 날짜로 업데이트하시겠습니까?')) return;
+    try {
+      const response = await fetch('http://localhost:8082/api/users/update-created-at', {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('가입일 업데이트에 실패했습니다.');
+      const result = await response.json();
+      alert(result.message);
+      // 사용자 목록 새로고침
+      const usersResponse = await fetch('http://localhost:8082/api/users');
+      if (usersResponse.ok) {
+        const data = await usersResponse.json();
+        setUsers(data);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   if (loading) return <p>로딩 중...</p>;
   if (error) return <p className="text-red-500">에러: {error}</p>;
 
@@ -203,6 +237,7 @@ export default function UserManagement() {
         <div className="flex gap-2">
           <button onClick={() => setAddingUser({ name: '', email: '', role: 'USER', activityLevel: 1, remarks: '' })} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">등록</button>
           <button onClick={() => { setShowBulkModal(true); setBulkUsers([]); }} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">일괄등록</button>
+          <button onClick={handleUpdateCreatedAt} className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700">가입일 업데이트</button>
         </div>
       </div>
       <div className="border-t border-gray-200 overflow-x-auto">
@@ -275,7 +310,7 @@ export default function UserManagement() {
                     user.remarks
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.createdAt)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {editingUserId === user.id ? (
                     <div className="flex space-x-2">

@@ -203,10 +203,13 @@ export default function RegisterLibraryItemPage() {
       formData.append('author', author);
       formData.append('description', description);
       formData.append('keywords', keywords);
-      files.forEach((fileWithType, index) => {
-        formData.append(`files`, fileWithType.file);
-        formData.append(`fileTypes`, fileWithType.fileType);
-      });
+      // 파일이 있을 때만 파일 데이터 추가
+      if (files.length > 0) {
+        files.forEach((fileWithType, index) => {
+          formData.append(`files`, fileWithType.file);
+          formData.append(`fileTypes`, fileWithType.fileType);
+        });
+      }
       
       // 삭제할 파일명들 추가
       if (deletedFileNames.length > 0) {
