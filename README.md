@@ -38,3 +38,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
 
 Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+
+react.development.js:1426 Uncaught TypeError: Object.defineProperty called on non-object
+    at Object.defineProperty (<anonymous>)
+    at __webpack_require__.r (webpack.js?v=1756872238620:265:21)
+    at eval (pdf.mjs:1:21)
+    at (app-pages-browser)/node_modules/pdfjs-dist/build/pdf.mjs (http://localhost:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:60:1)
+    at options.factory (webpack.js?v=1756872238620:716:31)
+    at __webpack_require__ (webpack.js?v=1756872238620:37:33)
+    at fn (webpack.js?v=1756872238620:371:21)
+    at eval (LocalPDFViewer.tsx:9:68)
+    at (app-pages-browser)/src/components/common/LocalPDFViewer.tsx (http://localhost:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:29:1)
+    at options.factory (webpack.js?v=1756872238620:716:31)
+    at __webpack_require__ (webpack.js?v=1756872238620:37:33)
+    at fn (webpack.js?v=1756872238620:371:21)
