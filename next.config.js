@@ -14,6 +14,18 @@ const nextConfig = {
     // 빌드 시 ESLint 에러가 있어도 빌드를 계속 진행
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { isServer }) => {
+    // PDF.js 워커 파일 처리
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return [
       {

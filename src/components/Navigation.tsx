@@ -18,6 +18,7 @@ export default function Navigation() {
     { name: 'Library', href: '/library' },
     { name: 'Learning', href: '/learning' },
     { name: 'Q&A', href: '/qna' },
+    { name: 'Dialogue', href: '/dialogue' },
     { name: 'Agora', href: '/opinions' },
     { name: 'Community', href: '/news' },
     { name: 'Expert', href: '/expert' },

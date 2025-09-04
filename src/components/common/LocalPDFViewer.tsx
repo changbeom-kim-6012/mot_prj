@@ -2,19 +2,72 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FiX, FiChevronLeft, FiChevronRight, FiZoomIn, FiZoomOut, FiRotateCw, FiMaximize2 } from 'react-icons/fi';
-import * as pdfjsLib from 'pdfjs-dist';
 
-// PDF.js 모듈 안전성 검사
-if (!pdfjsLib || typeof pdfjsLib !== 'object') {
-  console.error('PDF.js 모듈을 로드할 수 없습니다:', pdfjsLib);
-  throw new Error('PDF.js 모듈 로딩 실패');
-}
+// PDF.js 전역 변수
+let pdfjsLib: any = null;
 
-// 워커 로드 실패 시 대안: 메인 스레드에서 처리
-const fallbackToMainThread = () => {
-  console.log('워커 로드 실패, 메인 스레드에서 처리');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
-  console.log('워커 fallback 설정 완료:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+// PDF.js 초기화 함수
+const initializePDFJS = async () => {
+  if (typeof window === 'undefined') {
+    console.log('서버 사이드에서 실행 중, PDF.js 초기화 건너뜀');
+    return null;
+  }
+
+  try {
+    // 이미 초기화된 경우 재사용
+    if (pdfjsLib) {
+      console.log('PDF.js 이미 초기화됨, 재사용');
+      return pdfjsLib;
+    }
+
+    // 방법 1: 전역 PDF.js 객체 사용 (CDN에서 로드된 경우)
+    if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
+      console.log('전역 PDF.js 객체 사용');
+      pdfjsLib = (window as any).pdfjsLib;
+    } else {
+      // 방법 2: CDN에서 직접 로드
+      console.log('CDN에서 PDF.js 로드 시도');
+      
+      // PDF.js 스크립트 로드
+      const loadScript = (src: string): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+          }
+          
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+          document.head.appendChild(script);
+        });
+      };
+
+      // PDF.js 메인 스크립트 로드
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      
+      // 전역 객체 확인
+      if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
+        pdfjsLib = (window as any).pdfjsLib;
+        console.log('CDN에서 PDF.js 로드 성공');
+      } else {
+        throw new Error('PDF.js 전역 객체를 찾을 수 없습니다');
+      }
+    }
+
+    // 워커 설정
+    if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+      const workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+      console.log('PDF.js 워커 설정 완료:', workerSrc);
+    }
+
+    return pdfjsLib;
+  } catch (error) {
+    console.error('PDF.js 초기화 오류:', error);
+    return null;
+  }
 };
 
 interface LocalPDFViewerProps {
@@ -28,126 +81,80 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [rotation, setRotation] = useState<number>(0);
-  const [autoRotation, setAutoRotation] = useState<boolean>(true); // 자동 회전 활성화 상태
-  
-  // PDF.js 워커 설정 - 컴포넌트 마운트 시 설정
-  useEffect(() => {
-    try {
-      // PDF.js 모듈 상태 재확인
-      if (!pdfjsLib || !pdfjsLib.GlobalWorkerOptions) {
-        console.error('PDF.js 모듈이 제대로 로드되지 않았습니다');
-        return;
-      }
-      
-      const workerSrc = `${window.location.origin}/pdf.worker.min.js`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-      console.log('PDF.js 워커 활성화 - 로컬 워커 파일 사용');
-      console.log('워커 경로:', workerSrc);
-      console.log('현재 origin:', window.location.origin);
-      console.log('PDF.js 모듈 상태:', !!pdfjsLib);
-    } catch (error) {
-      console.error('워커 설정 중 오류:', error);
-      // 워커 설정 실패 시 fallback 사용
-      fallbackToMainThread();
-    }
-  }, []);
-  
-  // 화면 캡처처럼 보이도록 초기 스케일 계산 함수
-  const calculateInitialScale = (pageWidth: number, pageHeight: number, currentRotation: number = 0) => {
-    // 회전에 따른 실제 페이지 크기 계산
-    const isRotated = currentRotation === 90 || currentRotation === 270;
-    const actualWidth = isRotated ? pageHeight : pageWidth;
-    const actualHeight = isRotated ? pageWidth : pageHeight;
-    
-    // 화면 전체 크기 활용 (View창을 최대한 활용)
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    
-    // 모달 크기 (실제 View창 크기)
-    const modalWidth = screenWidth * 0.90; // w-11/12 (90%)
-    const modalHeight = screenHeight * 0.95; // h-[95vh] (95%)
-    
-    // 헤더와 패딩을 제외한 실제 사용 가능한 영역 (콘텐츠 박스 크기)
-    const availableWidth = modalWidth - 10; // 여백 최소화
-    const availableHeight = modalHeight - 40; // 헤더와 여백 최소화
-    
-    // 캔버스 크기를 콘텐츠 크기와 동일하게 맞추기
-    const widthScale = availableWidth / actualWidth;
-    const heightScale = availableHeight / actualHeight;
-    
-    // 높이를 우선으로 하여 PDF가 컨테이너 높이 안에 완전히 들어가도록 조정
-    const optimalScale = Math.min(widthScale, heightScale);
-    
-    // 최소 스케일 제한 (너무 작아지지 않도록)
-    const finalScale = Math.max(optimalScale, 1.64);
-    
-    console.log('캔버스 크기 콘텐츠 크기 동일화 계산:', {
-      screenWidth,
-      screenHeight,
-      modalWidth,
-      modalHeight,
-      availableWidth,
-      availableHeight,
-      pageWidth,
-      pageHeight,
-      actualWidth,
-      actualHeight,
-      currentRotation,
-      widthScale,
-      heightScale,
-      optimalScale,
-      finalScale
-    });
-    
-    return finalScale;
-  };
-
-  // 자동 회전 계산 함수
-  const calculateOptimalRotation = (pageWidth: number, pageHeight: number) => {
-    // 화면 비율 (가로가 더 긴 경우)
-    const screenWidth = window.innerWidth * 0.92 - 10; // 모달 가로 크기
-    const screenHeight = window.innerHeight - 40; // 모달 세로 크기
-    const screenRatio = screenWidth / screenHeight;
-    
-    // PDF 비율 (세로가 더 긴 경우)
-    const pdfRatio = pageWidth / pageHeight;
-    
-    console.log('자동 회전 계산:', {
-      screenWidth,
-      screenHeight,
-      screenRatio,
-      pageWidth,
-      pageHeight,
-      pdfRatio
-    });
-    
-    // PDF가 세로형이고, 화면이 가로형이면 회전
-    if (pdfRatio < 1 && screenRatio > 1) {
-      console.log('자동 회전 적용: 90도');
-      return 90; // 90도 회전
-    }
-    
-    console.log('자동 회전 없음: 0도');
-    return 0; // 회전 없음
-  };
-
+  const [autoRotation, setAutoRotation] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [pdfjsInitialized, setPdfjsInitialized] = useState(false);
+  
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<any>(null);
   const isMountedRef = useRef(true);
 
+  // PDF.js 초기화
   useEffect(() => {
-    isMountedRef.current = true;
-    loadPDF();
+    const initPDFJS = async () => {
+      const initialized = await initializePDFJS();
+      if (initialized) {
+        setPdfjsInitialized(true);
+        console.log('PDF.js 초기화 완료');
+      } else {
+        console.error('PDF.js 초기화 실패');
+        setError('PDF 뷰어를 초기화할 수 없습니다.');
+        setIsLoading(false);
+      }
+    };
+
+    initPDFJS();
+  }, []);
+
+  useEffect(() => {
+    if (pdfjsInitialized) {
+      isMountedRef.current = true;
+      loadPDF();
+    }
+    
     return () => {
       isMountedRef.current = false;
       if (pdfRef.current) {
         pdfRef.current.destroy();
       }
     };
-  }, [fileUrl]);
+  }, [fileUrl, pdfjsInitialized]);
+
+  // 초기 스케일 계산 함수
+  const calculateInitialScale = (pageWidth: number, pageHeight: number, currentRotation: number = 0) => {
+    const isRotated = currentRotation === 90 || currentRotation === 270;
+    const actualWidth = isRotated ? pageHeight : pageWidth;
+    const actualHeight = isRotated ? pageWidth : pageHeight;
+    
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const modalWidth = screenWidth * 0.90;
+    const modalHeight = screenHeight * 0.95;
+    const availableWidth = modalWidth - 10;
+    const availableHeight = modalHeight - 40;
+    
+    const widthScale = availableWidth / actualWidth;
+    const heightScale = availableHeight / actualHeight;
+    const optimalScale = Math.min(widthScale, heightScale);
+    const finalScale = Math.max(optimalScale, 1.64);
+    
+    return finalScale;
+  };
+
+  // 자동 회전 계산 함수
+  const calculateOptimalRotation = (pageWidth: number, pageHeight: number) => {
+    const screenWidth = window.innerWidth * 0.92 - 10;
+    const screenHeight = window.innerHeight - 40;
+    const screenRatio = screenWidth / screenHeight;
+    const pdfRatio = pageWidth / pageHeight;
+    
+    if (pdfRatio < 1 && screenRatio > 1) {
+      return 90;
+    }
+    return 0;
+  };
 
   const loadPDF = async () => {
     try {
@@ -156,22 +163,36 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
       console.log('PDF 로딩 시작:', fileUrl);
       
-      // PDF.js 모듈 상태 재확인
       if (!pdfjsLib || typeof pdfjsLib.getDocument !== 'function') {
         throw new Error('PDF.js 모듈이 제대로 로드되지 않았습니다');
       }
 
-      // PDF 문서 로드 - 워커 비활성화에 맞춘 설정
+      if (!fileUrl || fileUrl.trim() === '') {
+        throw new Error('PDF 파일 URL이 제공되지 않았습니다');
+      }
+
+      // PDF 문서 로드
       const loadingTask = pdfjsLib.getDocument({
         url: fileUrl,
         withCredentials: false,
         disableAutoFetch: false,
         disableStream: false,
-        isEvalSupported: false, // 워커 비활성화 시 필요
-        useSystemFonts: false   // 시스템 폰트 사용 비활성화
+        isEvalSupported: false,
+        useSystemFonts: false,
+        standardFontDataUrl: undefined,
+        maxImageSize: -1,
+        cMapUrl: undefined,
+        cMapPacked: false,
+        enableXfa: false,
+        enableRange: false
       });
 
-      const pdf = await loadingTask.promise;
+      // 로딩 타임아웃 설정 (30초)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('PDF 로딩 시간 초과')), 30000);
+      });
+
+      const pdf = await Promise.race([loadingTask.promise, timeoutPromise]);
       
       if (!isMountedRef.current) return;
       
@@ -186,19 +207,10 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       const firstPage = await pdf.getPage(1);
       const originalViewport = firstPage.getViewport({ scale: 1.0 });
       
-      // 자동 회전 계산
       const optimalRotation = autoRotation ? calculateOptimalRotation(originalViewport.width, originalViewport.height) : 0;
       setRotation(optimalRotation);
       
-      // 회전을 고려한 초기 스케일 계산
       const initialScale = calculateInitialScale(originalViewport.width, originalViewport.height, optimalRotation);
-      
-      console.log('초기 설정:', { 
-        pageWidth: originalViewport.width, 
-        pageHeight: originalViewport.height, 
-        optimalRotation,
-        initialScale 
-      });
       
       setScale(initialScale);
       setIsLoading(false);
@@ -212,15 +224,13 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
           const newScale = Math.min(initialScale + 0.2, 5);
           setScale(newScale);
           renderPage(1);
-          console.log('자동 확대 실행:', newScale);
         }
-      }, 500); // 0.5초 후 자동 확대
+      }, 500);
     } catch (err) {
       if (!isMountedRef.current) return;
       
       console.error('PDF 로드 오류:', err);
       
-      // 자동 재시도 (최대 3회)
       if (retryCount < 3) {
         console.log(`PDF 로드 재시도 ${retryCount + 1}/3`);
         setRetryCount(prev => prev + 1);
@@ -228,9 +238,21 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
           if (isMountedRef.current) {
             loadPDF();
           }
-        }, 1000); // 1초 후 재시도
+        }, 2000);
       } else {
-        setError('PDF를 불러올 수 없습니다. 파일을 확인해주세요.');
+        let errorMessage = 'PDF를 불러올 수 없습니다.';
+        if (err instanceof Error) {
+          if (err.message.includes('시간 초과')) {
+            errorMessage = 'PDF 로딩 시간이 초과되었습니다. 파일 크기를 확인해주세요.';
+          } else if (err.message.includes('URL')) {
+            errorMessage = 'PDF 파일 경로를 확인해주세요.';
+          } else if (err.message.includes('CORS')) {
+            errorMessage = '파일 접근 권한이 없습니다.';
+          } else {
+            errorMessage = `PDF 로딩 오류: ${err.message}`;
+          }
+        }
+        setError(errorMessage);
         setIsLoading(false);
       }
     }
@@ -238,11 +260,6 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
   const renderPage = async (pageNum: number) => {
     if (!pdfRef.current || !canvasContainerRef.current || !isMountedRef.current) {
-      console.error('렌더링 조건 불충족:', { 
-        pdf: !!pdfRef.current, 
-        container: !!canvasContainerRef.current, 
-        mounted: isMountedRef.current 
-      });
       return;
     }
 
@@ -250,13 +267,10 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       console.log(`페이지 ${pageNum} 렌더링 시작`);
       
       const page = await pdfRef.current.getPage(pageNum);
-      console.log('페이지 객체 가져오기 성공:', page);
       
-      // 기존 Canvas 제거
       const container = canvasContainerRef.current;
       container.innerHTML = '';
       
-      // 새로운 Canvas 생성
       const canvas = document.createElement('canvas');
       canvas.className = 'shadow-lg border border-gray-200';
       canvas.style.maxWidth = '100%';
@@ -272,38 +286,26 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
         throw new Error('Canvas context를 가져올 수 없습니다.');
       }
 
-      console.log('새 Canvas 생성 및 context 가져오기 성공');
-
-      // 캔버스 크기 설정 (회전 적용)
       const viewport = page.getViewport({ scale, rotation });
-      console.log('Viewport 설정:', { width: viewport.width, height: viewport.height, scale, rotation });
       
       canvas.width = viewport.width;
       canvas.height = viewport.height;
 
-      console.log('Canvas 크기 설정 완료:', { width: canvas.width, height: canvas.height });
-
-      // 페이지 렌더링
       const renderContext = {
         canvasContext: context,
         viewport: viewport,
       };
 
-      console.log('렌더링 시작...');
-      
       await page.render(renderContext).promise;
       
       if (isMountedRef.current) {
         console.log(`페이지 ${pageNum} 렌더링 완료`);
-      } else {
-        console.log('컴포넌트가 언마운트되어 렌더링 중단');
       }
       
     } catch (err) {
       if (!isMountedRef.current) return;
       
-      console.error('페이지 렌더링 오류 상세:', err);
-      console.error('오류 스택:', err instanceof Error ? err.stack : '스택 정보 없음');
+      console.error('페이지 렌더링 오류:', err);
       setError(`페이지를 렌더링할 수 없습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
     }
   };
@@ -325,13 +327,13 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
   };
 
   const zoomIn = () => {
-    const newScale = Math.min(scale + 0.2, 5); // 최대 500%까지 확대 가능
+    const newScale = Math.min(scale + 0.2, 5);
     setScale(newScale);
     renderPage(pageNumber);
   };
 
   const zoomOut = () => {
-    const newScale = Math.max(scale - 0.2, 0.1); // 최소 10%까지 축소 가능
+    const newScale = Math.max(scale - 0.2, 0.5);
     setScale(newScale);
     renderPage(pageNumber);
   };
@@ -342,33 +344,31 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     renderPage(pageNumber);
   };
 
-  // 자동 회전 토글 함수
-  const toggleAutoRotation = async () => {
-    const newAutoRotation = !autoRotation;
-    setAutoRotation(newAutoRotation);
-    
-    if (newAutoRotation && pdfRef.current) {
-      // 자동 회전이 활성화되면 최적 회전 계산
-      const page = await pdfRef.current.getPage(pageNumber);
-      const originalViewport = page.getViewport({ scale: 1.0 });
-      const optimalRotation = calculateOptimalRotation(originalViewport.width, originalViewport.height);
-      setRotation(optimalRotation);
-      
-      // 새로운 회전에 맞는 스케일 재계산
-      const newScale = calculateInitialScale(originalViewport.width, originalViewport.height, optimalRotation);
-      setScale(newScale);
-      
-      renderPage(pageNumber);
-    }
+  const toggleAutoRotation = () => {
+    setAutoRotation(!autoRotation);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    } else if (e.key === 'ArrowLeft') {
-      goToPrevPage();
-    } else if (e.key === 'ArrowRight') {
-      goToNextPage();
+    switch (e.key) {
+      case 'ArrowLeft':
+        goToPrevPage();
+        break;
+      case 'ArrowRight':
+        goToNextPage();
+        break;
+      case '+':
+      case '=':
+        zoomIn();
+        break;
+      case '-':
+        zoomOut();
+        break;
+      case 'r':
+        rotate();
+        break;
+      case 'Escape':
+        onClose();
+        break;
     }
   };
 
@@ -472,7 +472,25 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
                 <button 
                   onClick={() => {
                     setRetryCount(0);
-                    loadPDF();
+                    setError(null);
+                    setIsLoading(true);
+                    const retryLoad = async () => {
+                      try {
+                        const initialized = await initializePDFJS();
+                        if (initialized) {
+                          setPdfjsInitialized(true);
+                          loadPDF();
+                        } else {
+                          setError('PDF 뷰어를 초기화할 수 없습니다.');
+                          setIsLoading(false);
+                        }
+                      } catch (error) {
+                        console.error('재시도 중 초기화 오류:', error);
+                        setError('PDF 뷰어 재초기화에 실패했습니다.');
+                        setIsLoading(false);
+                      }
+                    };
+                    retryLoad();
                   }}
                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >

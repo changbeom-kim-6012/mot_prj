@@ -139,6 +139,20 @@ export default function Home() {
               </div>
             </Link>
 
+            {/* Dialogue Card */}
+            <Link href="/dialogue" className="group">
+              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="relative h-full flex flex-col">
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-500">
+                    <FiMessageSquare className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-4">Dialogue</h3>
+                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">질문과 대답을 대화식으로 하는 공간으로 전문가들과 실시간 소통</p>
+                </div>
+              </div>
+            </Link>
+
             {/* Agora Card (was Opinions) */}
             <Link href="/opinions" className="group">
               <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">

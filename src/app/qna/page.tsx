@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft, FiLock } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
@@ -158,6 +158,14 @@ export default function QnaPage() {
 
   // Q&A 상세 조회 모달 열기
   const handleViewDetail = async (question: Question) => {
+    // 로그인 확인
+    if (!isAuthenticated) {
+      setQuestionError('질문 상세 조회는 로그인이 필요합니다.');
+      setDetailModalOpen(true);
+      setQuestionLoading(false);
+      return;
+    }
+    
     setSelectedQuestion(question);
     setDetailModalOpen(true);
     setQuestionLoading(true);
@@ -168,10 +176,6 @@ export default function QnaPage() {
       const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
       if (response.ok) {
         const data = await response.json();
-        
-        // 비공개 질문도 모든 사람이 볼 수 있도록 접근 제어 제거
-        // (리스트와 상세 조회 모두 로그인에 관계없이 접근 가능)
-        
         setSelectedQuestion(data);
         // 답변 목록도 함께 불러오기
         fetchAnswers(question.id);
@@ -463,9 +467,10 @@ export default function QnaPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
+                        {/* 상태 태그 숨김 처리 */}
+                        {/* <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
                           {getStatusText(question.status)}
-                        </span>
+                        </span> */}
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {question.category1}
                         </span>
@@ -487,9 +492,19 @@ export default function QnaPage() {
                         </h3>
                       </button>
                       
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {question.content}
-                      </p>
+                      {/* 비공개 질문은 내용 숨김 */}
+                      {question.isPublic ? (
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                          {question.content}
+                        </p>
+                      ) : (
+                        <div className="bg-gray-100 rounded-lg p-4 mb-4">
+                          <div className="flex items-center text-gray-500">
+                            <FiLock className="w-4 h-4 mr-2" />
+                            <span className="text-sm">비공개 질문입니다. 로그인 후 상세 보기를 클릭하여 내용을 확인하세요.</span>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <div className="flex items-center space-x-4">
@@ -546,14 +561,30 @@ export default function QnaPage() {
                 </div>
               ) : questionError ? (
                 <div className="text-center py-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">접근 제한</h2>
-                  <p className="text-gray-600 mb-6">{questionError}</p>
-                  <button
-                    onClick={handleCloseDetailModal}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    닫기
-                  </button>
+                  <div className="mb-6">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FiLock className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">로그인 필요</h2>
+                    <p className="text-gray-600 mb-6">{questionError}</p>
+                    <p className="text-sm text-gray-500 mb-6">
+                      질문 상세 조회를 위해서는 로그인이 필요합니다.
+                    </p>
+                  </div>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={handleCloseDetailModal}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      닫기
+                    </button>
+                    <Link
+                      href="/login"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      로그인하기
+                    </Link>
+                  </div>
                 </div>
               ) : selectedQuestion ? (
                 <div className="space-y-6">
@@ -563,9 +594,10 @@ export default function QnaPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-3">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedQuestion.status)}`}>
+                          {/* 상태 태그 숨김 처리 */}
+                          {/* <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedQuestion.status)}`}>
                             {getStatusText(selectedQuestion.status)}
-                          </span>
+                          </span> */}
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             {selectedQuestion.category1}
                           </span>

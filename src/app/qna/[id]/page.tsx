@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload, FiTrash2, FiLock } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
@@ -57,14 +57,17 @@ export default function QnaDetailPage() {
   }, [questionId]);
 
   const fetchQuestionDetail = async () => {
+    // 로그인 확인
+    if (!isAuthenticated) {
+      setError('질문 상세 조회는 로그인이 필요합니다.');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const response = await fetch(`http://localhost:8082/api/questions/${questionId}`);
       if (response.ok) {
         const data = await response.json();
-        
-        // 비공개 질문도 모든 사람이 볼 수 있도록 접근 제어 제거
-        // (리스트와 상세 조회 모두 로그인에 관계없이 접근 가능)
-        
         setQuestion(data);
         // 답변 목록도 함께 불러오기 (실제로는 별도 API일 수 있음)
         fetchAnswers();
@@ -228,15 +231,31 @@ export default function QnaDetailPage() {
         <Navigation />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">접근 제한</h2>
-            <p className="text-gray-600 mb-6">{error || '질문을 찾을 수 없습니다.'}</p>
-            <Link
-              href="/qna"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <FiArrowLeft className="w-4 h-4 mr-2" />
-              Q&A 목록으로 돌아가기
-            </Link>
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiLock className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">로그인 필요</h2>
+              <p className="text-gray-600 mb-6">{error || '질문을 찾을 수 없습니다.'}</p>
+              <p className="text-sm text-gray-500 mb-6">
+                질문 상세 조회를 위해서는 로그인이 필요합니다.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <Link
+                href="/qna"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <FiArrowLeft className="w-4 h-4 mr-2" />
+                Q&A 목록으로 돌아가기
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                로그인하기
+              </Link>
+            </div>
           </div>
         </div>
       </main>
@@ -277,9 +296,10 @@ export default function QnaDetailPage() {
                   </div>
                 )}
                 <div className="flex items-center space-x-3 mb-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
+                  {/* 상태 태그 숨김 처리 */}
+                  {/* <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
                     {getStatusText(question.status)}
-                  </span>
+                  </span> */}
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {question.category1}
                   </span>
