@@ -86,3 +86,7 @@ __webpack_require__
 file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (37:33)
 fn
 file:///C:/A-Cursor/MOT_Club/Frontend/mot/dist/static/chunks/webpack.js (371:21)
+
+copy "node_modules\pdfjs-dist\build\pdf.worker.min.mjs" "public\pdf.worker.min.js"
+
+ const workerSrc = `${window.location.origin}/pdf.worker.min.js`; 설치할것
