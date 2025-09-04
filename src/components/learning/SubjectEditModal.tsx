@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiSave, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
+import LocalPDFViewer from '@/components/common/LocalPDFViewer';
 
 interface SubjectEditModalProps {
   isOpen: boolean;
@@ -49,8 +50,8 @@ export default function SubjectEditModal({
 }: SubjectEditModalProps) {
   const { user, isAuthenticated } = useAuth();
   
-  // 관리자 권한 확인
-  const isAdmin = isAuthenticated && user && user.role === 'ADMIN';
+  // 관리자/전문가 권한 확인
+  const isAdmin = isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT');
   const [formData, setFormData] = useState<SubjectFormData>({
     subjectCode: '',
     subjectDescription: '',
@@ -62,6 +63,10 @@ export default function SubjectEditModal({
   const [curriculumFile, setCurriculumFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // 파일보기 관련 상태
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewingFile, setViewingFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
 
   // 프로그램 목록 (예시 데이터)
   const [programs] = useState<Program[]>([
@@ -76,6 +81,19 @@ export default function SubjectEditModal({
   // subject 데이터가 변경될 때 폼 데이터 초기화
   useEffect(() => {
     if (subject) {
+      console.log('=== SubjectEditModal Subject 데이터 ===');
+      console.log('subject:', subject);
+      console.log('curriculumFileName:', subject.curriculumFileName);
+      console.log('curriculumFilePath:', subject.curriculumFilePath);
+      console.log('hasFileName:', !!subject.curriculumFileName);
+      console.log('hasFilePath:', !!subject.curriculumFilePath);
+      console.log('isAuthenticated:', isAuthenticated);
+      console.log('user:', user);
+      console.log('user.role:', user?.role);
+      console.log('isAdmin:', isAdmin);
+      console.log('curriculumFile 상태:', curriculumFile);
+      console.log('========================');
+      
       setFormData({
         subjectCode: subject.subjectCode || '',
         subjectDescription: subject.subjectDescription || '',
@@ -83,6 +101,9 @@ export default function SubjectEditModal({
         categoryId: subject.categoryId || 0,
         selectedPrograms: []
       });
+      
+      // curriculumFile 상태 초기화 (새 파일 선택 취소)
+      setCurriculumFile(null);
     }
   }, [subject]);
 
@@ -194,6 +215,39 @@ export default function SubjectEditModal({
     }
   };
 
+  // 파일보기 처리
+  const handleViewCurriculumFile = async (fileName: string, filePath: string | null) => {
+    if (!isAuthenticated) {
+      alert('파일 조회에는 로그인이 필요합니다.');
+      return;
+    }
+    
+    if (!filePath) {
+      alert('파일 경로 정보가 없습니다.');
+      return;
+    }
+    
+    try {
+      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
+        return '%' + c.charCodeAt(0).toString(16);
+      });
+      
+      const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+      
+      setViewingFile({ fileName, fileUrl });
+      setViewModalOpen(true);
+    } catch (error) {
+      console.error('파일 경로 처리 중 오류:', error);
+      alert('파일 경로 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 파일보기 모달 닫기
+  const handleCloseViewModal = () => {
+    setViewModalOpen(false);
+    setViewingFile(null);
+  };
+
   const handleInputChange = (field: keyof SubjectFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // 에러 메시지 제거
@@ -212,7 +266,18 @@ export default function SubjectEditModal({
     }));
   };
 
-  if (!isOpen) return null;
+  console.log('=== SubjectEditModal 렌더링 ===');
+  console.log('isOpen:', isOpen);
+  console.log('subject:', subject);
+  console.log('subjectEditModalOpen 상태:', isOpen);
+  console.log('========================');
+  
+  if (!isOpen) {
+    console.log('SubjectEditModal이 닫혀있음 - 렌더링하지 않음');
+    return null;
+  }
+  
+  console.log('SubjectEditModal이 열림 - 렌더링 시작');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -358,15 +423,71 @@ export default function SubjectEditModal({
                   className="hidden"
                 />
               </label>
-              {curriculumFile ? (
+              
+              {/* 디버깅 정보 */}
+              <div className="text-xs text-gray-500">
+                curriculumFile: {curriculumFile ? curriculumFile.name : 'null'} | 
+                subject.curriculumFileName: {subject.curriculumFileName || 'null'} | 
+                subject.curriculumFilePath: {subject.curriculumFilePath || 'null'} |
+                isAuthenticated: {isAuthenticated ? 'true' : 'false'} |
+                user.role: {user?.role || 'null'} |
+                isAdmin: {isAdmin ? 'true' : 'false'}
+              </div>
+              
+              {/* 새로 선택된 파일 */}
+              {curriculumFile && (
                 <span className="text-sm text-gray-600">
-                  {curriculumFile.name}
+                  새 파일: {curriculumFile.name}
                 </span>
-              ) : subject.curriculumFileName ? (
-                <span className="text-sm text-gray-600">
-                  현재: {subject.curriculumFileName}
-                </span>
-              ) : null}
+              )}
+              
+              {/* 기존 파일 */}
+              {!curriculumFile && subject.curriculumFileName && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    현재: {subject.curriculumFileName}
+                  </span>
+                  {subject.curriculumFilePath ? (
+                    isAuthenticated ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors border border-emerald-200"
+                        title="파일 보기"
+                      >
+                        {subject.curriculumFileName?.toLowerCase().endsWith('.pdf') ? (
+                          <FiEye className="w-3 h-3" />
+                        ) : (
+                          <FiFileText className="w-3 h-3" />
+                        )}
+                        <span>파일보기</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">(로그인 필요)</span>
+                    )
+                  ) : (
+                    <span className="text-xs text-gray-400">(파일 경로 없음)</span>
+                  )}
+                </div>
+              )}
+              
+              {/* 강제 테스트 버튼 */}
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-xs text-red-500">테스트:</span>
+                <button
+                  type="button"
+                  onClick={() => console.log('테스트 버튼 클릭됨')}
+                  className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 border border-red-200"
+                >
+                  <FiEye className="w-3 h-3" />
+                  <span>테스트버튼</span>
+                </button>
+              </div>
+              
+              {/* 파일이 없는 경우 */}
+              {!curriculumFile && !subject.curriculumFileName && (
+                <span className="text-sm text-gray-400">파일 없음</span>
+              )}
             </div>
             {errors.curriculumFile && (
               <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -509,6 +630,34 @@ export default function SubjectEditModal({
           </div>
         </form>
       </div>
+
+      {/* 파일 보기 모달 */}
+      {viewModalOpen && viewingFile && (
+        viewingFile.fileName.toLowerCase().endsWith('.pdf') ? (
+          <LocalPDFViewer
+            fileUrl={viewingFile.fileUrl}
+            fileName={viewingFile.fileName}
+            onClose={handleCloseViewModal}
+          />
+        ) : (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">파일 미리보기</h3>
+              <p className="text-gray-600 mb-4">
+                현재 PDF 파일만 미리보기를 지원합니다.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCloseViewModal}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
 }

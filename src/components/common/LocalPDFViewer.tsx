@@ -122,6 +122,14 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     };
   }, [fileUrl, pdfjsInitialized]);
 
+  // numPages가 설정되면 자동으로 렌더링 실행
+  useEffect(() => {
+    if (numPages > 0 && pdfRef.current && !isLoading) {
+      console.log('numPages 변경으로 인한 재렌더링');
+      renderAllPages();
+    }
+  }, [numPages, scale, rotation]);
+
   // 초기 스케일 계산 함수
   const calculateInitialScale = (pageWidth: number, pageHeight: number, currentRotation: number = 0) => {
     const isRotated = currentRotation === 90 || currentRotation === 270;
@@ -129,16 +137,12 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     const actualHeight = isRotated ? pageWidth : pageHeight;
     
     const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
     const modalWidth = screenWidth * 0.90;
-    const modalHeight = screenHeight * 0.95;
-    const availableWidth = modalWidth - 10;
-    const availableHeight = modalHeight - 40;
+    const availableWidth = modalWidth - 40; // 여백 증가
     
+    // 가로 너비에 맞춰 스케일 계산 (세로 스크롤 허용)
     const widthScale = availableWidth / actualWidth;
-    const heightScale = availableHeight / actualHeight;
-    const optimalScale = Math.min(widthScale, heightScale);
-    const finalScale = Math.max(optimalScale, 1.64);
+    const finalScale = Math.max(widthScale, 0.8); // 최소 스케일 0.8로 조정
     
     return finalScale;
   };
@@ -154,6 +158,74 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       return 90;
     }
     return 0;
+  };
+
+  const renderAllPages = async () => {
+    if (!pdfRef.current || !canvasContainerRef.current || !isMountedRef.current) {
+      return;
+    }
+
+    try {
+      console.log('모든 페이지 렌더링 시작');
+      
+      const container = canvasContainerRef.current;
+      container.innerHTML = '';
+      
+      // PDF 객체에서 직접 페이지 수 가져오기
+      const totalPages = pdfRef.current.numPages;
+      console.log(`총 페이지 수: ${totalPages}`);
+      
+      // 모든 페이지를 순차적으로 렌더링
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        if (!isMountedRef.current) return;
+        
+        console.log(`페이지 ${pageNum}/${totalPages} 렌더링 중...`);
+        
+        const page = await pdfRef.current.getPage(pageNum);
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'shadow-lg border border-gray-200 mb-4';
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+        canvas.style.width = 'auto';
+        canvas.style.display = 'block';
+        container.appendChild(canvas);
+        
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          throw new Error('Canvas context를 가져올 수 없습니다.');
+        }
+
+        const viewport = page.getViewport({ scale, rotation });
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+
+        await page.render(renderContext).promise;
+        
+        // 페이지 번호 표시 (선택사항)
+        const pageLabel = document.createElement('div');
+        pageLabel.className = 'text-center text-sm text-gray-500 mb-2 mt-2';
+        pageLabel.textContent = `페이지 ${pageNum}`;
+        container.appendChild(pageLabel);
+      }
+      
+      if (isMountedRef.current) {
+        console.log('모든 페이지 렌더링 완료');
+      }
+      
+    } catch (err) {
+      if (!isMountedRef.current) return;
+      
+      console.error('모든 페이지 렌더링 오류:', err);
+      setError(`페이지를 렌더링할 수 없습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+    }
   };
 
   const loadPDF = async () => {
@@ -200,32 +272,25 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
       console.log('PDF 로드 성공, 페이지 수:', pdf.numPages);
 
-      setNumPages(pdf.numPages);
-      setPageNumber(1);
-      
-      // 첫 페이지를 가져와서 자동 회전 및 초기 스케일 계산
+      // 첫 페이지를 가져와서 초기 스케일 계산
       const firstPage = await pdf.getPage(1);
       const originalViewport = firstPage.getViewport({ scale: 1.0 });
       
-      const optimalRotation = autoRotation ? calculateOptimalRotation(originalViewport.width, originalViewport.height) : 0;
-      setRotation(optimalRotation);
+      // 회전 없이 표시
+      setRotation(0);
       
-      const initialScale = calculateInitialScale(originalViewport.width, originalViewport.height, optimalRotation);
-      
+      const initialScale = calculateInitialScale(originalViewport.width, originalViewport.height, 0);
       setScale(initialScale);
-      setIsLoading(false);
-
-      // 첫 페이지 렌더링
-      await renderPage(1);
       
-      // PDF 로딩 완료 후 자동으로 1회 확대 실행
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          const newScale = Math.min(initialScale + 0.2, 5);
-          setScale(newScale);
-          renderPage(1);
-        }
-      }, 500);
+      // 상태 업데이트 (이것이 useEffect를 트리거하여 자동으로 렌더링됨)
+      setNumPages(pdf.numPages);
+      setPageNumber(1);
+      
+      // 로딩 상태를 false로 설정
+      setIsLoading(false);
+      
+      console.log('PDF 로드 및 상태 설정 완료');
+      
     } catch (err) {
       if (!isMountedRef.current) return;
       
@@ -272,12 +337,11 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       container.innerHTML = '';
       
       const canvas = document.createElement('canvas');
-      canvas.className = 'shadow-lg border border-gray-200';
+      canvas.className = 'shadow-lg border border-gray-200 mb-4';
       canvas.style.maxWidth = '100%';
-      canvas.style.maxHeight = '100%';
-      canvas.style.width = 'auto';
       canvas.style.height = 'auto';
-      canvas.style.objectFit = 'contain';
+      canvas.style.width = 'auto';
+      canvas.style.display = 'block';
       container.appendChild(canvas);
       
       const context = canvas.getContext('2d');
@@ -310,38 +374,24 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     }
   };
 
-  const goToPrevPage = () => {
-    if (pageNumber > 1) {
-      const newPage = pageNumber - 1;
-      setPageNumber(newPage);
-      renderPage(newPage);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (pageNumber < numPages) {
-      const newPage = pageNumber + 1;
-      setPageNumber(newPage);
-      renderPage(newPage);
-    }
-  };
+  // 페이지 네비게이션 기능 제거 (모든 페이지가 연속으로 표시됨)
 
   const zoomIn = () => {
     const newScale = Math.min(scale + 0.2, 5);
     setScale(newScale);
-    renderPage(pageNumber);
+    renderAllPages();
   };
 
   const zoomOut = () => {
     const newScale = Math.max(scale - 0.2, 0.5);
     setScale(newScale);
-    renderPage(pageNumber);
+    renderAllPages();
   };
 
   const rotate = () => {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
-    renderPage(pageNumber);
+    renderAllPages();
   };
 
   const toggleAutoRotation = () => {
@@ -350,12 +400,6 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'ArrowLeft':
-        goToPrevPage();
-        break;
-      case 'ArrowRight':
-        goToNextPage();
-        break;
       case '+':
       case '=':
         zoomIn();
@@ -383,25 +427,9 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
         <div className="flex justify-between items-center p-1 border-b">
           <h3 className="text-lg font-medium">{fileName}</h3>
           <div className="flex items-center space-x-2">
-            <button 
-              onClick={goToPrevPage}
-              disabled={pageNumber <= 1}
-              className="p-2 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="이전 페이지"
-            >
-              <FiChevronLeft className="h-5 w-5" />
-            </button>
             <span className="text-sm text-gray-600 min-w-[80px] text-center">
-              {pageNumber} / {numPages}
+              전체 {numPages}페이지
             </span>
-            <button 
-              onClick={goToNextPage}
-              disabled={pageNumber >= numPages}
-              className="p-2 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="다음 페이지"
-            >
-              <FiChevronRight className="h-5 w-5" />
-            </button>
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
             <button 
               onClick={zoomOut}
@@ -447,7 +475,7 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
           </div>
         </div>
         
-        <div className="flex-1 p-2 relative overflow-hidden">
+        <div className="flex-1 p-2 relative overflow-auto">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
               <div className="text-center">
@@ -500,8 +528,8 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
             </div>
           )}
           
-          <div className="w-full h-full flex items-center justify-center">
-            <div ref={canvasContainerRef} className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex justify-center">
+            <div ref={canvasContainerRef} className="w-full flex flex-col items-center">
               {/* Canvas가 여기에 동적으로 생성됩니다 */}
             </div>
           </div>

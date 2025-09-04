@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo, FiSettings, FiTrendingUp, FiDatabase, FiTarget } from 'react-icons/fi';
+import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo, FiSettings, FiTrendingUp, FiDatabase, FiTarget, FiFileText } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
-import FileViewer from '@/components/common/FileViewer';
+import LocalPDFViewer from '@/components/common/LocalPDFViewer';
 import CourseOverviewModal from '@/components/common/CourseOverviewModal';
 import SubjectCreateModal from '@/components/learning/SubjectCreateModal';
 import SubjectEditModal from '@/components/learning/SubjectEditModal';
@@ -341,8 +341,15 @@ export default function LearningPage() {
 
   // Subject Description 클릭 시 수정 모달 열기
   const handleSubjectDescriptionClick = (subject: any) => {
+    console.log('=== Subject 클릭됨 ===');
+    console.log('subject:', subject);
+    console.log('subjectEditModalOpen 상태:', subjectEditModalOpen);
+    console.log('========================');
+    
     setSelectedSubject(subject);
     setSubjectEditModalOpen(true);
+    
+    console.log('모달 열기 완료');
   };
 
   // Curriculum 파일 보기 처리
@@ -529,43 +536,52 @@ export default function LearningPage() {
                           <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full">
                             {subject.subjectCode}
                           </span>
-                          <h4 
-                            className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-emerald-600 transition-colors"
-                            onClick={() => handleSubjectDescriptionClick(subject)}
-                            title="클릭하여 수정"
-                          >
+                                                     <h4 
+                             className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-emerald-600 transition-colors"
+                             onClick={() => {
+                               console.log('Subject 클릭됨!');
+                               handleSubjectDescriptionClick(subject);
+                             }}
+                             title="클릭하여 수정"
+                           >
                             {subject.subjectDescription}
                           </h4>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
                           {subject.curriculumFileName ? (
-                            <div className="relative group">
-                              <div 
-                                className={`flex items-center gap-2 cursor-pointer transition-colors ${
-                                  isAuthenticated 
-                                    ? 'hover:text-emerald-600 hover:underline' 
-                                    : 'text-gray-400 cursor-not-allowed'
-                                }`}
-                                onClick={() => {
-                                  if (isAuthenticated) {
-                                    handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath);
-                                  }
-                                }}
-                                title={isAuthenticated ? "클릭하여 파일 보기" : "파일조회에는 로그인이 필요합니다"}
-                              >
-                                <FiEye className="w-4 h-4" />
-                                <span>{subject.curriculumFileName}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-600">{subject.curriculumFileName}</span>
+                              <div className="relative group">
+                                <button
+                                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                                    isAuthenticated 
+                                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => {
+                                    if (isAuthenticated) {
+                                      handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath);
+                                    }
+                                  }}
+                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
+                                  disabled={!isAuthenticated}
+                                >
+                                  {subject.curriculumFileName?.toLowerCase().endsWith('.pdf') ? (
+                                    <FiEye className="w-3 h-3" />
+                                  ) : (
+                                    <FiFileText className="w-3 h-3" />
+                                  )}
+                                  <span>파일보기</span>
+                                </button>
+                                
+                                {/* 툴팁 */}
+                                {!isAuthenticated && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    파일조회에는 로그인이 필요합니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                )}
                               </div>
-                              
-
-                              
-                              {/* 툴팁 */}
-                              {!isAuthenticated && (
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                  파일조회에는 로그인이 필요합니다
-                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                </div>
-                              )}
                             </div>
                           ) : (
                             <span className="text-gray-400">파일 없음</span>
@@ -594,13 +610,30 @@ export default function LearningPage() {
 
       {/* 파일 보기 모달 */}
       {viewModalOpen && viewingFile && (
-        <div>
-          <FileViewer
-            fileName={viewingFile.fileName}
+        viewingFile.fileName.toLowerCase().endsWith('.pdf') ? (
+          <LocalPDFViewer
             fileUrl={viewingFile.fileUrl}
+            fileName={viewingFile.fileName}
             onClose={handleCloseViewModal}
           />
-        </div>
+        ) : (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">파일 미리보기</h3>
+              <p className="text-gray-600 mb-4">
+                현재 PDF 파일만 미리보기를 지원합니다.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCloseViewModal}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
              {/* Program Overview 모달 */}

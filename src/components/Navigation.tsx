@@ -20,7 +20,7 @@ export default function Navigation() {
     { name: 'Q&A', href: '/qna' },
     { name: 'Dialogue', href: '/dialogue' },
     { name: 'Agora', href: '/opinions' },
-    { name: 'Community', href: '/news' },
+    // { name: 'Community', href: '/news' }, // Community 메뉴 숨김
     { name: 'Expert', href: '/expert' },
   ];
 
