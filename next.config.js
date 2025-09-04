@@ -22,6 +22,17 @@ const nextConfig = {
       },
     ];
   },
+
+  webpack(config) {
+    // 1) node_modules 안의 .mjs를 "자바스크립트"로 강제 처리
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: 'javascript/auto',
+    });
+
+    return config;
+  },
 };
 
 module.exports = nextConfig; 
