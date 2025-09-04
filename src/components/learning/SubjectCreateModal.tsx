@@ -129,7 +129,7 @@ export default function SubjectCreateModal({
         console.log(key, ':', value);
       }
 
-      const response = await fetch('http://192.168.0.101:8082/api/subjects', {
+      const response = await fetch('http://localhost:8082/api/subjects', {
         method: 'POST',
         // Content-Type 헤더를 명시하지 않아 브라우저가 자동으로 multipart/form-data 설정
         body: formDataToSend

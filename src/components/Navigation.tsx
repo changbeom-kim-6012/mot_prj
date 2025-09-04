@@ -225,7 +225,7 @@ export default function Navigation() {
                   return;
                 }
                 try {
-                  const res = await fetch(`http://192.168.0.101:8082/api/users/${user.id}/password`, {
+                  const res = await fetch(`http://localhost:8082/api/users/${user.id}/password`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ currentPassword, newPassword }),
