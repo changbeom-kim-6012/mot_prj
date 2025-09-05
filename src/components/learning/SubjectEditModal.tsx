@@ -424,16 +424,6 @@ export default function SubjectEditModal({
                 />
               </label>
               
-              {/* 디버깅 정보 */}
-              <div className="text-xs text-gray-500">
-                curriculumFile: {curriculumFile ? curriculumFile.name : 'null'} | 
-                subject.curriculumFileName: {subject.curriculumFileName || 'null'} | 
-                subject.curriculumFilePath: {subject.curriculumFilePath || 'null'} |
-                isAuthenticated: {isAuthenticated ? 'true' : 'false'} |
-                user.role: {user?.role || 'null'} |
-                isAdmin: {isAdmin ? 'true' : 'false'}
-              </div>
-              
               {/* 새로 선택된 파일 */}
               {curriculumFile && (
                 <span className="text-sm text-gray-600">
@@ -470,19 +460,6 @@ export default function SubjectEditModal({
                   )}
                 </div>
               )}
-              
-              {/* 강제 테스트 버튼 */}
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-xs text-red-500">테스트:</span>
-                <button
-                  type="button"
-                  onClick={() => console.log('테스트 버튼 클릭됨')}
-                  className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 border border-red-200"
-                >
-                  <FiEye className="w-3 h-3" />
-                  <span>테스트버튼</span>
-                </button>
-              </div>
               
               {/* 파일이 없는 경우 */}
               {!curriculumFile && !subject.curriculumFileName && (

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft, FiLock } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
+import AdminEditModal from '@/components/qna/AdminEditModal';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
 
@@ -73,6 +74,9 @@ export default function QnaPage() {
   const [newAnswer, setNewAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
+
+  // 관리자 편집 모달 상태
+  const [isAdminEditModalOpen, setIsAdminEditModalOpen] = useState(false);
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
@@ -158,35 +162,65 @@ export default function QnaPage() {
 
   // Q&A 상세 조회 모달 열기
   const handleViewDetail = async (question: Question) => {
-    // 로그인 확인
-    if (!isAuthenticated) {
-      setQuestionError('질문 상세 조회는 로그인이 필요합니다.');
-      setDetailModalOpen(true);
-      setQuestionLoading(false);
-      return;
-    }
+    // 관리자 권한 확인
+    const isAdmin = user?.role === 'ADMIN';
     
-    setSelectedQuestion(question);
-    setDetailModalOpen(true);
-    setQuestionLoading(true);
-    setQuestionError(null);
-    
-    try {
-      // 질문 상세 정보 불러오기
-      const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedQuestion(data);
-        // 답변 목록도 함께 불러오기
-        fetchAnswers(question.id);
-      } else {
-        setQuestionError('질문을 찾을 수 없습니다.');
+    if (isAdmin) {
+      // 관리자는 편집 모달 열기
+      setSelectedQuestion(question);
+      setIsAdminEditModalOpen(true);
+      setQuestionLoading(true);
+      setQuestionError(null);
+      
+      try {
+        // 질문 상세 정보 불러오기
+        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedQuestion(data);
+          // 답변 목록도 함께 불러오기
+          fetchAnswers(question.id);
+        } else {
+          setQuestionError('질문을 찾을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('질문 조회 중 오류:', error);
+        setQuestionError('질문을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setQuestionLoading(false);
       }
-    } catch (error) {
-      console.error('질문 조회 중 오류:', error);
-      setQuestionError('질문을 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setQuestionLoading(false);
+    } else {
+      // 일반 사용자는 기존 조회 모달 열기
+      // 로그인 확인
+      if (!isAuthenticated) {
+        setQuestionError('질문 상세 조회는 로그인이 필요합니다.');
+        setDetailModalOpen(true);
+        setQuestionLoading(false);
+        return;
+      }
+      
+      setSelectedQuestion(question);
+      setDetailModalOpen(true);
+      setQuestionLoading(true);
+      setQuestionError(null);
+      
+      try {
+        // 질문 상세 정보 불러오기
+        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedQuestion(data);
+          // 답변 목록도 함께 불러오기
+          fetchAnswers(question.id);
+        } else {
+          setQuestionError('질문을 찾을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('질문 조회 중 오류:', error);
+        setQuestionError('질문을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setQuestionLoading(false);
+      }
     }
   };
 
@@ -211,6 +245,14 @@ export default function QnaPage() {
     setQuestionError(null);
     setNewAnswer('');
     setIsAnswerModalOpen(false);
+  };
+
+  // 관리자 편집 모달 닫기
+  const handleCloseAdminEditModal = () => {
+    setIsAdminEditModalOpen(false);
+    setSelectedQuestion(null);
+    setQuestionAnswers([]);
+    setQuestionError(null);
   };
 
   // 답변 작성 모달 열기
@@ -872,6 +914,16 @@ export default function QnaPage() {
           총 {totalElements}개의 질문 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalElements)}번째
         </div>
       )}
+
+      {/* 관리자 편집 모달 */}
+      <AdminEditModal
+        isOpen={isAdminEditModalOpen}
+        onClose={handleCloseAdminEditModal}
+        question={selectedQuestion}
+        answers={questionAnswers}
+        onQuestionUpdate={fetchQuestions}
+        onAnswerUpdate={() => selectedQuestion && fetchAnswers(selectedQuestion.id)}
+      />
     </main>
   );
 } 
