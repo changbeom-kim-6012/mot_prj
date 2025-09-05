@@ -80,7 +80,7 @@ export default function QnaPage() {
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
-    fetch('http://localhost:8082/api/codes/menu/Q&A/details')
+    fetch('http://192.168.0.101:8082/api/codes/menu/Q&A/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -99,16 +99,16 @@ export default function QnaPage() {
     try {
       setLoading(true);
       
-      let url = `http://localhost:8082/api/questions?page=${currentPage}&size=${pageSize}`;
+      let url = `http://192.168.0.101:8082/api/questions?page=${currentPage}&size=${pageSize}`;
       
       // 카테고리 필터 적용
       if (selectedCategory) {
-        url = `http://localhost:8082/api/questions/category/${encodeURIComponent(selectedCategory)}?page=${currentPage}&size=${pageSize}`;
+        url = `http://192.168.0.101:8082/api/questions/category/${encodeURIComponent(selectedCategory)}?page=${currentPage}&size=${pageSize}`;
       }
       
       // 검색어 필터 적용
       if (searchTerm.trim()) {
-        url = `http://localhost:8082/api/questions/search?keyword=${encodeURIComponent(searchTerm.trim())}&page=${currentPage}&size=${pageSize}`;
+        url = `http://192.168.0.101:8082/api/questions/search?keyword=${encodeURIComponent(searchTerm.trim())}&page=${currentPage}&size=${pageSize}`;
       }
       
       const response = await fetch(url);
@@ -174,7 +174,7 @@ export default function QnaPage() {
       
       try {
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
         if (response.ok) {
           const data = await response.json();
           setSelectedQuestion(data);
@@ -206,7 +206,7 @@ export default function QnaPage() {
       
       try {
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
         if (response.ok) {
           const data = await response.json();
           setSelectedQuestion(data);
@@ -227,7 +227,7 @@ export default function QnaPage() {
   // 답변 목록 불러오기
   const fetchAnswers = async (questionId: number) => {
     try {
-      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`);
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}/answers`);
       if (response.ok) {
         const data = await response.json();
         setQuestionAnswers(data);
@@ -273,7 +273,7 @@ export default function QnaPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}`, {
         method: 'DELETE',
       });
 
@@ -311,7 +311,7 @@ export default function QnaPage() {
         isExpertAnswer: isExpertAnswer
       });
 
-      const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -374,7 +374,7 @@ export default function QnaPage() {
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://localhost:8082/api/library/qna/download/${filePath}`;
+    link.href = `http://192.168.0.101:8082/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
