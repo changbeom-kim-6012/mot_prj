@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { 
@@ -7,54 +9,146 @@ import {
   FiAward,
   FiGlobe,
   FiEdit3,
+  FiX,
   FiBell,
-  FiClock,
-  FiArrowRight
+  FiEye,
+  FiDownload,
+  FiFileText
 } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import FileViewer from '@/components/common/FileViewer';
 
 export default function Home() {
-  const newsItems = [
-    {
-      id: 1,
-      category: '공지사항',
-      title: '2024년 MOT 플랫폼 서비스 개편 안내',
-      date: '2024.03.20',
-      isNew: true,
-    },
-    {
-      id: 2,
-      category: '뉴스',
-      title: '기술경영 전문가 초청 세미나 개최',
-      date: '2024.03.19',
-      isNew: true,
-    },
-    {
-      id: 3,
-      category: '공지사항',
-      title: '연구기획 관련 자료 업데이트 안내',
-      date: '2024.03.18',
-      isNew: false,
-    },
-    {
-      id: 4,
-      category: '뉴스',
-      title: '2024 기술경영 트렌드 리포트 발간',
-      date: '2024.03.17',
-      isNew: false,
-    },
-    {
-      id: 5,
-      category: '공지사항',
-      title: 'MOT 플랫폼 이용자 설문조사 실시',
-      date: '2024.03.16',
-      isNew: false,
-    },
-  ];
+  const [activeNotices, setActiveNotices] = useState<any[]>([]);
+  const [showNoticePopup, setShowNoticePopup] = useState(false);
+  const [currentNoticeIndex, setCurrentNoticeIndex] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
+
+  // 오늘 그만 보기 확인 함수
+  const isNoticeDismissedToday = () => {
+    const today = new Date().toDateString();
+    const dismissedDate = localStorage.getItem('noticeDismissedDate');
+    return dismissedDate === today;
+  };
+
+  // 오늘 그만 보기 설정 함수
+  const setNoticeDismissedToday = () => {
+    const today = new Date().toDateString();
+    localStorage.setItem('noticeDismissedDate', today);
+  };
+
+  // 활성화된 공지사항 조회
+  useEffect(() => {
+    const fetchActiveNotices = async () => {
+      try {
+        const response = await fetch('http://localhost:8082/api/notices/active');
+        if (response.ok) {
+          const notices = await response.json();
+          setActiveNotices(notices);
+          // 공지사항이 있고 오늘 그만 보기가 설정되지 않았으면 팝업 표시
+          if (notices.length > 0 && !isNoticeDismissedToday()) {
+            setShowNoticePopup(true);
+          }
+        }
+      } catch (error) {
+        console.error('공지사항 조회 실패:', error);
+      }
+    };
+
+    fetchActiveNotices();
+  }, []);
+
+  const handleCloseNoticePopup = () => {
+    setShowNoticePopup(false);
+  };
+
+  const handleDismissToday = () => {
+    setNoticeDismissedToday();
+    setShowNoticePopup(false);
+  };
+
+  const handleNextNotice = () => {
+    setCurrentNoticeIndex((prev) => (prev + 1) % activeNotices.length);
+  };
+
+  const handlePrevNotice = () => {
+    setCurrentNoticeIndex((prev) => (prev - 1 + activeNotices.length) % activeNotices.length);
+  };
+
+  const handleFileDownload = async (attachmentPath: string, attachmentName: string) => {
+    try {
+      const response = await fetch(`http://localhost:8082/api/notices/download/${attachmentPath}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = attachmentName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('파일 다운로드에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('파일 다운로드 실패:', error);
+      alert('파일 다운로드에 실패했습니다.');
+    }
+  };
+
+  const handleFileView = (attachmentPath: string, attachmentName: string) => {
+    const fileUrl = `http://localhost:8082/api/notices/download/${attachmentPath}`;
+    setSelectedFile({ url: fileUrl, name: attachmentName });
+  };
+
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
+  };
+  // 새소식 데이터 - 숨김 처리로 인해 사용하지 않음
+  // const newsItems = [
+  //   {
+  //     id: 1,
+  //     category: '공지사항',
+  //     title: '2024년 MOT 플랫폼 서비스 개편 안내',
+  //     date: '2024.03.20',
+  //     isNew: true,
+  //   },
+  //   {
+  //     id: 2,
+  //     category: '뉴스',
+  //     title: '기술경영 전문가 초청 세미나 개최',
+  //     date: '2024.03.19',
+  //     isNew: true,
+  //   },
+  //   {
+  //     id: 3,
+  //     category: '공지사항',
+  //     title: '연구기획 관련 자료 업데이트 안내',
+  //     date: '2024.03.18',
+  //     isNew: false,
+  //   },
+  //   {
+  //     id: 4,
+  //     category: '뉴스',
+  //     title: '2024 기술경영 트렌드 리포트 발간',
+  //     date: '2024.03.17',
+  //     isNew: false,
+  //   },
+  //   {
+  //     id: 5,
+  //     category: '공지사항',
+  //     title: 'MOT 플랫폼 이용자 설문조사 실시',
+  //     date: '2024.03.16',
+  //     isNew: false,
+  //   },
+  // ];
 
   return (
-    <main className="min-h-screen bg-white">
-      <Navigation />
-      <div className="pt-28">
+    <>
+      <main className="min-h-screen bg-white">
+        <Navigation />
+        <div className="pt-28">
       
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-fuchsia-800 to-purple-900 text-white">
@@ -167,8 +261,8 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Community Card (was News) */}
-            <Link href="/news" className="group">
+            {/* Community Card (was News) - 숨김 처리 */}
+            {/* <Link href="/news" className="group">
               <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
                 <div className="relative h-full flex flex-col">
@@ -179,7 +273,7 @@ export default function Home() {
                   <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">공지사항, Library, Learning, Q&A, Agora 메뉴의 등록 정보 등 각종 새소식 공유 창</p>
                 </div>
               </div>
-            </Link>
+            </Link> */}
 
             {/* Expert Card */}
             <Link href="/expert" className="group">
@@ -198,8 +292,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* News & Announcements Section */}
-      <section className="py-24 bg-slate-50">
+      {/* News & Announcements Section - 숨김 처리 */}
+      {/* <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center mb-12">
             <div className="flex items-center gap-4">
@@ -221,10 +315,8 @@ export default function Home() {
             {newsItems.map((item) => (
               <Link key={item.id} href={`/news/${item.id}`} className="group">
                 <div className="bg-white rounded-2xl p-8 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 relative overflow-hidden">
-                  {/* Background Decoration */}
                   <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full -mr-20 -mt-20 transition-transform group-hover:scale-150" />
                   
-                  {/* Content */}
                   <div className="relative">
                     <div className="flex items-center justify-between mb-6">
                       <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
@@ -253,8 +345,124 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
       </div>
     </main>
+
+    {/* 공지사항 팝업 */}
+    {showNoticePopup && activeNotices.length > 0 && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FiBell className="w-5 h-5 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">공지사항</h2>
+            </div>
+            <button
+              onClick={handleCloseNoticePopup}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            {activeNotices[currentNoticeIndex] && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {activeNotices[currentNoticeIndex].title}
+                </h3>
+                <div className="text-gray-700 whitespace-pre-wrap mb-4">
+                  {activeNotices[currentNoticeIndex].content}
+                </div>
+                {activeNotices[currentNoticeIndex].attachmentName && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FiFileText className="w-5 h-5 text-gray-500" />
+                        <span className="text-sm text-gray-700">
+                          첨부파일: {activeNotices[currentNoticeIndex].attachmentName}
+                        </span>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleFileView(
+                            activeNotices[currentNoticeIndex].attachmentPath,
+                            activeNotices[currentNoticeIndex].attachmentName
+                          )}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                        >
+                          <FiEye className="w-4 h-4" />
+                          보기
+                        </button>
+                        <button
+                          onClick={() => handleFileDownload(
+                            activeNotices[currentNoticeIndex].attachmentPath,
+                            activeNotices[currentNoticeIndex].attachmentName
+                          )}
+                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors flex items-center gap-1"
+                        >
+                          <FiDownload className="w-4 h-4" />
+                          다운로드
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {activeNotices.length > 1 && (
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+              <button
+                onClick={handlePrevNotice}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                이전
+              </button>
+              <span className="text-sm text-gray-500">
+                {currentNoticeIndex + 1} / {activeNotices.length}
+              </span>
+              <button
+                onClick={handleNextNotice}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                다음
+              </button>
+            </div>
+          )}
+
+          <div className="p-6 border-t border-gray-200 flex justify-between items-center">
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                onChange={handleDismissToday}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span>오늘 그만 보기</span>
+            </label>
+            <button
+              onClick={handleCloseNoticePopup}
+              className="px-6 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    
+    {/* 파일 뷰어 */}
+    {selectedFile && (
+      <FileViewer
+        fileUrl={selectedFile.url}
+        fileName={selectedFile.name}
+        onClose={handleCloseFileViewer}
+      />
+    )}
+    </>
   );
 }

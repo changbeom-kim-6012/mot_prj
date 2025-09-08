@@ -351,7 +351,7 @@ export default function OpinionsPage() {
                   <FiBookOpen className="mr-2 h-4 w-4" />
                   Opinion 등록
                 </button>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
                   {!user ? '로그인 후 작성할 수 있습니다' : '전문가 또는 관리자만 작성할 수 있습니다'}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                 </div>
@@ -377,7 +377,7 @@ export default function OpinionsPage() {
             <motion.div
               key={article.id}
               variants={itemVariants}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6 hover:shadow-md transition-shadow duration-200"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200"
             >
               <div className="flex justify-between items-start">
                 {/* 왼쪽: 제목, 작성자 */}
@@ -447,7 +447,7 @@ export default function OpinionsPage() {
                             <FiList className="mr-2 h-4 w-4" />
                             전문 보기
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
                             로그인 후 확인할 수 있습니다
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                           </div>
@@ -456,13 +456,29 @@ export default function OpinionsPage() {
                     )}
                     {/* 첨부파일이 있는 경우 전문파일보기 버튼 표시 */}
                     {attachments[article.id] && attachments[article.id].length > 0 && (
-                      <button 
-                        onClick={() => handleFileView(attachments[article.id][0].filePath, attachments[article.id][0].fileName)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-500 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
-                      >
-                        <FiPaperclip className="mr-2 h-4 w-4" />
-                        전문파일보기
-                      </button>
+                      isAuthenticated && user ? (
+                        <button 
+                          onClick={() => handleFileView(attachments[article.id][0].filePath, attachments[article.id][0].fileName)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-500 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                        >
+                          <FiPaperclip className="mr-2 h-4 w-4" />
+                          전문파일보기
+                        </button>
+                      ) : (
+                        <div className="relative group">
+                          <button 
+                            disabled
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                          >
+                            <FiPaperclip className="mr-2 h-4 w-4" />
+                            전문파일보기
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
+                            로그인 후 확인할 수 있습니다
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )
                     )}
                   </div>
               </div>
@@ -560,7 +576,7 @@ export default function OpinionsPage() {
                           <FiList className="mr-2 h-4 w-4" />
                           전문보기
                         </button>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
                           로그인 후 확인할 수 있습니다
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                         </div>

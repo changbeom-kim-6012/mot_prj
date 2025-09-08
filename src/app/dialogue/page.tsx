@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2 } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
@@ -52,6 +52,75 @@ export default function DialoguePage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isPublicDropdownOpen, setIsPublicDropdownOpen] = useState(false);
+
+  // 메시지 삭제 함수
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!confirm('정말로 이 메시지를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/dialogue/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (response.ok) {
+        // 메시지 목록에서 삭제된 메시지 제거
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        alert('메시지가 성공적으로 삭제되었습니다.');
+      } else {
+        throw new Error('메시지 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('메시지 삭제 실패:', error);
+      alert('메시지 삭제에 실패했습니다.');
+    }
+  };
+
+  // 메시지 삭제 권한 체크 함수
+  const canDeleteMessage = (message: DialogueMessage) => {
+    // 관리자는 모든 메시지 삭제 가능
+    if (user?.role === 'ADMIN') {
+      return true;
+    }
+    
+    // 자신이 작성한 메시지가 아니면 삭제 불가
+    if (message.authorEmail !== user?.email) {
+      return false;
+    }
+    
+    // 자신이 작성한 메시지 중에서 가장 최신 메시지인지 확인
+    const sortedMessages = [...messages].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    
+    // 가장 최신 메시지가 자신이 작성한 메시지인 경우에만 삭제 가능
+    return sortedMessages.length > 0 && sortedMessages[0].id === message.id;
+  };
+
+  // 대화방 참여자 체크 함수
+  const isParticipant = () => {
+    if (!user || !selectedRoom) return false;
+    
+    // 관리자는 모든 대화방에 참여자로 간주
+    if (user.role === 'ADMIN') return true;
+    
+    // 참여자 목록에서 현재 사용자 찾기
+    const isInParticipants = participants.some(participant => participant.email === user.email);
+    
+    // 디버깅을 위한 로그
+    console.log('참여자 체크:', {
+      userEmail: user.email,
+      participants: participants.map(p => p.email),
+      isInParticipants
+    });
+    
+    return isInParticipants;
+  };
 
   // 더미 데이터
   const dummyRooms: DialogueRoom[] = [
@@ -249,14 +318,31 @@ export default function DialoguePage() {
         joinedAt: "2024-01-15T10:30:00Z"
       }
     ];
+
+    // 테스트를 위해 현재 사용자가 참여자가 아닌 경우를 시뮬레이션
+    // 실제 환경에서는 백엔드에서 참여자 목록을 가져와야 함
+    // 현재 사용자가 참여자 목록에 있으면 제거 (테스트용)
+    const filteredParticipants = dummyParticipants.filter(p => p.email !== user?.email);
+
+    // 참여자 체크를 위해 현재 사용자가 참여자 목록에 있는지 확인
+    // 실제 환경에서는 백엔드에서 참여자 목록을 가져와야 함
+    console.log('더미 참여자 목록:', dummyParticipants.map(p => p.email));
+    console.log('필터링된 참여자 목록:', filteredParticipants.map(p => p.email));
+    console.log('현재 사용자:', user?.email);
     
     setMessages(dummyMessages);
-    setParticipants(dummyParticipants);
+    setParticipants(filteredParticipants);
   };
 
   // 메시지 전송
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom) return;
+    
+    // 참여자가 아닌 경우 메시지 전송 불가
+    if (!isParticipant()) {
+      alert('대화방 참여자만 메시지를 등록할 수 있습니다.');
+      return;
+    }
     
     setSendingMessage(true);
     
@@ -299,21 +385,33 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      // 더미 상태 변경 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // 선택된 방의 상태 업데이트
-      setSelectedRoom(prev => prev ? { ...prev, status: newStatus } : null);
-      
-      // 목록의 해당 방 상태도 업데이트
-      setRooms(prev => prev.map(room => 
-        room.id === selectedRoom.id ? { ...room, status: newStatus } : room
-      ));
-      setFilteredRooms(prev => prev.map(room => 
-        room.id === selectedRoom.id ? { ...room, status: newStatus } : room
-      ));
-      
-      setIsStatusDropdownOpen(false);
+      const response = await fetch(`http://localhost:8082/api/dialogue/rooms/${selectedRoom.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${newStatus}`,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 선택된 방의 상태 업데이트
+        setSelectedRoom(prev => prev ? { ...prev, status: newStatus } : null);
+        
+        // 목록의 해당 방 상태도 업데이트
+        setRooms(prev => prev.map(room => 
+          room.id === selectedRoom.id ? { ...room, status: newStatus } : room
+        ));
+        setFilteredRooms(prev => prev.map(room => 
+          room.id === selectedRoom.id ? { ...room, status: newStatus } : room
+        ));
+        
+        setIsStatusDropdownOpen(false);
+        alert('상태가 성공적으로 변경되었습니다.');
+      } else {
+        throw new Error('상태 변경에 실패했습니다.');
+      }
     } catch (error) {
       console.error('상태 변경 실패:', error);
       alert('상태 변경에 실패했습니다.');
@@ -325,24 +423,67 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      // 더미 공개 여부 변경 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // 선택된 방의 공개 여부 업데이트
-      setSelectedRoom(prev => prev ? { ...prev, isPublic } : null);
-      
-      // 목록의 해당 방 공개 여부도 업데이트
-      setRooms(prev => prev.map(room => 
-        room.id === selectedRoom.id ? { ...room, isPublic } : room
-      ));
-      setFilteredRooms(prev => prev.map(room => 
-        room.id === selectedRoom.id ? { ...room, isPublic } : room
-      ));
-      
-      setIsPublicDropdownOpen(false);
+      const response = await fetch(`http://localhost:8082/api/dialogue/rooms/${selectedRoom.id}/public`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `isPublic=${isPublic}`,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 선택된 방의 공개 여부 업데이트
+        setSelectedRoom(prev => prev ? { ...prev, isPublic } : null);
+        
+        // 목록의 해당 방 공개 여부도 업데이트
+        setRooms(prev => prev.map(room => 
+          room.id === selectedRoom.id ? { ...room, isPublic } : room
+        ));
+        setFilteredRooms(prev => prev.map(room => 
+          room.id === selectedRoom.id ? { ...room, isPublic } : room
+        ));
+        
+        setIsPublicDropdownOpen(false);
+        alert('공개 여부가 성공적으로 변경되었습니다.');
+      } else {
+        throw new Error('공개 여부 변경에 실패했습니다.');
+      }
     } catch (error) {
       console.error('공개 여부 변경 실패:', error);
       alert('공개 여부 변경에 실패했습니다.');
+    }
+  };
+
+  // 대화방 삭제
+  const handleDeleteRoom = async () => {
+    if (!selectedRoom) return;
+    
+    // 삭제 실행 알림
+    alert(`"${selectedRoom.title}" 대화방을 삭제합니다.`);
+    
+    if (!confirm(`정말로 "${selectedRoom.title}" 대화방을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/dialogue/rooms/${selectedRoom.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('대화방이 성공적으로 삭제되었습니다.');
+        handleClosePopup();
+        // 목록에서도 제거
+        setRooms(prev => prev.filter(room => room.id !== selectedRoom.id));
+        setFilteredRooms(prev => prev.filter(room => room.id !== selectedRoom.id));
+      } else {
+        throw new Error('대화방 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('대화방 삭제 실패:', error);
+      alert('대화방 삭제에 실패했습니다.');
     }
   };
 
@@ -366,10 +507,12 @@ export default function DialoguePage() {
     return (
       <main className="min-h-screen bg-gray-50">
         <Navigation />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">대화방 목록을 불러오는 중...</p>
+        <div className="pt-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">대화방 목록을 불러오는 중...</p>
+            </div>
           </div>
         </div>
       </main>
@@ -605,9 +748,21 @@ export default function DialoguePage() {
                               {message.authorName}
                               {message.isExpert && <span className="ml-1 text-green-600">(전문가)</span>}
                             </span>
-                            <span className="text-xs opacity-75">
-                              {formatDate(message.createdAt)}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs opacity-75">
+                                {formatDate(message.createdAt)}
+                              </span>
+                              {/* 삭제 버튼 - 관리자이거나 최신 메시지 작성자인 경우에만 표시 */}
+                              {canDeleteMessage(message) && (
+                                <button
+                                  onClick={() => handleDeleteMessage(message.id)}
+                                  className="text-xs opacity-75 hover:opacity-100 transition-opacity"
+                                  title="메시지 삭제"
+                                >
+                                  <FiTrash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <p className="text-sm">{message.content}</p>
                         </div>
@@ -616,38 +771,53 @@ export default function DialoguePage() {
                   ))}
                 </div>
 
-                {/* 메시지 입력 */}
-                <div className="p-6 border-t border-gray-200">
-                  <div className="flex space-x-3">
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                      placeholder="메시지를 입력하세요..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={sendingMessage}
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || sendingMessage}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {sendingMessage ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          전송중
-                        </div>
-                      ) : (
-                        <FiSend className="w-4 h-4" />
-                      )}
-                    </button>
+                {/* 메시지 입력 - 참여자만 표시 */}
+                {isParticipant() && (
+                  <div className="p-6 border-t border-gray-200">
+                    <div className="flex space-x-3">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        placeholder="메시지를 입력하세요..."
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        disabled={sendingMessage}
+                      />
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!newMessage.trim() || sendingMessage}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sendingMessage ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            전송중
+                          </div>
+                        ) : (
+                          <FiSend className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* 참여자가 아닌 경우 안내 메시지 */}
+                {!isParticipant() && (
+                  <div className="p-6 border-t border-gray-200 bg-gray-50">
+                    <div className="text-center text-gray-500">
+                      <div className="flex items-center justify-center mb-2">
+                        <FiLock className="w-5 h-5 mr-2" />
+                        <span className="font-medium">대화방 참여자만 메시지를 등록할 수 있습니다</span>
+                      </div>
+                      <p className="text-sm">이 대화방에 참여하려면 관리자에게 문의하세요.</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 참여자 목록 */}
-              <div className="w-80 border-l border-gray-200 bg-gray-50 flex flex-col">
+              <div className="w-96 border-l border-gray-200 bg-gray-50 flex flex-col overflow-visible">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-sm font-medium text-gray-700">참여자 ({participants.length}명)</h3>
                 </div>
@@ -682,9 +852,19 @@ export default function DialoguePage() {
                 
                 {/* 관리자용 상태 변경 영역 */}
                 {user?.role === 'ADMIN' && (
-                  <div className="p-4 border-t border-gray-200 bg-white">
+                  <div className="p-4 border-t border-gray-200 bg-white overflow-visible">
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-gray-700">대화방 관리</h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-gray-700">대화방 관리</h4>
+                        <button
+                          onClick={handleDeleteRoom}
+                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                          title="대화방 삭제"
+                        >
+                          <FiTrash2 className="w-4 h-4 mr-1" />
+                          대화방 삭제
+                        </button>
+                      </div>
                       
                       {/* 상태 관리 */}
                       <div className="flex items-center space-x-3">
@@ -710,7 +890,7 @@ export default function DialoguePage() {
                           </button>
                           
                           {isStatusDropdownOpen && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                            <div className="absolute bottom-full right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-full min-w-[120px]">
                               <div className="py-1">
                                 <button
                                   onClick={() => handleStatusChange('OPEN')}
@@ -770,7 +950,7 @@ export default function DialoguePage() {
                           </button>
                           
                           {isPublicDropdownOpen && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                            <div className="absolute bottom-full right-0 mb-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-full min-w-[150px]">
                               <div className="py-1">
                                 <button
                                   onClick={() => handlePublicChange(true)}
@@ -782,7 +962,6 @@ export default function DialoguePage() {
                                     selectedRoom.isPublic ? 'bg-green-500' : 'bg-gray-300'
                                   }`}></div>
                                   <span>공개</span>
-                                  <span className="text-xs text-gray-500 ml-2">- 모든 사용자 접근 가능</span>
                                   {selectedRoom.isPublic && (
                                     <FiSettings className="w-4 h-4 ml-auto text-green-600" />
                                   )}
@@ -797,7 +976,6 @@ export default function DialoguePage() {
                                     !selectedRoom.isPublic ? 'bg-gray-500' : 'bg-gray-300'
                                   }`}></div>
                                   <span>비공개</span>
-                                  <span className="text-xs text-gray-500 ml-2">- 관리자와 전문가만 접근</span>
                                   {!selectedRoom.isPublic && (
                                     <FiSettings className="w-4 h-4 ml-auto text-gray-600" />
                                   )}

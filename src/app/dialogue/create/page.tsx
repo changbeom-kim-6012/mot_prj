@@ -64,13 +64,7 @@ export default function CreateDialoguePage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
               <p className="text-gray-600 mb-6">대화방을 생성하려면 로그인해주세요.</p>
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={() => router.back()}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  이전으로
-                </button>
+              <div className="flex justify-center">
                 <button
                   onClick={() => router.push('/login')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -219,10 +213,9 @@ export default function CreateDialoguePage() {
                </div>
                <button
                  onClick={() => router.back()}
-                 className="text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
+                 className="text-blue-600 hover:text-blue-700 font-medium"
                >
-                 <FiArrowLeft className="w-4 h-4" />
-                 <span>← 목록으로 돌아가기</span>
+                 ← 목록으로 돌아가기
                </button>
              </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

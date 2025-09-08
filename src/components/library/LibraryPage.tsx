@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiPlus, FiSearch, FiEye, FiDownload, FiCalendar, FiUser, FiX, FiBookOpen, FiTrash2, FiEdit } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye, FiDownload, FiCalendar, FiUser, FiX, FiBookOpen, FiTrash2, FiEdit, FiArrowLeft } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import FileViewer from '@/components/common/FileViewer';
 import RegisterLibraryItemForm from '@/components/library/RegisterLibraryItemForm';
@@ -442,24 +442,25 @@ export default function LibraryPage() {
 
       {/* 자료 상세 조회 모달 */}
       {detailModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+          <div className="relative p-6 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white max-h-[95vh] overflow-y-auto">
             <div className="mt-3">
               {/* 모달 헤더 */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">자료 상세 정보</h3>
+                <h3 className="text-xl font-semibold text-gray-900">자료 상세 정보</h3>
                 <button
                   onClick={handleCloseDetailModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <FiX className="h-6 w-6" />
+                  <FiArrowLeft className="w-4 h-4 mr-2" />
+                  목록으로 돌아가기
                 </button>
               </div>
 
               {/* 자료 정보 */}
               <div className="space-y-4">
                                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">카테고리</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">카테고리</label>
                    <div className="pl-4">
                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                        {selectedItem.category}
@@ -468,49 +469,51 @@ export default function LibraryPage() {
                  </div>
 
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">제목</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">제목</label>
                    <div className="pl-4">
-                     <p className="text-sm text-gray-900">{selectedItem.title}</p>
+                     <p className="text-base text-gray-900">{selectedItem.title}</p>
                    </div>
                  </div>
 
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">작성자</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">작성자</label>
                    <div className="pl-4">
                      <div className="flex items-center">
                        <FiUser className="h-4 w-4 text-gray-400 mr-2" />
-                       <span className="text-sm text-gray-900">{selectedItem.author}</span>
+                       <span className="text-base text-gray-900">{selectedItem.author}</span>
                      </div>
                    </div>
                  </div>
 
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">설명</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">설명</label>
                    <div className="pl-4">
-                     <p className="text-sm text-gray-900 whitespace-pre-wrap">{selectedItem.description}</p>
+                     <div className="bg-gray-50 p-4 rounded-lg">
+                       <p className="text-base text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedItem.description}</p>
+                     </div>
                    </div>
                  </div>
 
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">키워드</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">키워드</label>
                    <div className="pl-4">
-                     <p className="text-sm text-gray-900">{selectedItem.keywords}</p>
+                     <p className="text-base text-gray-900">{selectedItem.keywords}</p>
                    </div>
                  </div>
 
                  <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">등록일</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">등록일</label>
                    <div className="pl-4">
                      <div className="flex items-center">
                        <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
-                       <span className="text-sm text-gray-900">{formatDate(selectedItem.createdAt)}</span>
+                       <span className="text-base text-gray-900">{formatDate(selectedItem.createdAt)}</span>
                      </div>
                    </div>
                  </div>
 
                  {selectedItem.fileNames && selectedItem.filePaths && (
                    <div>
-                     <label className="block text-sm font-bold text-gray-700 mb-2">첨부파일</label>
+                     <label className="block text-base font-bold text-gray-700 mb-2">첨부파일</label>
                      <div className="pl-4">
                        <div className="space-y-2">
                          {selectedItem.fileNames.split(',').map((fileName, index) => {
@@ -521,7 +524,7 @@ export default function LibraryPage() {
                            return (
                              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                                <div className="flex items-center gap-2">
-                                 <span className="text-sm text-gray-900">{fileName.trim()}</span>
+                                 <span className="text-base text-gray-900">{fileName.trim()}</span>
                                  {isViewOnly && (
                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                                      보기만
@@ -589,14 +592,14 @@ export default function LibraryPage() {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditItem(selectedItem)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <FiEdit className="mr-2 h-4 w-4" />
                       수정
                     </button>
                     <button
                       onClick={() => handleDeleteItem(selectedItem)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
                       <FiTrash2 className="mr-2 h-4 w-4" />
                       삭제
@@ -605,7 +608,7 @@ export default function LibraryPage() {
                 )}
                 <button
                   onClick={handleCloseDetailModal}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 text-base rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   닫기
                 </button>
