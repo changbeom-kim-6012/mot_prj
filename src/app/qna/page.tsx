@@ -8,7 +8,6 @@ import AnswerList from '@/components/qna/AnswerList';
 import AdminEditModal from '@/components/qna/AdminEditModal';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
-import { useCommonCodes } from '@/hooks/useCommonCodes';
 
 interface Question {
   id: number;
@@ -52,10 +51,8 @@ export default function QnaPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState<{id:number, name:string}[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
-  
-  // common_codes 테이블에서 Q&A 카테고리 조회
-  const { codes: categories, loading: categoriesLoading } = useCommonCodes('Q&A');
   
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
@@ -81,49 +78,39 @@ export default function QnaPage() {
   // 관리자 편집 모달 상태
   const [isAdminEditModalOpen, setIsAdminEditModalOpen] = useState(false);
 
-  // 카테고리는 useCommonCodes 훅에서 자동으로 로드됨
+  // 카테고리 불러오기 (Library 패턴과 동일)
+  useEffect(() => {
+    fetch('http://192.168.0.101:8082/api/codes/menu/Q&A/details')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategories(data.map((c:any) => ({ id: c.id, name: c.codeName })));
+        }
+      })
+      .catch(() => setCategories([]));
+  }, []);
 
-  // 질문 목록 불러오기 (페이지 변경 시에만)
+  // 질문 목록 불러오기
   useEffect(() => {
     fetchQuestions();
-  }, [currentPage]);
-
-  // 모달이 열릴 때 바탕화면 스크롤 방지
-  useEffect(() => {
-    if (detailModalOpen) {
-      // 바탕화면 스크롤 방지
-      document.body.style.overflow = 'hidden';
-    } else {
-      // 바탕화면 스크롤 복원
-      document.body.style.overflow = 'unset';
-    }
-
-    // 컴포넌트 언마운트 시 스크롤 복원
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [detailModalOpen]);
+  }, [currentPage, selectedCategory, searchTerm]);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
       
-      // 카테고리와 검색어를 조합한 검색 API 사용
-      let url = `http://localhost:8082/api/questions/search-combined?page=${currentPage}&size=${pageSize}`;
+      let url = `http://192.168.0.101:8082/api/questions?page=${currentPage}&size=${pageSize}`;
       
-      // 카테고리 파라미터 추가
+      // 카테고리 필터 적용
       if (selectedCategory) {
-        url += `&category=${encodeURIComponent(selectedCategory)}`;
-        console.log('선택된 카테고리:', selectedCategory);
+        url = `http://192.168.0.101:8082/api/questions/category/${encodeURIComponent(selectedCategory)}?page=${currentPage}&size=${pageSize}`;
       }
       
-      // 검색어 파라미터 추가
+      // 검색어 필터 적용
       if (searchTerm.trim()) {
-        url += `&keyword=${encodeURIComponent(searchTerm.trim())}`;
-        console.log('검색어:', searchTerm.trim());
+        url = `http://192.168.0.101:8082/api/questions/search?keyword=${encodeURIComponent(searchTerm.trim())}&page=${currentPage}&size=${pageSize}`;
       }
       
-      console.log('최종 요청 URL:', url);
       const response = await fetch(url);
       
       if (response.ok) {
@@ -166,25 +153,11 @@ export default function QnaPage() {
 
   const handleSearch = () => {
     setCurrentPage(0); // 검색 시 첫 페이지로 이동
-    fetchQuestions(); // 검색 실행
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setCurrentPage(0); // 카테고리 변경 시 첫 페이지로 이동
-    fetchQuestions(); // 카테고리 변경 시 검색 실행
-  };
-
-  // 디버깅용: 모든 카테고리 확인
-  const checkAllCategories = async () => {
-    try {
-      const response = await fetch('http://localhost:8082/api/questions/categories');
-      const categories = await response.json();
-      console.log('DB에 저장된 모든 카테고리:', categories);
-      alert(`DB 카테고리 목록:\n${categories.join('\n')}`);
-    } catch (error) {
-      console.error('카테고리 조회 실패:', error);
-    }
   };
 
   // Q&A 상세 조회 모달 열기
@@ -201,7 +174,7 @@ export default function QnaPage() {
       
       try {
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
         if (response.ok) {
           const data = await response.json();
           setSelectedQuestion(data);
@@ -233,7 +206,7 @@ export default function QnaPage() {
       
       try {
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
         if (response.ok) {
           const data = await response.json();
           setSelectedQuestion(data);
@@ -254,7 +227,7 @@ export default function QnaPage() {
   // 답변 목록 불러오기
   const fetchAnswers = async (questionId: number) => {
     try {
-      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`);
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}/answers`);
       if (response.ok) {
         const data = await response.json();
         setQuestionAnswers(data);
@@ -300,7 +273,7 @@ export default function QnaPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}`, {
         method: 'DELETE',
       });
 
@@ -338,7 +311,7 @@ export default function QnaPage() {
         isExpertAnswer: isExpertAnswer
       });
 
-      const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -399,15 +372,9 @@ export default function QnaPage() {
   };
 
   const handleFileDownload = (filePath: string) => {
-    // 파일 경로가 유효하지 않으면 다운로드하지 않음
-    if (!filePath || filePath.trim() === '' || filePath === '[NULL]') {
-      console.warn('유효하지 않은 파일 경로:', filePath);
-      return;
-    }
-    
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://localhost:8082/api/library/qna/download/${filePath}`;
+    link.href = `http://192.168.0.101:8082/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
@@ -418,14 +385,12 @@ export default function QnaPage() {
       return (
     <main className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="pt-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">질문 목록을 불러오는 중...</p>
           </div>
         </div>
-      </div>
       </main>
     );
   }
@@ -475,11 +440,10 @@ export default function QnaPage() {
                   value={selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  disabled={categoriesLoading}
                 >
-                  <option value="">{categoriesLoading ? '카테고리 로딩 중...' : '모든 카테고리'}</option>
+                  <option value="">모든 카테고리</option>
                   {categories.map(cat => (
-                    <option key={cat.id} value={cat.codeName}>{cat.codeName}</option>
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
               </div>
@@ -492,11 +456,6 @@ export default function QnaPage() {
                   placeholder="질문 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch();
-                    }
-                  }}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -507,13 +466,6 @@ export default function QnaPage() {
                   className="inline-flex items-center px-4 py-2 border border-blue-600 text-blue-600 bg-white rounded-md shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium"
                 >
                   검색
-                </button>
-                <button
-                  type="button"
-                  onClick={checkAllCategories}
-                  className="inline-flex items-center px-4 py-2 border border-green-600 text-green-600 bg-white rounded-md shadow-sm hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm font-medium"
-                >
-                  카테고리 확인
                 </button>
                 {isAuthenticated ? (
                   <Link
@@ -630,19 +582,8 @@ export default function QnaPage() {
 
       {/* Q&A 상세 조회 모달 */}
       {detailModalOpen && (
-        <div 
-          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-          onWheel={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleCloseDetailModal();
-            }
-          }}
-        >
-          <div 
-            className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white"
-            onWheel={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Q&A 상세</h3>
@@ -736,73 +677,61 @@ export default function QnaPage() {
                     </div>
 
                     {/* 첨부파일 */}
-                    <div className="border-t border-gray-200 pt-4">
-                      <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">
-                          {selectedQuestion.filePath && selectedQuestion.filePath.trim() !== '' ? selectedQuestion.filePath : '[NULL]'}
-                        </span>
-                        {selectedQuestion.filePath && selectedQuestion.filePath.trim() !== '' ? (
-                          /* 파일이 있는 경우 */
-                          <>
-                            {/* 관리자나 전문가는 공개/비공개 관계없이 파일보기 가능 */}
-                            {(user?.role === 'ADMIN' || user?.role === 'EXPERT') ? (
-                              <button
-                                onClick={() => selectedQuestion.filePath && selectedQuestion.filePath.trim() !== '' && handleFileDownload(selectedQuestion.filePath)}
-                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                              >
-                                <FiDownload className="w-4 h-4 mr-2" />
-                                파일보기
-                              </button>
-                            ) : (
-                              /* 일반 사용자는 공개 질문만 파일보기 가능 */
-                              selectedQuestion.isPublic ? (
-                                isAuthenticated ? (
+                    {selectedQuestion.filePath && (
+                      <div className="border-t border-gray-200 pt-4">
+                        <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-500">
+                            {selectedQuestion.filePath}
+                          </span>
+                          {/* 관리자나 전문가는 공개/비공개 관계없이 파일보기 가능 */}
+                          {(user?.role === 'ADMIN' || user?.role === 'EXPERT') ? (
+                            <button
+                              onClick={() => handleFileDownload(selectedQuestion.filePath!)}
+                              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <FiDownload className="w-4 h-4 mr-2" />
+                              파일보기
+                            </button>
+                          ) : (
+                            /* 일반 사용자는 공개 질문만 파일보기 가능 */
+                            selectedQuestion.isPublic ? (
+                              isAuthenticated ? (
+                                <button
+                                  onClick={() => handleFileDownload(selectedQuestion.filePath!)}
+                                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  <FiDownload className="w-4 h-4 mr-2" />
+                                  파일보기
+                                </button>
+                              ) : (
+                                <div className="relative group">
                                   <button
-                                    onClick={() => selectedQuestion.filePath && selectedQuestion.filePath.trim() !== '' && handleFileDownload(selectedQuestion.filePath)}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    disabled
+                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                                   >
                                     <FiDownload className="w-4 h-4 mr-2" />
                                     파일보기
                                   </button>
-                                ) : (
-                                  <div className="relative group">
-                                  <button
-                                    disabled
-                                    className="inline-flex items-center px-3 py-2 border border-gray-200 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-50 cursor-not-allowed opacity-60"
-                                  >
-                                    <FiDownload className="w-4 h-4 mr-2 text-gray-300" />
-                                    파일보기
-                                  </button>
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                      로그인이 필요합니다
-                                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                    </div>
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                    로그인이 필요합니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                                   </div>
-                                )
-                              ) : (
+                                </div>
+                              )
+                            ) : (
                               <button
                                 disabled
-                                className="inline-flex items-center px-3 py-2 border border-gray-200 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-50 cursor-not-allowed opacity-60"
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                               >
-                                <FiDownload className="w-4 h-4 mr-2 text-gray-300" />
+                                <FiDownload className="w-4 h-4 mr-2" />
                                 파일보기
                               </button>
-                              )
-                            )}
-                          </>
-                        ) : (
-                          /* 파일이 없는 경우 - 비활성화된 버튼 */
-                          <button
-                            disabled
-                            className="inline-flex items-center px-3 py-2 border border-gray-200 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-50 cursor-not-allowed opacity-60"
-                          >
-                            <FiDownload className="w-4 h-4 mr-2 text-gray-300" />
-                            파일보기
-                          </button>
-                        )}
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   

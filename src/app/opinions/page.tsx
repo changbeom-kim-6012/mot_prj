@@ -55,11 +55,11 @@ export default function OpinionsPage() {
       setLoading(true);
       try {
         console.log('Fetching opinions from API...');
-        console.log('Request URL:', 'http://localhost:8082/api/opinions');
+        console.log('Request URL:', 'http://192.168.0.101:8082/api/opinions');
         console.log('Current origin:', window.location.origin);
         console.log('Auth state:', { isAuthenticated, user: user?.email });
         
-        const res = await axios.get('http://localhost:8082/api/opinions', {
+        const res = await axios.get('http://192.168.0.101:8082/api/opinions', {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -89,7 +89,7 @@ export default function OpinionsPage() {
         // 각 기고의 첨부파일 불러오기
         const attachmentPromises = filteredArticles.map(async (article: Article) => {
           try {
-            const attachmentRes = await axios.get(`http://localhost:8082/api/attachments`, {
+            const attachmentRes = await axios.get(`http://192.168.0.101:8082/api/attachments`, {
               params: {
                 refTable: 'opinions',
                 refId: article.id
@@ -128,7 +128,7 @@ export default function OpinionsPage() {
   // Agora 카테고리 불러오기
   useEffect(() => {
     console.log('Fetching categories from API...');
-    fetch('http://localhost:8082/api/codes/agora-details', {
+    fetch('http://192.168.0.101:8082/api/codes/agora-details', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ export default function OpinionsPage() {
     const storedFileName = pathParts[pathParts.length - 1];
     
     const encodedFileName = encodeURIComponent(storedFileName);
-    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedFileName}`;
+    const fileUrl = `http://192.168.0.101:8082/api/attachments/view/${encodedFileName}`;
     setSelectedFile({ url: fileUrl, name: fileName });
   };
 

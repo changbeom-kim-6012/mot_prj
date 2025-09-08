@@ -21,7 +21,7 @@ export default function EditNewsPage() {
 
   const fetchNewsData = async () => {
     try {
-      const response = await fetch(`http://localhost:8082/api/news/${id}`);
+      const response = await fetch(`http://192.168.0.101:8082/api/news/${id}`);
       if (response.ok) {
         const data = await response.json();
         setTitle(data.title || '');
@@ -38,7 +38,7 @@ export default function EditNewsPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch(`http://localhost:8082/api/news/${id}`, {
+      const response = await fetch(`http://192.168.0.101:8082/api/news/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

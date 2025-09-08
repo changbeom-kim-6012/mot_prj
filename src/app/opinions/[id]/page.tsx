@@ -58,7 +58,7 @@ export default function OpinionDetailPage() {
     
     console.log('파일 조회 요청:', { fileName, filePath, storedFileName, encodedFileName });
     
-    const fileUrl = `http://localhost:8082/api/attachments/view/${encodedFileName}`;
+    const fileUrl = `http://192.168.0.101:8082/api/attachments/view/${encodedFileName}`;
     setSelectedFile({ url: fileUrl, name: fileName.trim() });
   };
 
@@ -70,7 +70,7 @@ export default function OpinionDetailPage() {
     async function fetchDetail() {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:8082/api/opinions/${articleId}`);
+        const res = await axios.get(`http://192.168.0.101:8082/api/opinions/${articleId}`);
         const articleData = res.data;
         
         // 등록승인 또는 등록대기 상태의 기고만 표시
@@ -82,7 +82,7 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attRes = await axios.get('http://localhost:8082/api/attachments', {
+        const attRes = await axios.get('http://192.168.0.101:8082/api/attachments', {
           params: { refTable: 'opinions', refId: articleId }
         });
         setAttachments(attRes.data);
@@ -180,7 +180,7 @@ export default function OpinionDetailPage() {
                         <FiList className="mr-2 h-4 w-4" />
                         전문보기
                       </button>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                         로그인이 필요합니다
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
@@ -199,60 +199,27 @@ export default function OpinionDetailPage() {
                     <span className="text-sm text-gray-900">{attachments[0].fileName}</span>
                     <span className="text-xs text-gray-500">({(attachments[0].fileSize/1024).toFixed(1)} KB)</span>
                     <div className="flex space-x-2">
-                      {isAuthenticated && user ? (
-                        <>
-                          <button
-                            onClick={() => handleViewFile(attachments[0].fileName, attachments[0].filePath)}
-                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
-                          >
-                            <FiEye className="mr-1" />
-                            파일보기
-                          </button>
-                          <button
-                            onClick={() => {
-                              // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
-                              const pathParts = attachments[0].filePath.split('\\');
-                              const storedFileName = pathParts[pathParts.length - 1];
-                              
-                              const encodedFileName = encodeURIComponent(storedFileName);
-                              window.open(`http://localhost:8082/api/attachments/download/${encodedFileName}`, '_blank');
-                            }}
-                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
-                          >
-                            <FiDownload className="mr-1" />
-                            다운로드
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <div className="relative group">
-                            <button
-                              disabled
-                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-gray-500 bg-gray-200 cursor-not-allowed"
-                            >
-                              <FiEye className="mr-1" />
-                              파일보기
-                            </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
-                              로그인 후 확인할 수 있습니다
-                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                            </div>
-                          </div>
-                          <div className="relative group">
-                            <button
-                              disabled
-                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-gray-500 bg-gray-200 cursor-not-allowed"
-                            >
-                              <FiDownload className="mr-1" />
-                              다운로드
-                            </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
-                              로그인 후 확인할 수 있습니다
-                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <button
+                        onClick={() => handleViewFile(attachments[0].fileName, attachments[0].filePath)}
+                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
+                      >
+                        <FiEye className="mr-1" />
+                        파일보기
+                      </button>
+                                             <button
+                         onClick={() => {
+                           // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
+                           const pathParts = attachments[0].filePath.split('\\');
+                           const storedFileName = pathParts[pathParts.length - 1];
+                           
+                           const encodedFileName = encodeURIComponent(storedFileName);
+                           window.open(`http://192.168.0.101:8082/api/attachments/download/${encodedFileName}`, '_blank');
+                         }}
+                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                       >
+                        <FiDownload className="mr-1" />
+                        다운로드
+                      </button>
                     </div>
                   </div>
                 </div>
