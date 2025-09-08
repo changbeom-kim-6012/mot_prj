@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://192.168.0.101:3000](http://192.168.0.101:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -43,12 +43,12 @@ react.development.js:1426 Uncaught TypeError: Object.defineProperty called on no
     at Object.defineProperty (<anonymous>)
     at __webpack_require__.r (webpack.js?v=1756872238620:265:21)
     at eval (pdf.mjs:1:21)
-    at (app-pages-browser)/node_modules/pdfjs-dist/build/pdf.mjs (http://192.168.0.101:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:60:1)
+    at (app-pages-browser)/node_modules/pdfjs-dist/build/pdf.mjs (http://localhost:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:60:1)
     at options.factory (webpack.js?v=1756872238620:716:31)
     at __webpack_require__ (webpack.js?v=1756872238620:37:33)
     at fn (webpack.js?v=1756872238620:371:21)
     at eval (LocalPDFViewer.tsx:9:68)
-    at (app-pages-browser)/src/components/common/LocalPDFViewer.tsx (http://192.168.0.101:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:29:1)
+    at (app-pages-browser)/src/components/common/LocalPDFViewer.tsx (http://localhost:3000/_next/static/chunks/_app-pages-browser_src_components_common_LocalPDFViewer_tsx.js:29:1)
     at options.factory (webpack.js?v=1756872238620:716:31)
     at __webpack_require__ (webpack.js?v=1756872238620:37:33)
     at fn (webpack.js?v=1756872238620:371:21)

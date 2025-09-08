@@ -22,11 +22,25 @@ export default function QnaWritePage() {
   const [content, setContent] = useState('');
   const [category1, setCategory1] = useState('');
   const [category1Etc, setCategory1Etc] = useState('');
+  const [category1Id, setCategory1Id] = useState<number | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [contactInfo, setContactInfo] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
+
+  // 카테고리 목록 불러오기
+  useEffect(() => {
+    fetch('http://localhost:8082/api/codes/menu/Q&A/details')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategories(data.map((c: any) => ({ id: c.id, name: c.codeName })));
+        }
+      })
+      .catch(() => setCategories([]));
+  }, []);
 
   // 사용자 로그인 시 이메일을 기본값으로 설정
   useEffect(() => {
@@ -48,6 +62,18 @@ export default function QnaWritePage() {
     }
   };
 
+  const handleCategoryChange = (categoryName: string) => {
+    setCategory1(categoryName);
+    
+    // 카테고리 이름으로 ID 찾기
+    const category = categories.find(cat => cat.name === categoryName);
+    const categoryId = category ? category.id : null;
+    setCategory1Id(categoryId);
+    
+    console.log('선택된 카테고리:', categoryName);
+    console.log('찾은 카테고리 ID:', categoryId);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -60,12 +86,16 @@ export default function QnaWritePage() {
     // 디버깅을 위한 로그 추가
     console.log('전송할 isPublic 값:', isPublic);
     console.log('전송할 isPublic 타입:', typeof isPublic);
+    console.log('전송할 카테고리 ID:', category1Id);
 
     try {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('content', content);
       formData.append('category1', category1);
+      if (category1Id) {
+        formData.append('category1Id', category1Id.toString());
+      }
       formData.append('authorEmail', user.email);
       formData.append('isPublic', isPublic.toString());
       formData.append('contactInfo', contactInfo);
@@ -78,7 +108,7 @@ export default function QnaWritePage() {
         console.log(`${key}: ${value}`);
       }
 
-      const response = await fetch('http://192.168.0.101:8082/api/questions', {
+      const response = await fetch('http://localhost:8082/api/questions', {
         method: 'POST',
         body: formData
       });
@@ -188,7 +218,7 @@ export default function QnaWritePage() {
                   <CodeSelectWithEtc
                     menuName="Q&A"
                     value={category1}
-                    onChange={setCategory1}
+                    onChange={handleCategoryChange}
                     etcValue={category1Etc}
                     onEtcChange={setCategory1Etc}
                     placeholder="선택하세요"

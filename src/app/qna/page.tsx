@@ -51,14 +51,16 @@ export default function QnaPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [categories, setCategories] = useState<{id:number, name:string}[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   
-  // 페이징 상태
+  // 페이징 상태 (클라이언트 사이드 페이징)
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
 
   // 페이지 로드 시 사용자 정보 출력
   console.log('QnaPage 컴포넌트 로드됨');
@@ -80,7 +82,7 @@ export default function QnaPage() {
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
-    fetch('http://192.168.0.101:8082/api/codes/menu/Q&A/details')
+    fetch('http://localhost:8082/api/codes/menu/Q&A/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -90,28 +92,22 @@ export default function QnaPage() {
       .catch(() => setCategories([]));
   }, []);
 
-  // 질문 목록 불러오기
+  // 질문 목록 불러오기 (한 번만 실행)
   useEffect(() => {
     fetchQuestions();
-  }, [currentPage, selectedCategory, searchTerm]);
+  }, []);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
+      console.log('=== Q&A 목록 조회 시작 ===');
       
-      let url = `http://192.168.0.101:8082/api/questions?page=${currentPage}&size=${pageSize}`;
-      
-      // 카테고리 필터 적용
-      if (selectedCategory) {
-        url = `http://192.168.0.101:8082/api/questions/category/${encodeURIComponent(selectedCategory)}?page=${currentPage}&size=${pageSize}`;
-      }
-      
-      // 검색어 필터 적용
-      if (searchTerm.trim()) {
-        url = `http://192.168.0.101:8082/api/questions/search?keyword=${encodeURIComponent(searchTerm.trim())}&page=${currentPage}&size=${pageSize}`;
-      }
+      // 모든 데이터를 가져오기 위해 큰 사이즈로 요청
+      const url = `http://localhost:8082/api/questions?page=0&size=1000`;
+      console.log('API URL:', url);
       
       const response = await fetch(url);
+      console.log('API 응답 상태:', response.status, response.statusText);
       
       if (response.ok) {
         const data: PageInfo = await response.json();
@@ -129,35 +125,219 @@ export default function QnaPage() {
         
         console.log('처리된 데이터:', processedData);
         
+        setAllQuestions(processedData);
         setQuestions(processedData);
         setFilteredQuestions(processedData);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
+        setTotalElements(processedData.length);
+        setTotalPages(Math.ceil(processedData.length / pageSize));
       } else {
-        console.error('질문 목록 조회 실패:', response.status);
+        const errorText = await response.text();
+        console.error('질문 목록 조회 실패:', response.status, response.statusText);
+        console.error('에러 응답 내용:', errorText);
+        setAllQuestions([]);
         setQuestions([]);
         setFilteredQuestions([]);
-        setTotalPages(0);
-        setTotalElements(0);
       }
     } catch (error) {
       console.error('질문 목록 조회 중 오류:', error);
+      console.error('에러 상세:', error);
+      setAllQuestions([]);
       setQuestions([]);
       setFilteredQuestions([]);
-      setTotalPages(0);
-      setTotalElements(0);
     } finally {
       setLoading(false);
+      console.log('=== Q&A 목록 조회 완료 ===');
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    console.log('검색 실행:', searchTerm);
     setCurrentPage(0); // 검색 시 첫 페이지로 이동
+    
+    // 검색어가 있으면 서버에서 검색, 없으면 현재 카테고리로 다시 조회
+    if (searchTerm.trim()) {
+      await fetchQuestionsBySearch(searchTerm.trim());
+    } else {
+      await fetchQuestionsByCategory(selectedCategoryId);
+    }
   };
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
+  const fetchQuestionsBySearch = async (keyword: string) => {
+    try {
+      setLoading(true);
+      console.log('=== 검색어로 Q&A 목록 조회 시작 ===');
+      console.log('검색어:', keyword);
+      
+      const url = `http://localhost:8082/api/questions/category/${selectedCategoryId}?keyword=${keyword}&page=0&size=1000`;
+      console.log('검색 API URL:', url);
+      
+      const response = await fetch(url);
+      console.log('API 응답 상태:', response.status, response.statusText);
+      
+      if (response.ok) {
+        const data: PageInfo = await response.json();
+        
+        console.log('서버에서 받은 검색 결과:', data);
+        
+        // 데이터 타입 확인 및 변환
+        const processedData = data.content.map((question: any) => {
+          console.log(`질문 ID ${question.id}: isPublic = ${question.isPublic}, 타입 = ${typeof question.isPublic}`);
+          return {
+            ...question,
+            isPublic: Boolean(question.isPublic)
+          };
+        });
+        
+        console.log('처리된 검색 데이터:', processedData);
+        
+        setAllQuestions(processedData);
+        setQuestions(processedData);
+        setFilteredQuestions(processedData);
+        setTotalElements(processedData.length);
+        setTotalPages(Math.ceil(processedData.length / pageSize));
+      } else {
+        const errorText = await response.text();
+        console.error('검색 실패:', response.status, response.statusText);
+        console.error('에러 응답 내용:', errorText);
+        setAllQuestions([]);
+        setQuestions([]);
+        setFilteredQuestions([]);
+        setTotalElements(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('검색 중 오류:', error);
+      console.error('에러 상세:', error);
+      setAllQuestions([]);
+      setQuestions([]);
+      setFilteredQuestions([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+      console.log('=== 검색 완료 ===');
+    }
+  };
+
+  const handleCategoryChange = async (categoryName: string) => {
+    console.log('카테고리 변경:', categoryName);
+    console.log('사용 가능한 카테고리 목록:', categories);
+    
+    // 빈 값이면 전체 목록 조회
+    if (!categoryName || categoryName.trim() === '') {
+      console.log('빈 카테고리 선택, 전체 목록 조회');
+      setSelectedCategory('');
+      setSelectedCategoryId(null);
+      await fetchQuestionsByCategory(null);
+      return;
+    }
+    
+    setSelectedCategory(categoryName);
     setCurrentPage(0); // 카테고리 변경 시 첫 페이지로 이동
+    console.log('카테고리 변경 완료, 새 카테고리:', categoryName);
+    
+    // 카테고리 이름으로 ID 찾기
+    const category = categories.find(cat => cat.name === categoryName);
+    const categoryId = category ? category.id : null;
+    setSelectedCategoryId(categoryId);
+    
+    console.log('찾은 카테고리 ID:', categoryId);
+    
+    // 카테고리별 DB 검색 (카테고리 ID로)
+    await fetchQuestionsByCategory(categoryId);
+  };
+
+  const fetchQuestionsByCategory = async (categoryId: number | null) => {
+    try {
+      setLoading(true);
+      console.log('=== 카테고리별 Q&A 목록 조회 시작 ===');
+      console.log('선택된 카테고리 ID:', categoryId);
+      console.log('사용 가능한 카테고리 목록:', categories);
+      
+      let url;
+      if (categoryId && categoryId > 0) {
+        // 특정 카테고리 ID로 검색
+        url = `http://localhost:8082/api/questions/category/${categoryId}?page=0&size=1000`;
+        console.log('카테고리 ID 필터 적용됨:', categoryId);
+        console.log('생성된 URL:', url);
+      } else {
+        // 전체 목록 조회
+        url = `http://localhost:8082/api/questions?page=0&size=1000`;
+        console.log('전체 목록 조회');
+      }
+      
+      console.log('최종 API URL:', url);
+      const response = await fetch(url);
+      console.log('API 응답 상태:', response.status, response.statusText);
+      console.log('API 응답 헤더:', Object.fromEntries(response.headers.entries()));
+      
+      if (response.ok) {
+        const data: PageInfo = await response.json();
+        
+        console.log('서버에서 받은 페이징 데이터:', data);
+        
+        // 데이터 타입 확인 및 변환
+        const processedData = data.content.map((question: any) => {
+          console.log(`질문 ID ${question.id}: isPublic = ${question.isPublic}, 타입 = ${typeof question.isPublic}`);
+          return {
+            ...question,
+            isPublic: Boolean(question.isPublic)
+          };
+        });
+        
+        console.log('처리된 데이터:', processedData);
+        
+        setAllQuestions(processedData);
+        setQuestions(processedData);
+        setFilteredQuestions(processedData);
+        setTotalElements(processedData.length);
+        setTotalPages(Math.ceil(processedData.length / pageSize));
+      } else {
+        const errorText = await response.text();
+        console.error('카테고리별 질문 목록 조회 실패:', response.status, response.statusText);
+        console.error('에러 응답 내용:', errorText);
+        console.error('요청한 카테고리 ID:', categoryId);
+        console.error('요청 URL:', url);
+        
+        // 403 오류인 경우 전체 목록으로 폴백
+        if (response.status === 403) {
+          console.log('403 오류 발생, 전체 목록으로 폴백 시도');
+          const fallbackUrl = `http://localhost:8082/api/questions?page=0&size=1000`;
+          const fallbackResponse = await fetch(fallbackUrl);
+          if (fallbackResponse.ok) {
+            const fallbackData: PageInfo = await fallbackResponse.json();
+            const processedData = fallbackData.content.map((question: any) => ({
+              ...question,
+              isPublic: Boolean(question.isPublic)
+            }));
+            setAllQuestions(processedData);
+            setQuestions(processedData);
+            setFilteredQuestions(processedData);
+            setTotalElements(processedData.length);
+            setTotalPages(Math.ceil(processedData.length / pageSize));
+            console.log('폴백 성공: 전체 목록 로드됨');
+            return;
+          }
+        }
+        
+        setAllQuestions([]);
+        setQuestions([]);
+        setFilteredQuestions([]);
+        setTotalElements(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('카테고리별 질문 목록 조회 중 오류:', error);
+      console.error('에러 상세:', error);
+      setAllQuestions([]);
+      setQuestions([]);
+      setFilteredQuestions([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+      console.log('=== 카테고리별 Q&A 목록 조회 완료 ===');
+    }
   };
 
   // Q&A 상세 조회 모달 열기
@@ -173,14 +353,21 @@ export default function QnaPage() {
       setQuestionError(null);
       
       try {
+        console.log('=== Q&A 상세 조회 시작 ===');
+        console.log('질문 ID:', question.id);
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        console.log('질문 상세 API 응답 상태:', response.status, response.statusText);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('질문 상세 데이터:', data);
           setSelectedQuestion(data);
           // 답변 목록도 함께 불러오기
           fetchAnswers(question.id);
         } else {
+          const errorText = await response.text();
+          console.error('질문 상세 조회 실패:', response.status, errorText);
           setQuestionError('질문을 찾을 수 없습니다.');
         }
       } catch (error) {
@@ -205,14 +392,21 @@ export default function QnaPage() {
       setQuestionError(null);
       
       try {
+        console.log('=== Q&A 상세 조회 시작 ===');
+        console.log('질문 ID:', question.id);
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://192.168.0.101:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://localhost:8082/api/questions/${question.id}`);
+        console.log('질문 상세 API 응답 상태:', response.status, response.statusText);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('질문 상세 데이터:', data);
           setSelectedQuestion(data);
           // 답변 목록도 함께 불러오기
           fetchAnswers(question.id);
         } else {
+          const errorText = await response.text();
+          console.error('질문 상세 조회 실패:', response.status, errorText);
           setQuestionError('질문을 찾을 수 없습니다.');
         }
       } catch (error) {
@@ -227,13 +421,24 @@ export default function QnaPage() {
   // 답변 목록 불러오기
   const fetchAnswers = async (questionId: number) => {
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}/answers`);
+      console.log('=== 답변 목록 조회 시작 ===');
+      console.log('질문 ID:', questionId);
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}/answers`);
+      console.log('답변 목록 API 응답 상태:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('답변 목록 데이터:', data);
         setQuestionAnswers(data);
+      } else {
+        const errorText = await response.text();
+        console.error('답변 목록 조회 실패:', response.status, errorText);
       }
     } catch (error) {
       console.error('답변 조회 중 오류:', error);
+      console.error('에러 상세:', error);
+    } finally {
+      console.log('=== 답변 목록 조회 완료 ===');
     }
   };
 
@@ -273,7 +478,7 @@ export default function QnaPage() {
     }
 
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${questionId}`, {
+      const response = await fetch(`http://localhost:8082/api/questions/${questionId}`, {
         method: 'DELETE',
       });
 
@@ -311,7 +516,7 @@ export default function QnaPage() {
         isExpertAnswer: isExpertAnswer
       });
 
-      const response = await fetch(`http://192.168.0.101:8082/api/questions/${selectedQuestion.id}/answers`, {
+      const response = await fetch(`http://localhost:8082/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -374,7 +579,7 @@ export default function QnaPage() {
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://192.168.0.101:8082/api/library/qna/download/${filePath}`;
+    link.href = `http://localhost:8082/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
@@ -493,18 +698,24 @@ export default function QnaPage() {
 
           {/* 질문 목록 */}
           <div className="space-y-4">
-            {filteredQuestions.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <FiMessageSquare className="mx-auto h-12 w-12" />
+            {(() => {
+              // 현재 페이지에 해당하는 데이터만 표시
+              const startIndex = currentPage * pageSize;
+              const endIndex = startIndex + pageSize;
+              const currentPageQuestions = filteredQuestions.slice(startIndex, endIndex);
+              
+              return currentPageQuestions.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <FiMessageSquare className="mx-auto h-12 w-12" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">질문이 없습니다</h3>
+                  <p className="text-gray-500">
+                    {searchTerm || selectedCategory ? '검색 조건에 맞는 질문이 없습니다.' : '아직 등록된 질문이 없습니다.'}
+                  </p>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">질문이 없습니다</h3>
-                <p className="text-gray-500">
-                  {searchTerm || selectedCategory ? '검색 조건에 맞는 질문이 없습니다.' : '아직 등록된 질문이 없습니다.'}
-                </p>
-              </div>
-            ) : (
-              filteredQuestions.map((question) => (
+              ) : (
+                currentPageQuestions.map((question) => (
                 <div key={question.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -574,7 +785,8 @@ export default function QnaPage() {
                   </div>
                 </div>
               ))
-            )}
+              );
+            })()}
           </div>
           </div>
         </div>
