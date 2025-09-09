@@ -162,7 +162,7 @@ export default function CreateDialoguePage() {
 
     try {
       // 백엔드 API로 회원 검증
-      const response = await fetch(`http://localhost:8082/api/users/email/${email}`);
+      const response = await fetch(`http://192.168.0.101:8082/api/users/email/${email}`);
       
       if (response.ok) {
         const userData = await response.json();

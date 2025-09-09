@@ -90,7 +90,7 @@ export default function LearningPage() {
       
       // 기본 공통코드 API 호출
       console.log('=== 기본 공통코드 API 호출 ===');
-      const basicResponse = await fetch('http://localhost:8082/api/codes');
+      const basicResponse = await fetch('http://192.168.0.101:8082/api/codes');
       console.log('기본 API 응답 상태:', basicResponse.status);
       
       if (basicResponse.ok) {
@@ -154,7 +154,7 @@ export default function LearningPage() {
       
       // Learning-details API 호출 (백업)
       console.log('=== Learning-details API 호출 (백업) ===');
-      const response = await fetch('http://localhost:8082/api/codes/learning-details');
+      const response = await fetch('http://192.168.0.101:8082/api/codes/learning-details');
       console.log('Learning-details API 응답 상태:', response.status);
       
       if (response.ok) {
@@ -202,7 +202,7 @@ export default function LearningPage() {
       setIsLoadingSubjects(true);
       console.log(`=== Subject 데이터 요청 시작 - 카테고리 ID: ${categoryId} ===`);
       
-      const response = await fetch(`http://localhost:8082/api/subjects/category/${categoryId}`);
+      const response = await fetch(`http://192.168.0.101:8082/api/subjects/category/${categoryId}`);
       console.log('Subject API 응답 상태:', response.status);
       
       if (response.ok) {
@@ -245,7 +245,7 @@ export default function LearningPage() {
 
   const fetchRelatedMaterials = async () => {
     try {
-      const response = await fetch('http://localhost:8082/api/library');
+      const response = await fetch('http://192.168.0.101:8082/api/library');
       if (response.ok) {
         const data = await response.json();
         // MOT 이론 및 방법론 관련 자료만 필터링
@@ -275,7 +275,7 @@ export default function LearningPage() {
     const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+    const fileUrl = `http://192.168.0.101:8082/api/library/view/${encodedPath}`;
     
     console.log('=== Learning 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);
@@ -386,7 +386,7 @@ export default function LearningPage() {
         return '%' + c.charCodeAt(0).toString(16);
       });
       
-      const fileUrl = `http://localhost:8082/api/library/view/${encodedPath}`;
+      const fileUrl = `http://192.168.0.101:8082/api/library/view/${encodedPath}`;
       
       console.log('=== Curriculum 파일 보기 디버깅 ===');
       console.log('원본 fileName:', fileName);
