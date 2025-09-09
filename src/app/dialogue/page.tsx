@@ -214,18 +214,30 @@ export default function DialoguePage() {
     };
   }, [isStatusDropdownOpen, isPublicDropdownOpen]);
 
-  // 검색 및 필터링 처리
-  useEffect(() => {
+  // 검색 및 필터링은 검색 버튼 클릭 시에만 실행됨
+
+  const handleSearch = () => {
+    performSearch(filterStatus, searchTerm);
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilterStatus(status);
+    // 상태 필터 변경 시 즉시 검색 실행
+    performSearch(status, searchTerm);
+  };
+
+  // 실제 검색 로직을 별도 함수로 분리
+  const performSearch = (status: string, term: string) => {
     let filtered = dummyRooms;
 
     // 상태 필터 적용
-    if (filterStatus) {
-      filtered = filtered.filter(room => room.status === filterStatus);
+    if (status) {
+      filtered = filtered.filter(room => room.status === status);
     }
 
     // 검색어 필터 적용
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
+    if (term.trim()) {
+      const searchLower = term.toLowerCase();
       filtered = filtered.filter(room => 
         room.title.toLowerCase().includes(searchLower) ||
         room.question.toLowerCase().includes(searchLower) ||
@@ -234,21 +246,18 @@ export default function DialoguePage() {
     }
 
     setFilteredRooms(filtered);
-  }, [searchTerm, filterStatus]);
-
-  const handleSearch = () => {
-    // 검색 로직은 useEffect에서 처리됨
-  };
-
-  const handleStatusFilter = (status: string) => {
-    setFilterStatus(status);
   };
 
   // 대화방 팝업 열기
   const handleOpenDialogue = (room: DialogueRoom) => {
     if (!isAuthenticated) {
-      alert('대화방 참여는 로그인이 필요합니다.');
+      alert('대화내용 조회 및 대화방 참여는 로그인이 필요합니다.');
       return;
+    }
+    
+    // 비공개 대화방인 경우 참여자만 조회 가능
+    if (!room.isPublic) {
+      return; // 클릭해도 아무 동작하지 않음
     }
     
     setSelectedRoom(room);
@@ -557,8 +566,9 @@ export default function DialoguePage() {
 
             {/* 검색 및 필터 */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                <div>
+              <div className="flex items-center gap-4">
+                {/* 상태 선택 (width 30% 줄임) */}
+                <div className="w-1/5">
                   <select
                     value={filterStatus}
                     onChange={(e) => handleStatusFilter(e.target.value)}
@@ -569,26 +579,32 @@ export default function DialoguePage() {
                     <option value="CLOSED">종료</option>
                   </select>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiSearch className="h-5 w-5 text-gray-400" />
+                
+                {/* 검색 입력과 버튼을 중앙정렬 */}
+                <div className="flex-1 flex justify-center items-center gap-4">
+                  <div className="relative w-2/5">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FiSearch className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="대화방 검색..."
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="대화방 검색..."
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div className="flex space-x-2">
                   <button
                     onClick={handleSearch}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     검색
                   </button>
+                </div>
+                
+                {/* 대화방 생성 버튼 (오른쪽 정렬) */}
+                <div className="w-1/5 flex justify-end">
                   {isAuthenticated && (
                     <Link
                       href="/dialogue/create"
@@ -632,7 +648,14 @@ export default function DialoguePage() {
                           onClick={() => handleOpenDialogue(room)}
                           className="block w-full text-left"
                         >
-                          <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2">
+                          <h3 
+                            className={`text-lg font-semibold transition-colors mb-2 ${
+                              !room.isPublic 
+                                ? 'text-gray-400 cursor-not-allowed' 
+                                : 'text-gray-900 hover:text-blue-600'
+                            }`}
+                            title={!room.isPublic ? '비공개 대화방으로 참여자만 입장이 가능합니다.' : ''}
+                          >
                             {room.title}
                           </h3>
                         </button>

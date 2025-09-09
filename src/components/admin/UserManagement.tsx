@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from 'react';
 
-// 날짜 포맷팅 함수
+// 날짜 포맷팅 함수 (yy.mm.dd 형식)
 const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return '-';
   
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('ko-KR');
+    
+    const year = date.getFullYear().toString().slice(-2); // 마지막 2자리
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    return `${year}.${month}.${day}`;
   } catch (error) {
     return '-';
   }
@@ -24,6 +29,7 @@ interface User {
   activityLevel: number;
   remarks: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 // 추가: 일괄등록용 타입
@@ -59,6 +65,19 @@ export default function UserManagement() {
           throw new Error('사용자 목록을 불러오는데 실패했습니다.');
         }
         const data = await response.json();
+        
+        // 디버깅: 받은 데이터 구조 확인
+        console.log('=== 사용자 데이터 디버깅 ===');
+        console.log('전체 데이터:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          console.log('첫 번째 사용자 데이터:', data[0]);
+          console.log('첫 번째 사용자의 createdAt:', data[0].createdAt);
+          console.log('첫 번째 사용자의 updatedAt:', data[0].updatedAt);
+          console.log('createdAt 타입:', typeof data[0].createdAt);
+          console.log('updatedAt 타입:', typeof data[0].updatedAt);
+        }
+        console.log('========================');
+        
         setUsers(data);
       } catch (err: any) {
         setError(err.message);
@@ -250,6 +269,7 @@ export default function UserManagement() {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '150px'}}>역할</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '320px'}}>비고</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '120px'}}>가입일</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '120px'}}>수정일</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">관리</th>
             </tr>
           </thead>
@@ -268,6 +288,7 @@ export default function UserManagement() {
                   </select>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500"><textarea name="remarks" value={addingUser.remarks || ''} onChange={handleAddInputChange} className="block w-full p-3 border-gray-300 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" /></td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
@@ -311,6 +332,7 @@ export default function UserManagement() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.createdAt)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.updatedAt)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {editingUserId === user.id ? (
                     <div className="flex space-x-2">
@@ -332,7 +354,7 @@ export default function UserManagement() {
       {/* 일괄등록 팝업 */}
       {showBulkModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[720px]">
+          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[960px]">
             <h2 className="text-xl font-bold mb-4">회원 일괄등록</h2>
             <table className="min-w-full mb-4">
               <thead>
@@ -341,6 +363,8 @@ export default function UserManagement() {
                   <th className="px-2 py-1" style={{width: '312px'}}>이메일</th>
                   <th className="px-2 py-1" style={{width: '180px'}}>역할</th>
                   <th className="px-2 py-1" style={{width: '384px'}}>비고</th>
+                  <th className="px-2 py-1" style={{width: '120px'}}>가입일</th>
+                  <th className="px-2 py-1" style={{width: '120px'}}>수정일</th>
                   <th className="px-2 py-1" style={{width: '96px'}}>관리</th>
                 </tr>
               </thead>
@@ -357,6 +381,8 @@ export default function UserManagement() {
                       </select>
                     </td>
                     <td><input type="text" name="remarks" value={user.remarks} onChange={e => handleBulkInputChange(idx, e)} className="border p-1 rounded w-80" /></td>
+                    <td className="px-2 py-1 text-sm text-gray-500">-</td>
+                    <td className="px-2 py-1 text-sm text-gray-500">-</td>
                     <td><button onClick={() => handleBulkRemoveRow(idx)} className="text-red-500">삭제</button></td>
                   </tr>
                 ))}

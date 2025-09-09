@@ -265,8 +265,8 @@ export default function QnaDetailPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="py-16">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-10">
           {/* 뒤로가기 버튼 */}
           <div className="mb-6">
             <Link
@@ -279,7 +279,7 @@ export default function QnaDetailPage() {
           </div>
 
           {/* 질문 상세 */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-10 mb-10">
             {/* 질문 헤더 */}
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
@@ -309,8 +309,8 @@ export default function QnaDetailPage() {
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">{question.title}</h1>
-                <div className="flex items-center space-x-6 text-sm text-gray-500">
+                <h1 className="text-3xl font-bold text-gray-900 mb-6">{question.title}</h1>
+                <div className="flex items-center space-x-6 text-base text-gray-500">
                   <div className="flex items-center">
                     <FiUser className="w-4 h-4 mr-1" />
                     <span>{question.authorEmail}</span>
@@ -332,8 +332,8 @@ export default function QnaDetailPage() {
             </div>
 
             {/* 질문 내용 */}
-            <div className="prose max-w-none mb-6">
-              <div className="whitespace-pre-wrap text-gray-700">{question.content}</div>
+            <div className="prose max-w-none mb-8">
+              <div className="whitespace-pre-wrap text-lg text-gray-700 leading-relaxed">{question.content}</div>
             </div>
 
             {/* 첨부파일 */}
@@ -370,9 +370,9 @@ export default function QnaDetailPage() {
           )}
 
           {/* 답변 목록 */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-10 mb-10">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900">
                 답변 ({answers.length}개)
               </h2>
             </div>

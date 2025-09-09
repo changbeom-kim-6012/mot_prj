@@ -175,6 +175,18 @@ export default function LibraryPage() {
   };
 
   const handleViewDetail = (item: LibraryItem) => {
+    console.log('=== 자료 상세보기 디버깅 ===');
+    console.log('선택된 자료:', item);
+    console.log('현재 사용자:', user);
+    console.log('사용자 권한:', user?.role);
+    console.log('자료 작성자:', item.author);
+    console.log('사용자명:', user?.username);
+    console.log('관리자 권한:', user?.role === 'ADMIN');
+    console.log('전문가 권한:', user?.role === 'EXPERT');
+    console.log('자신의 자료:', user?.username === item.author);
+    console.log('수정/삭제 가능:', user?.role === 'ADMIN' || (user?.role === 'EXPERT' && user?.username === item.author));
+    console.log('========================');
+    
     setSelectedItem(item);
     setDetailModalOpen(true);
   };
@@ -185,6 +197,17 @@ export default function LibraryPage() {
   };
 
   const handleDeleteItem = async (item: LibraryItem) => {
+    // 권한 확인
+    if (!isAuthenticated || !user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.username === item.author)) {
+      alert('자료를 삭제할 권한이 없습니다.');
+      return;
+    }
+    
     if (!confirm(`"${item.title}" 자료를 삭제하시겠습니까?`)) {
       return;
     }
@@ -209,6 +232,17 @@ export default function LibraryPage() {
   };
 
   const handleEditItem = (item: LibraryItem) => {
+    // 권한 확인
+    if (!isAuthenticated || !user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.username === item.author)) {
+      alert('자료를 수정할 권한이 없습니다.');
+      return;
+    }
+    
     setEditingItem(item);
     setEditModalOpen(true);
     setDetailModalOpen(false); // 상세 모달 닫기
@@ -323,7 +357,8 @@ export default function LibraryPage() {
         {/* 검색 및 필터 */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center gap-4">
-            <div className="flex-1">
+            {/* 카테고리 선택 (width 50% 줄임) */}
+            <div className="w-1/6">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -335,19 +370,21 @@ export default function LibraryPage() {
                 ))}
               </select>
             </div>
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="h-5 w-5 text-gray-400" />
+            
+            {/* 검색 입력과 버튼을 중앙정렬 */}
+            <div className="flex-1 flex justify-center items-center gap-4">
+              <div className="relative w-2/5">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiSearch className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="자료 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="자료 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div>
               <button
                 onClick={handleSearch}
                 className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -355,7 +392,9 @@ export default function LibraryPage() {
                 검색
               </button>
             </div>
-            <div>
+            
+            {/* 자료 등록 버튼 (현 위치 그대로) */}
+            <div className="w-1/6 flex justify-end">
               {isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') ? (
                 <button
                   onClick={handleOpenRegisterModal}
@@ -385,7 +424,7 @@ export default function LibraryPage() {
               <tr>
                 <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">카테고리</th>
                 <th scope="col" className="flex-1 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">제목</th>
-                <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">작성자</th>
+                <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">저자/강사</th>
                 <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">등록일</th>
                 <th scope="col" className="w-48 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">파일</th>
               </tr>
@@ -476,7 +515,7 @@ export default function LibraryPage() {
                  </div>
 
                  <div>
-                   <label className="block text-base font-bold text-gray-700 mb-2">작성자</label>
+                   <label className="block text-base font-bold text-gray-700 mb-2">저자/강사</label>
                    <div className="pl-4">
                      <div className="flex items-center">
                        <FiUser className="h-4 w-4 text-gray-400 mr-2" />
@@ -588,7 +627,10 @@ export default function LibraryPage() {
 
               {/* 모달 푸터 */}
               <div className="flex justify-between mt-6">
-                {isAuthenticated && user && user.role === 'ADMIN' && (
+                {isAuthenticated && user && (
+                  (user.role === 'ADMIN' || 
+                   (user.role === 'EXPERT' && selectedItem && selectedItem.author === user.username)
+                  )) && (
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEditItem(selectedItem)}
@@ -648,16 +690,17 @@ export default function LibraryPage() {
       {/* 자료등록 모달 */}
       {registerModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
+          <div className="relative top-4 mx-auto p-4 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-1">
               {/* 모달 헤더 */}
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">자료 등록</h3>
                 <button
                   onClick={handleCloseRegisterModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
-                  <FiX className="h-6 w-6" />
+                  <FiArrowLeft className="w-4 h-4" />
+                  목록으로 돌아가기
                 </button>
               </div>
 

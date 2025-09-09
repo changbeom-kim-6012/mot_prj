@@ -13,16 +13,21 @@ import { Expert } from '@/types/expert';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading, isLoggingOut } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('experts');
   const [showExpertModal, setShowExpertModal] = useState(false);
   const [editingExpert, setEditingExpert] = useState<Expert | null>(null);
 
-  // 관리자 권한 확인
+  // 관리자 권한 확인 (로딩 완료 후에만 실행)
   useEffect(() => {
+    if (loading) return; // 로딩 중이면 아무것도 하지 않음
+    
     if (!isAuthenticated) {
-      alert('로그인이 필요합니다.');
+      // 로그아웃 중이 아닌 경우에만 alert 표시
+      if (!isLoggingOut) {
+        alert('로그인이 필요합니다.');
+      }
       router.push('/login');
       return;
     }
@@ -32,17 +37,20 @@ export default function AdminPage() {
       router.push('/');
       return;
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, loading, isLoggingOut]);
 
-  // 관리자가 아닌 경우 로딩 표시
-  if (!isAuthenticated || user?.role !== 'ADMIN') {
+
+  // 로딩 중이거나 관리자가 아닌 경우 로딩 표시
+  if (loading || !isAuthenticated || user?.role !== 'ADMIN') {
     return (
       <main className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">권한을 확인하는 중...</p>
+            <p className="mt-4 text-gray-600">
+              {loading ? '로딩 중...' : '권한을 확인하는 중...'}
+            </p>
           </div>
         </div>
       </main>

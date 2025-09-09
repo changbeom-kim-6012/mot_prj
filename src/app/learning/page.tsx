@@ -339,6 +339,13 @@ export default function LearningPage() {
     }
   };
 
+  // Subject 삭제 성공 시 목록 새로고침
+  const handleSubjectDeleteSuccess = () => {
+    if (activeTab) {
+      fetchSubjects(activeTab);
+    }
+  };
+
   // Subject Description 클릭 시 수정 모달 열기
   const handleSubjectDescriptionClick = (subject: any) => {
     console.log('=== Subject 클릭됨 ===');
@@ -655,6 +662,7 @@ export default function LearningPage() {
          isOpen={subjectEditModalOpen}
          onClose={() => setSubjectEditModalOpen(false)}
          onSuccess={handleSubjectEditSuccess}
+         onDelete={handleSubjectDeleteSuccess}
          subject={selectedSubject}
          categories={categories}
        />

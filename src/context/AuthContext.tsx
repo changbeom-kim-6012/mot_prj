@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  isLoggingOut: boolean;
   login: (userData: User) => void;
   logout: () => void;
 }
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -49,15 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    setIsLoggingOut(true);
     setUser(null);
     sessionStorage.removeItem('user');
-    router.push('/'); // 로그아웃 후 메인페이지로 이동
+    router.push('/login'); // 로그아웃 후 로그인 화면으로 이동
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
     loading,
+    isLoggingOut,
     login,
     logout,
   };

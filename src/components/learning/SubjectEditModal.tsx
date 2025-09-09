@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText } from 'react-icons/fi';
+import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText, FiArrowRight, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
 
@@ -9,6 +9,7 @@ interface SubjectEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onDelete?: () => void;
   subject: {
     id: number;
     subjectCode: string;
@@ -45,13 +46,14 @@ export default function SubjectEditModal({
   isOpen, 
   onClose, 
   onSuccess,
+  onDelete,
   subject,
   categories 
 }: SubjectEditModalProps) {
   const { user, isAuthenticated } = useAuth();
   
-  // 관리자/전문가 권한 확인
-  const isAdmin = isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT');
+  // 관리자 권한 확인 (ADMIN만)
+  const isAdmin = isAuthenticated && user && user.role === 'ADMIN';
   const [formData, setFormData] = useState<SubjectFormData>({
     subjectCode: '',
     subjectDescription: '',
@@ -139,6 +141,12 @@ export default function SubjectEditModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // 관리자 권한 확인
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
@@ -187,7 +195,44 @@ export default function SubjectEditModal({
     }
   };
 
+  const handleDelete = async () => {
+    // 관리자 권한 확인
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
+    if (!confirm(`"${subject.subjectDescription}" Subject를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8082/api/subjects/${subject.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('Subject가 성공적으로 삭제되었습니다.');
+        onDelete?.();
+        onClose();
+      } else {
+        const errorData = await response.text();
+        console.error('Subject 삭제 실패:', response.status, errorData);
+        alert(`Subject 삭제에 실패했습니다: ${errorData}`);
+      }
+    } catch (error) {
+      console.error('Subject 삭제 중 오류:', error);
+      alert('Subject 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 관리자 권한 확인
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
     const file = e.target.files?.[0];
     if (file) {
       // 파일 크기 제한 (10MB)
@@ -258,6 +303,12 @@ export default function SubjectEditModal({
 
   // 프로그램 선택/해제
   const handleProgramToggle = (programId: string) => {
+    // 관리자 권한 확인
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       selectedPrograms: prev.selectedPrograms.includes(programId)
@@ -289,16 +340,17 @@ export default function SubjectEditModal({
               Subject {isAdmin ? '수정' : '조회'}
             </h2>
             {!isAdmin && (
-              <p className="text-sm text-gray-500 mt-1">
-                관리자 권한이 필요합니다. 조회만 가능합니다.
+              <p className="text-sm text-red-500 mt-1">
+                관리자 권한이 필요합니다. 수정 및 삭제는 관리자만 가능합니다.
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
-            <FiX className="w-6 h-6 text-gray-500" />
+            <FiArrowRight className="w-4 h-4" />
+            목록으로 돌아가기
           </button>
         </div>
 
@@ -577,33 +629,48 @@ export default function SubjectEditModal({
           )}
 
           {/* 버튼 */}
-          <div className="flex items-center justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-            >
-              {isAdmin ? '취소' : '닫기'}
-            </button>
-            {isAdmin && (
+          <div className="flex items-center justify-between pt-4">
+            {/* 삭제 버튼 (관리자만) */}
+            {isAdmin && onDelete && (
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                type="button"
+                onClick={handleDelete}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    수정 중...
-                  </>
-                ) : (
-                  <>
-                    <FiSave className="w-4 h-4" />
-                    Subject 수정
-                  </>
-                )}
+                <FiTrash2 className="w-4 h-4" />
+                Subject 삭제
               </button>
             )}
+            
+            {/* 오른쪽 버튼들 */}
+            <div className="flex items-center gap-3 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                {isAdmin ? '취소' : '닫기'}
+              </button>
+              {isAdmin && (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      수정 중...
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      Subject 수정
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </div>

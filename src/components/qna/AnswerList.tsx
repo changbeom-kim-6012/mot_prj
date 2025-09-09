@@ -148,12 +148,12 @@ export default function AnswerList({
       {answers.map((answer) => (
         <div
           key={answer.id}
-          className="bg-white rounded-lg shadow-sm p-6"
+          className="bg-white rounded-lg shadow-sm p-8"
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="mb-3 flex items-center gap-4">
-                <div className="text-sm text-gray-500">
+                <div className="text-base text-gray-500">
                   {answer.authorName}
                   {answer.isExpertAnswer && (
                     <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -161,7 +161,7 @@ export default function AnswerList({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-sm text-gray-400">
                   {formatDate(answer.createdAt)}
                 </div>
                 {isAnswerAuthor(answer) && editingAnswerId !== answer.id && (
@@ -219,7 +219,7 @@ export default function AnswerList({
                   </div>
                 </div>
               ) : (
-                <div className="text-gray-700 whitespace-pre-wrap">{answer.content}</div>
+                <div className="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">{answer.content}</div>
               )}
             </div>
             <div className="flex flex-col items-center gap-2 ml-4">

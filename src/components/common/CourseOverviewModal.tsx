@@ -43,9 +43,10 @@ function CourseDetailModal({ isOpen, onClose, course }: CourseDetailModalProps) 
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
-              <FiX className="w-6 h-6 text-gray-500" />
+              <FiArrowRight className="w-4 h-4" />
+              목록으로 돌아가기
             </button>
           </div>
 
@@ -162,9 +163,10 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                </div>
                <button
                  onClick={onClose}
-                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                >
-                 <FiX className="w-6 h-6 text-gray-500" />
+                 <FiArrowRight className="w-4 h-4" />
+                 목록으로 돌아가기
                </button>
              </div>
 
