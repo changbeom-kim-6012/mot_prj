@@ -21,7 +21,7 @@ export default function LoginPage() {
     console.log('로그인 시도:', { email, password: '***' });
 
     try {
-      const response = await fetch('http://121.140.143.9:8082/api/users/login', {
+      const response = await fetch('http://127.0.0.1:8082/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

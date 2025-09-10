@@ -32,7 +32,7 @@ export default function QnaWritePage() {
 
   // 카테고리 목록 불러오기
   useEffect(() => {
-    fetch('http://121.140.143.9:8082/api/codes/menu/Q&A/details')
+    fetch('http://127.0.0.1:8082/api/codes/menu/Q&A/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -108,7 +108,7 @@ export default function QnaWritePage() {
         console.log(`${key}: ${value}`);
       }
 
-      const response = await fetch('http://121.140.143.9:8082/api/questions', {
+      const response = await fetch('http://127.0.0.1:8082/api/questions', {
         method: 'POST',
         body: formData
       });

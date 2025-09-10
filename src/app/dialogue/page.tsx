@@ -60,7 +60,7 @@ export default function DialoguePage() {
     }
 
     try {
-      const response = await fetch(`http://121.140.143.9:8082/api/dialogue/messages/${messageId}`, {
+      const response = await fetch(`http://127.0.0.1:8082/api/dialogue/messages/${messageId}`, {
         method: 'DELETE',
         headers: {
           'User-Email': user?.email || '',
@@ -394,7 +394,7 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      const response = await fetch(`http://121.140.143.9:8082/api/dialogue/rooms/${selectedRoom.id}/status`, {
+      const response = await fetch(`http://127.0.0.1:8082/api/dialogue/rooms/${selectedRoom.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -432,7 +432,7 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      const response = await fetch(`http://121.140.143.9:8082/api/dialogue/rooms/${selectedRoom.id}/public`, {
+      const response = await fetch(`http://127.0.0.1:8082/api/dialogue/rooms/${selectedRoom.id}/public`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -477,7 +477,7 @@ export default function DialoguePage() {
     }
 
     try {
-      const response = await fetch(`http://121.140.143.9:8082/api/dialogue/rooms/${selectedRoom.id}`, {
+      const response = await fetch(`http://127.0.0.1:8082/api/dialogue/rooms/${selectedRoom.id}`, {
         method: 'DELETE',
       });
 
