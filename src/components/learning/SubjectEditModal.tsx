@@ -167,7 +167,7 @@ export default function SubjectEditModal({
         formDataToSend.append('curriculumFile', curriculumFile);
       }
 
-      const response = await fetch(`http://127.0.0.1:8082/api/subjects/${subject.id}/with-file`, {
+      const response = await fetch(`http://mot.erns.co.kr:8082/api/subjects/${subject.id}/with-file`, {
         method: 'PUT',
         body: formDataToSend
       });
@@ -207,7 +207,7 @@ export default function SubjectEditModal({
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8082/api/subjects/${subject.id}`, {
+      const response = await fetch(`http://mot.erns.co.kr:8082/api/subjects/${subject.id}`, {
         method: 'DELETE',
       });
 
@@ -277,7 +277,7 @@ export default function SubjectEditModal({
         return '%' + c.charCodeAt(0).toString(16);
       });
       
-      const fileUrl = `http://127.0.0.1:8082/api/library/view/${encodedPath}`;
+      const fileUrl = `http://mot.erns.co.kr:8082/api/library/view/${encodedPath}`;
       
       setViewingFile({ fileName, fileUrl });
       setViewModalOpen(true);

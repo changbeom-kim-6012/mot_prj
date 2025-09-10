@@ -152,7 +152,7 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                  <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
                  <button
                    onClick={() => handlePdfViewerOpen(
-                     'http://127.0.0.1:8082/api/library/view/MOT%20교육과정%20Overview.pdf',
+                     'http://mot.erns.co.kr:8082/api/library/view/MOT%20교육과정%20Overview.pdf',
                      'MOT 교육과정 Overview'
                    )}
                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
