@@ -41,7 +41,7 @@ const ResetPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://mot.erns.co.kr:8082/api/users/reset-password", {
+      const res = await fetch("http://mot.erns.co.kr/api/users/reset-password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, newPassword: password })

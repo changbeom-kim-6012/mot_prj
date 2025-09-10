@@ -82,7 +82,7 @@ export default function QnaPage() {
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
-    fetch('http://mot.erns.co.kr:8082/api/codes/menu/Q&A/details')
+    fetch('http://mot.erns.co.kr/api/codes/menu/Q&A/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -103,7 +103,7 @@ export default function QnaPage() {
       console.log('=== Q&A 목록 조회 시작 ===');
       
       // 모든 데이터를 가져오기 위해 큰 사이즈로 요청
-      const url = `http://mot.erns.co.kr:8082/api/questions?page=0&size=1000`;
+      const url = `http://mot.erns.co.kr/api/questions?page=0&size=1000`;
       console.log('API URL:', url);
       
       const response = await fetch(url);
@@ -168,7 +168,7 @@ export default function QnaPage() {
       console.log('=== 검색어로 Q&A 목록 조회 시작 ===');
       console.log('검색어:', keyword);
       
-      const url = `http://mot.erns.co.kr:8082/api/questions/category/${selectedCategoryId}?keyword=${keyword}&page=0&size=1000`;
+      const url = `http://mot.erns.co.kr/api/questions/category/${selectedCategoryId}?keyword=${keyword}&page=0&size=1000`;
       console.log('검색 API URL:', url);
       
       const response = await fetch(url);
@@ -257,12 +257,12 @@ export default function QnaPage() {
       let url;
       if (categoryId && categoryId > 0) {
         // 특정 카테고리 ID로 검색
-        url = `http://mot.erns.co.kr:8082/api/questions/category/${categoryId}?page=0&size=1000`;
+        url = `http://mot.erns.co.kr/api/questions/category/${categoryId}?page=0&size=1000`;
         console.log('카테고리 ID 필터 적용됨:', categoryId);
         console.log('생성된 URL:', url);
       } else {
         // 전체 목록 조회
-        url = `http://mot.erns.co.kr:8082/api/questions?page=0&size=1000`;
+        url = `http://mot.erns.co.kr/api/questions?page=0&size=1000`;
         console.log('전체 목록 조회');
       }
       
@@ -302,7 +302,7 @@ export default function QnaPage() {
         // 403 오류인 경우 전체 목록으로 폴백
         if (response.status === 403) {
           console.log('403 오류 발생, 전체 목록으로 폴백 시도');
-          const fallbackUrl = `http://mot.erns.co.kr:8082/api/questions?page=0&size=1000`;
+          const fallbackUrl = `http://mot.erns.co.kr/api/questions?page=0&size=1000`;
           const fallbackResponse = await fetch(fallbackUrl);
           if (fallbackResponse.ok) {
             const fallbackData: PageInfo = await fallbackResponse.json();
@@ -356,7 +356,7 @@ export default function QnaPage() {
         console.log('=== Q&A 상세 조회 시작 ===');
         console.log('질문 ID:', question.id);
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://mot.erns.co.kr:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://mot.erns.co.kr/api/questions/${question.id}`);
         console.log('질문 상세 API 응답 상태:', response.status, response.statusText);
         
         if (response.ok) {
@@ -395,7 +395,7 @@ export default function QnaPage() {
         console.log('=== Q&A 상세 조회 시작 ===');
         console.log('질문 ID:', question.id);
         // 질문 상세 정보 불러오기
-        const response = await fetch(`http://mot.erns.co.kr:8082/api/questions/${question.id}`);
+        const response = await fetch(`http://mot.erns.co.kr/api/questions/${question.id}`);
         console.log('질문 상세 API 응답 상태:', response.status, response.statusText);
         
         if (response.ok) {
@@ -423,7 +423,7 @@ export default function QnaPage() {
     try {
       console.log('=== 답변 목록 조회 시작 ===');
       console.log('질문 ID:', questionId);
-      const response = await fetch(`http://mot.erns.co.kr:8082/api/questions/${questionId}/answers`);
+      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}/answers`);
       console.log('답변 목록 API 응답 상태:', response.status, response.statusText);
       
       if (response.ok) {
@@ -478,7 +478,7 @@ export default function QnaPage() {
     }
 
     try {
-      const response = await fetch(`http://mot.erns.co.kr:8082/api/questions/${questionId}`, {
+      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}`, {
         method: 'DELETE',
       });
 
@@ -516,7 +516,7 @@ export default function QnaPage() {
         isExpertAnswer: isExpertAnswer
       });
 
-      const response = await fetch(`http://mot.erns.co.kr:8082/api/questions/${selectedQuestion.id}/answers`, {
+      const response = await fetch(`http://mot.erns.co.kr/api/questions/${selectedQuestion.id}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -579,7 +579,7 @@ export default function QnaPage() {
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://mot.erns.co.kr:8082/api/library/qna/download/${filePath}`;
+    link.href = `http://mot.erns.co.kr/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();

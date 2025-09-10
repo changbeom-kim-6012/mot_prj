@@ -32,7 +32,7 @@ export default function OpinionManagement() {
   const fetchOpinions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://mot.erns.co.kr:8082/api/opinions');
+      const response = await axios.get('http://mot.erns.co.kr/api/opinions');
       setOpinions(response.data);
     } catch (error) {
       console.error('Opinion 목록 조회 실패:', error);
@@ -49,7 +49,7 @@ export default function OpinionManagement() {
       // 방법 1: JSON 방식 (기존)
       let response;
       try {
-        response = await axios.patch(`http://mot.erns.co.kr:8082/api/opinions/${id}/status`, {
+        response = await axios.patch(`http://mot.erns.co.kr/api/opinions/${id}/status`, {
           status: newStatus
         }, {
           headers: { 'Content-Type': 'application/json' }
@@ -57,7 +57,7 @@ export default function OpinionManagement() {
       } catch (error: any) {
         console.log('JSON 방식 실패, 간단한 방식으로 재시도...');
         // 방법 2: 간단한 방식 (대안)
-        response = await axios.put(`http://mot.erns.co.kr:8082/api/opinions/${id}/status-simple?status=${newStatus}`);
+        response = await axios.put(`http://mot.erns.co.kr/api/opinions/${id}/status-simple?status=${newStatus}`);
       }
       
       console.log('Status update response:', response);
@@ -92,7 +92,7 @@ export default function OpinionManagement() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     
     try {
-      await axios.delete(`http://mot.erns.co.kr:8082/api/opinions/${id}`);
+      await axios.delete(`http://mot.erns.co.kr/api/opinions/${id}`);
       fetchOpinions(); // 목록 새로고침
       alert('삭제되었습니다.');
     } catch (error) {
@@ -121,7 +121,7 @@ export default function OpinionManagement() {
 
   const openAttachment = () => {
     if (selectedOpinion?.attachmentPath) {
-      window.open(`http://mot.erns.co.kr:8082/uploads/opinions/${selectedOpinion.attachmentPath}`, '_blank');
+      window.open(`http://mot.erns.co.kr/uploads/opinions/${selectedOpinion.attachmentPath}`, '_blank');
     } else {
       alert('첨부파일이 없습니다.');
     }

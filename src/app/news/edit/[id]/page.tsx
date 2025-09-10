@@ -21,7 +21,7 @@ export default function EditNewsPage() {
 
   const fetchNewsData = async () => {
     try {
-      const response = await fetch(`http://mot.erns.co.kr:8082/api/news/${id}`);
+      const response = await fetch(`http://mot.erns.co.kr/api/news/${id}`);
       if (response.ok) {
         const data = await response.json();
         setTitle(data.title || '');
@@ -38,7 +38,7 @@ export default function EditNewsPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch(`http://mot.erns.co.kr:8082/api/news/${id}`, {
+      const response = await fetch(`http://mot.erns.co.kr/api/news/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

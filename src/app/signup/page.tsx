@@ -30,7 +30,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://mot.erns.co.kr:8082/api/users', {
+      const response = await fetch('http://mot.erns.co.kr/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

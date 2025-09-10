@@ -30,7 +30,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://mot.erns.co.kr:8082/api/:path*',
+        destination: 'http://mot.erns.co.kr/api/:path*',
       },
     ];
   },
