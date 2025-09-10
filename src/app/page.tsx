@@ -41,7 +41,7 @@ export default function Home() {
   useEffect(() => {
     const fetchActiveNotices = async () => {
       try {
-        const response = await fetch('http://192.168.0.101:8082/api/notices/active');
+        const response = await fetch('http://motclub.co.kr/api/notices/active');
         if (response.ok) {
           const notices = await response.json();
           setActiveNotices(notices);
@@ -77,7 +77,7 @@ export default function Home() {
 
   const handleFileDownload = async (attachmentPath: string, attachmentName: string) => {
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/notices/download/${attachmentPath}`);
+      const response = await fetch(`http://motclub.co.kr/api/notices/download/${attachmentPath}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -98,7 +98,7 @@ export default function Home() {
   };
 
   const handleFileView = (attachmentPath: string, attachmentName: string) => {
-    const fileUrl = `http://192.168.0.101:8082/api/notices/download/${attachmentPath}`;
+    const fileUrl = `http://motclub.co.kr/api/notices/download/${attachmentPath}`;
     setSelectedFile({ url: fileUrl, name: attachmentName });
   };
 

@@ -57,7 +57,7 @@ export default function NoticeManagement() {
     try {
       console.log('=== 공지사항 조회 시작 ===');
       
-      const response = await fetch('http://192.168.0.101:8082/api/notices');
+      const response = await fetch('http://motclub.co.kr/api/notices');
       
       console.log('공지사항 조회 응답 상태:', response.status);
       
@@ -131,7 +131,7 @@ export default function NoticeManagement() {
     }
 
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/notices/${id}`, {
+      const response = await fetch(`http://motclub.co.kr/api/notices/${id}`, {
         method: 'DELETE',
       });
 
@@ -221,8 +221,8 @@ export default function NoticeManagement() {
 
     try {
       const url = editingNotice 
-        ? `http://192.168.0.101:8082/api/notices/${editingNotice.id}`
-        : 'http://192.168.0.101:8082/api/notices';
+        ? `http://motclub.co.kr/api/notices/${editingNotice.id}`
+        : 'http://motclub.co.kr/api/notices';
       
       const method = editingNotice ? 'PUT' : 'POST';
 
@@ -270,7 +270,7 @@ export default function NoticeManagement() {
 
   const handleFileDownload = async (attachmentPath: string, attachmentName: string) => {
     try {
-      const response = await fetch(`http://192.168.0.101:8082/api/notices/download/${attachmentPath}`);
+      const response = await fetch(`http://motclub.co.kr/api/notices/download/${attachmentPath}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -291,7 +291,7 @@ export default function NoticeManagement() {
   };
 
   const handleFileView = (attachmentPath: string, attachmentName: string) => {
-    const fileUrl = `http://192.168.0.101:8082/api/notices/download/${attachmentPath}`;
+    const fileUrl = `http://motclub.co.kr/api/notices/download/${attachmentPath}`;
     setSelectedFile({ url: fileUrl, name: attachmentName });
   };
 

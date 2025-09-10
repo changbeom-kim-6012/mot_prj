@@ -21,7 +21,7 @@ export default function LoginPage() {
     console.log('로그인 시도:', { email, password: '***' });
 
     try {
-      const response = await fetch('http://192.168.0.101:8082/api/users/login', {
+      const response = await fetch('http://motclub.co.kr/api/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
