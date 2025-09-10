@@ -21,7 +21,7 @@ export default function SimpleFileViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://motclub.co.kr:8082';
+    const baseUrl = 'http://121.140.143.9:8082';
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';

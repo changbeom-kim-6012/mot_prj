@@ -26,8 +26,8 @@ export const useCommonCodes = (menuName: string) => {
       setError(null);
       
       const [codesResponse, etcResponse] = await Promise.all([
-        fetch(`http://motclub.co.kr:8082/api/codes/menu/${menu}/details`),
-        fetch(`http://motclub.co.kr:8082/api/codes/menu/${menu}/has-etc`)
+        fetch(`http://121.140.143.9:8082/api/codes/menu/${menu}/details`),
+        fetch(`http://121.140.143.9:8082/api/codes/menu/${menu}/has-etc`)
       ]);
       
       if (!codesResponse.ok || !etcResponse.ok) {
