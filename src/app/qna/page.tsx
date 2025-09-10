@@ -82,7 +82,7 @@ export default function QnaPage() {
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
-    fetch('http://mot.erns.co.kr/api/codes/menu/Q&A/details')
+    fetch('http://mot.erns.co.kr/api/codes/menu/qna/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
