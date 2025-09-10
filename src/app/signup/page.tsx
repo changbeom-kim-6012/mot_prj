@@ -30,7 +30,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://motclub.co.kr/api/users', {
+      const response = await fetch('http://motclub.co.kr:8082/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

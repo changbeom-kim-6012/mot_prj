@@ -28,7 +28,7 @@ export default function ReactPdfViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://motclub.co.kr';
+    const baseUrl = 'http://motclub.co.kr:8082';
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';
