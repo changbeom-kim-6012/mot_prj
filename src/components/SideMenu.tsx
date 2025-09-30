@@ -38,20 +38,20 @@ const menuItems = [
     gradientTo: 'to-violet-600'
   },
   { 
+    icon: FiGlobe, 
+    label: 'Dialogue', 
+    href: '/dialogue',
+    color: 'text-rose-500',
+    gradientFrom: 'from-rose-500',
+    gradientTo: 'to-rose-600'
+  },
+  { 
     icon: FiEdit3, 
     label: 'Agora', 
     href: '/opinions',
     color: 'text-amber-500',
     gradientFrom: 'from-amber-500',
     gradientTo: 'to-amber-600'
-  },
-  { 
-    icon: FiGlobe, 
-    label: 'Community', 
-    href: '/news',
-    color: 'text-rose-500',
-    gradientFrom: 'from-rose-500',
-    gradientTo: 'to-rose-600'
   },
   { 
     icon: FiAward, 

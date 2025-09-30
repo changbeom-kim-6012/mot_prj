@@ -3,13 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3002",
+    "dev:local": "cross-env API_URL=http://localhost:8084 next dev -p 3002",
+    "dev:staging": "cross-env API_URL=http://www.motclub.co.kr next dev -p 3002",
+    "dev:prod": "cross-env API_URL=http://www.motclub.co.kr next dev -p 3002",
     "build": "next build",
+    "build:local": "cross-env NODE_ENV=production API_URL=http://localhost:8084 next build",
+    "build:staging": "cross-env NODE_ENV=production API_URL=http://www.motclub.co.kr next build",
+    "build:prod": "cross-env NODE_ENV=production API_URL=http://www.motclub.co.kr next build",
     "start": "next start",
+    "start:local": "cross-env API_URL=http://localhost:8084 next start",
+    "start:prod": "cross-env API_URL=http://www.motclub.co.kr next start",
     "startDev": "PORT=13000 next start",
     "startHub": "PORT=14000 HOSTNAME=0.0.0.0 next start",
     "startWin": "cross-env PORT=13000 next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "env:local": "node scripts/set-env.js local",
+    "env:staging": "node scripts/set-env.js staging",
+    "env:prod": "node scripts/set-env.js production"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

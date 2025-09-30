@@ -65,7 +65,7 @@ export default function QnaDetailPage() {
     }
     
     try {
-      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}`);
+      const response = await fetch(`/api/questions/${questionId}`);
       if (response.ok) {
         const data = await response.json();
         setQuestion(data);
@@ -84,7 +84,7 @@ export default function QnaDetailPage() {
 
   const fetchAnswers = async () => {
     try {
-      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}/answers`);
+      const response = await fetch(`/api/questions/${questionId}/answers`);
       if (response.ok) {
         const data = await response.json();
         setAnswers(data);
@@ -109,7 +109,7 @@ export default function QnaDetailPage() {
         isExpertAnswer: false
       });
 
-      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}/answers`, {
+      const response = await fetch(`/api/questions/${questionId}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ export default function QnaDetailPage() {
     }
 
     try {
-      const response = await fetch(`http://mot.erns.co.kr/api/questions/${questionId}`, {
+      const response = await fetch(`/api/questions/${questionId}`, {
         method: 'DELETE',
       });
 
@@ -204,7 +204,7 @@ export default function QnaDetailPage() {
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://mot.erns.co.kr/api/library/qna/download/${filePath}`;
+    link.href = `/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();

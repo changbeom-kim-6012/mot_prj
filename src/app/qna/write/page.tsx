@@ -32,11 +32,21 @@ export default function QnaWritePage() {
 
   // 카테고리 목록 불러오기
   useEffect(() => {
-    fetch('http://mot.erns.co.kr/api/codes/menu/Q&A/details')
+    fetch('/api/codes/menu/qna/details')
       .then(res => res.json())
       .then(data => {
+        console.log('Category API data:', data);
         if (Array.isArray(data)) {
-          setCategories(data.map((c: any) => ({ id: c.id, name: c.codeName })));
+          const categoryList = data.map((c: any) => ({ id: c.id, name: c.codeName }));
+          setCategories(categoryList);
+          
+          // 기본 카테고리 설정
+          if (categoryList.length > 0 && !category1) {
+            const defaultCategory = categoryList[0];
+            setCategory1(defaultCategory.name);
+            setCategory1Id(defaultCategory.id);
+            console.log('기본 카테고리 설정:', defaultCategory);
+          }
         }
       })
       .catch(() => setCategories([]));
@@ -108,7 +118,7 @@ export default function QnaWritePage() {
         console.log(`${key}: ${value}`);
       }
 
-      const response = await fetch('http://mot.erns.co.kr/api/questions', {
+      const response = await fetch('/api/questions', {
         method: 'POST',
         body: formData
       });
@@ -215,16 +225,18 @@ export default function QnaWritePage() {
               </label>
               <div className="flex gap-4">
                 <div className="w-1/2">
-                  <CodeSelectWithEtc
-                    menuName="Q&A"
+                  <select
                     value={category1}
-                    onChange={handleCategoryChange}
-                    etcValue={category1Etc}
-                    onEtcChange={setCategory1Etc}
-                    placeholder="선택하세요"
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    hideEtcInput={true}
-                  />
+                  >
+                    <option value="">선택하세요</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 {category1 === '기타' && (
                   <div className="w-1/2">

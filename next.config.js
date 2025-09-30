@@ -27,10 +27,11 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8084';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://mot.erns.co.kr/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },

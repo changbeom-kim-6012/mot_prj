@@ -107,7 +107,7 @@ export default function AdminEditModal({
       formData.append('isPublic', questionForm.isPublic.toString());
       formData.append('contactInfo', questionForm.contactInfo);
 
-      const response = await fetch(`http://mot.erns.co.kr/api/questions/${question.id}`, {
+      const response = await fetch(`http://localhost:8084/api/questions/${question.id}`, {
         method: 'PUT',
         headers: {
           'User-Email': user?.email || '',
@@ -139,7 +139,7 @@ export default function AdminEditModal({
     setError(null);
 
     try {
-      const url = new URL(`http://mot.erns.co.kr/api/answers/${editingAnswerId}`);
+      const url = new URL(`http://localhost:8084/api/answers/${editingAnswerId}`);
       url.searchParams.append('userEmail', user?.email || '');
       url.searchParams.append('userRole', user?.role || '');
 
@@ -176,7 +176,7 @@ export default function AdminEditModal({
     setError(null);
 
     try {
-      const url = new URL(`http://mot.erns.co.kr/api/answers/${answerId}`);
+      const url = new URL(`http://localhost:8084/api/answers/${answerId}`);
       url.searchParams.append('userEmail', user?.email || '');
       url.searchParams.append('userRole', user?.role || '');
 
@@ -211,7 +211,7 @@ export default function AdminEditModal({
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://mot.erns.co.kr/api/library/qna/download/${filePath}`;
+    link.href = `http://localhost:8084/api/library/qna/download/${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
@@ -382,7 +382,7 @@ export default function AdminEditModal({
                 </div>
                 
                 {/* 첨부파일 */}
-                {question.filePath && (
+                {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
                   <div className="border-t border-gray-200 pt-4 mt-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h4>
                     <div className="flex items-center justify-between">

@@ -135,7 +135,7 @@ export default function Navigation() {
 
           {/* 우측 아이콘 영역 */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-700 hover:text-gray-900 transition-colors">
+            <button className="md:hidden">
               <FiSearch className="w-5 h-5" />
             </button>
             
@@ -225,7 +225,7 @@ export default function Navigation() {
                   return;
                 }
                 try {
-                  const res = await fetch(`http://mot.erns.co.kr/api/users/${user.id}/password`, {
+                  const res = await fetch(`/api/users/${user.id}/password`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ currentPassword, newPassword }),

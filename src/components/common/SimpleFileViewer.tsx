@@ -21,7 +21,7 @@ export default function SimpleFileViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://mot.erns.co.kr';
+    const baseUrl = 'http://localhost:8084';
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';

@@ -64,7 +64,7 @@ export default function AnswerList({
       console.log('답변 삭제 요청 시작:', answerId);
       console.log('사용자 정보:', user?.email, user?.role);
       
-      const response = await axios.delete(`http://mot.erns.co.kr/api/answers/${answerId}`, {
+      const response = await axios.delete(`http://localhost:8084/api/answers/${answerId}`, {
         params: {
           userEmail: user?.email,
           userRole: user?.role
@@ -114,7 +114,7 @@ export default function AnswerList({
       console.log('답변 수정 요청:', answerId);
       console.log('사용자 정보:', user?.email, user?.role);
       
-      await axios.put(`http://mot.erns.co.kr/api/answers/${answerId}`, {
+      await axios.put(`http://localhost:8084/api/answers/${answerId}`, {
         content: editContent
       }, {
         params: {

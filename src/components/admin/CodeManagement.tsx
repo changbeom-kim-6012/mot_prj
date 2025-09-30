@@ -17,7 +17,7 @@ type CommonCode = {
   children?: CommonCode[];
 };
 
-const MENU_OPTIONS = ['Library', 'Learning', 'Q&A', 'Agora', 'Community'];
+const MENU_OPTIONS = ['Library', 'Learning', 'Q&A', 'Dialogue', 'Agora'];
 
 export default function CodeManagement() {
   const [codes, setCodes] = useState<CommonCode[]>([]);

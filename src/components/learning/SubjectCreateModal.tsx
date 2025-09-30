@@ -129,7 +129,7 @@ export default function SubjectCreateModal({
         console.log(key, ':', value);
       }
 
-      const response = await fetch('http://mot.erns.co.kr/api/subjects', {
+      const response = await fetch('http://localhost:8084/api/subjects', {
         method: 'POST',
         // Content-Type 헤더를 명시하지 않아 브라우저가 자동으로 multipart/form-data 설정
         body: formDataToSend
@@ -456,19 +456,6 @@ export default function SubjectCreateModal({
                       </option>
                     ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const select = document.querySelector('select') as HTMLSelectElement;
-                    if (select && select.value) {
-                      handleProgramToggle(select.value);
-                      select.value = '';
-                    }
-                  }}
-                  className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                >
-                  추가
-                </button>
               </div>
 
                              {/* 선택된 프로그램 리스트 */}

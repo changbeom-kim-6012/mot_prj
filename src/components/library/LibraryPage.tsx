@@ -81,7 +81,7 @@ export default function LibraryPage() {
 
   // 카테고리 불러오기
   useEffect(() => {
-    fetch('http://mot.erns.co.kr/api/codes/menu/Library/details')
+    fetch('http://localhost:8084/api/codes/menu/Library/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -98,7 +98,7 @@ export default function LibraryPage() {
 
   const fetchLibraryItems = async () => {
     try {
-      const response = await fetch('http://mot.erns.co.kr/api/library');
+      const response = await fetch('http://localhost:8084/api/library');
       if (response.ok) {
         const data = await response.json();
         
@@ -131,6 +131,7 @@ export default function LibraryPage() {
     const filtered = libraryItems.filter(item => {
       const matchesSearch = searchTerm.trim() === '' || 
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description.toLowerCase().includes(searchTerm.toLowerCase());
       
       // 카테고리 필터링 로직 개선
@@ -156,7 +157,7 @@ export default function LibraryPage() {
     const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://mot.erns.co.kr/api/library/view/${encodedPath}`;
+    const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
     
     console.log('=== 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);
@@ -213,7 +214,7 @@ export default function LibraryPage() {
     }
 
     try {
-      const response = await fetch(`http://mot.erns.co.kr/api/library/${item.id}`, {
+      const response = await fetch(`http://localhost:8084/api/library/${item.id}`, {
         method: 'DELETE',
       });
 
@@ -382,6 +383,11 @@ export default function LibraryPage() {
                   placeholder="자료 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch(e);
+                    }
+                  }}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -528,7 +534,7 @@ export default function LibraryPage() {
                    <label className="block text-base font-bold text-gray-700 mb-2">설명</label>
                    <div className="pl-4">
                      <div className="bg-gray-50 p-4 rounded-lg">
-                       <p className="text-base text-gray-900 whitespace-pre-wrap leading-relaxed">{selectedItem.description}</p>
+                       <p className="text-base text-gray-900 whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">{selectedItem.description}</p>
                      </div>
                    </div>
                  </div>
@@ -576,7 +582,7 @@ export default function LibraryPage() {
                                      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                        return '%' + c.charCodeAt(0).toString(16);
                                      });
-                                     const fileUrl = `http://mot.erns.co.kr/api/library/view/${encodedPath}`;
+                                     const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
                                      setViewingFile({ fileName: fileName.trim(), fileUrl });
                                      setViewModalOpen(true);
                                    } : undefined}
@@ -599,7 +605,7 @@ export default function LibraryPage() {
                                        const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                          return '%' + c.charCodeAt(0).toString(16);
                                        });
-                                       window.open(`http://mot.erns.co.kr/api/library/download/${encodedPath}`, '_blank');
+                                       window.open(`http://localhost:8084/api/library/download/${encodedPath}`, '_blank');
                                      } : undefined}
                                      disabled={!isAuthenticated || !user}
                                      className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${

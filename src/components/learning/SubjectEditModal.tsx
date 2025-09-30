@@ -167,7 +167,7 @@ export default function SubjectEditModal({
         formDataToSend.append('curriculumFile', curriculumFile);
       }
 
-      const response = await fetch(`http://mot.erns.co.kr/api/subjects/${subject.id}/with-file`, {
+      const response = await fetch(`http://localhost:8084/api/subjects/${subject.id}/with-file`, {
         method: 'PUT',
         body: formDataToSend
       });
@@ -207,7 +207,7 @@ export default function SubjectEditModal({
     }
 
     try {
-      const response = await fetch(`http://mot.erns.co.kr/api/subjects/${subject.id}`, {
+      const response = await fetch(`http://localhost:8084/api/subjects/${subject.id}`, {
         method: 'DELETE',
       });
 
@@ -277,7 +277,7 @@ export default function SubjectEditModal({
         return '%' + c.charCodeAt(0).toString(16);
       });
       
-      const fileUrl = `http://mot.erns.co.kr/api/library/view/${encodedPath}`;
+      const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
       
       setViewingFile({ fileName, fileUrl });
       setViewModalOpen(true);
@@ -559,22 +559,6 @@ export default function SubjectEditModal({
                     </option>
                   ))}
               </select>
-              <button
-                type="button"
-                onClick={() => {
-                  const select = document.querySelector('select') as HTMLSelectElement;
-                  if (select && select.value) {
-                    handleProgramToggle(select.value);
-                    select.value = '';
-                  }
-                }}
-                disabled={!isAdmin}
-                className={`px-4 py-3 text-white rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  isAdmin ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-400 cursor-not-allowed'
-                }`}
-              >
-                추가
-              </button>
             </div>
 
             {/* 선택된 프로그램 리스트 */}
