@@ -500,7 +500,7 @@ export default function SubjectEditModal({
               )}
               
               {/* 기존 파일 */}
-              {!curriculumFile && subject.curriculumFileName && (
+              {!curriculumFile && subject.curriculumFileName && subject.curriculumFileName !== '[NULL]' && (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600">
                     현재: {subject.curriculumFileName}

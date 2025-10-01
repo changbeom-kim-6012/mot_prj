@@ -901,7 +901,7 @@ export default function QnaPage() {
                     </div>
 
                     {/* 첨부파일 */}
-                    {selectedQuestion.filePath && (
+                    {selectedQuestion.filePath && selectedQuestion.filePath !== '[NULL]' && (
                       <div className="border-t border-gray-200 pt-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
                         <div className="flex items-center justify-between">
