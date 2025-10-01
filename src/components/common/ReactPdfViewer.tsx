@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { FiX, FiDownload, FiZoomIn, FiZoomOut, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { getApiUrl } from '@/config/api';
 
 // PDF.js 워커 설정
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -28,7 +29,7 @@ export default function ReactPdfViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://localhost:8084';
+    const baseUrl = getApiUrl('');
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';

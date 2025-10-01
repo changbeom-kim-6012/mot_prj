@@ -6,6 +6,7 @@ const path = require('path');
 // 환경별 API URL 설정
 const environments = {
   local: 'http://localhost:8084',
+  dev: 'http://192.168.0.101:8084',
   staging: 'http://www.motclub.co.kr',
   production: 'http://www.motclub.co.kr'
 };
@@ -16,7 +17,7 @@ const apiUrl = environments[env];
 
 if (!apiUrl) {
   console.error(`❌ 지원하지 않는 환경: ${env}`);
-  console.log('사용 가능한 환경: local, staging, production');
+  console.log('사용 가능한 환경: local, dev, staging, production');
   process.exit(1);
 }
 

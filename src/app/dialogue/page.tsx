@@ -6,6 +6,7 @@ import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, Fi
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
+import { getApiUrl } from '@/config/api';
 
 interface DialogueRoom {
   id: number;
@@ -60,7 +61,7 @@ export default function DialoguePage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8084/api/dialogue/messages/${messageId}`, {
+      const response = await fetch(`getApiUrl('/api/dialogue/')messages/${messageId}`, {
         method: 'DELETE',
         headers: {
           'User-Email': user?.email || '',
@@ -394,7 +395,7 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      const response = await fetch(`http://localhost:8084/api/dialogue/rooms/${selectedRoom.id}/status`, {
+      const response = await fetch(`getApiUrl('/api/dialogue/')rooms/${selectedRoom.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -432,7 +433,7 @@ export default function DialoguePage() {
     if (!selectedRoom) return;
     
     try {
-      const response = await fetch(`http://localhost:8084/api/dialogue/rooms/${selectedRoom.id}/public`, {
+      const response = await fetch(`getApiUrl('/api/dialogue/')rooms/${selectedRoom.id}/public`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -477,7 +478,7 @@ export default function DialoguePage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8084/api/dialogue/rooms/${selectedRoom.id}`, {
+      const response = await fetch(`getApiUrl('/api/dialogue/')rooms/${selectedRoom.id}`, {
         method: 'DELETE',
       });
 

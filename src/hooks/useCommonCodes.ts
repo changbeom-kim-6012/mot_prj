@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '@/config/api';
 
 export interface CommonCode {
   id: number;
@@ -26,8 +27,8 @@ export const useCommonCodes = (menuName: string) => {
       setError(null);
       
       const [codesResponse, etcResponse] = await Promise.all([
-        fetch(`http://localhost:8084/api/codes/menu/${menu}/details`),
-        fetch(`http://localhost:8084/api/codes/menu/${menu}/has-etc`)
+        fetch(`getApiUrl('/api/codes/menu/')${menu}/details`),
+        fetch(`getApiUrl('/api/codes/menu/')${menu}/has-etc`)
       ]);
       
       if (!codesResponse.ok || !etcResponse.ok) {

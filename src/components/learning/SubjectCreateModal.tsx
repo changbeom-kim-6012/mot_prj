@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiSave, FiAlertCircle } from 'react-icons/fi';
+import { getApiUrl } from '@/config/api';
 
 interface SubjectCreateModalProps {
   isOpen: boolean;
@@ -129,7 +130,7 @@ export default function SubjectCreateModal({
         console.log(key, ':', value);
       }
 
-      const response = await fetch('http://localhost:8084/api/subjects', {
+      const response = await fetch(getApiUrl('/api/subjects'), {
         method: 'POST',
         // Content-Type 헤더를 명시하지 않아 브라우저가 자동으로 multipart/form-data 설정
         body: formDataToSend

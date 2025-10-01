@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { getApiUrl } from '@/config/api';
 
 export default function EditNewsPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function EditNewsPage() {
 
   const fetchNewsData = async () => {
     try {
-      const response = await fetch(`http://localhost:8084/api/news/${id}`);
+      const response = await fetch(`getApiUrl('/api/news/')${id}`);
       if (response.ok) {
         const data = await response.json();
         setTitle(data.title || '');
@@ -38,7 +39,7 @@ export default function EditNewsPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch(`http://localhost:8084/api/news/${id}`, {
+      const response = await fetch(`getApiUrl('/api/news/')${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -27,7 +27,32 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
-    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8084';
+    // 환경별 API URL 설정
+    let apiUrl;
+    
+    // 환경 변수 우선순위: API_URL > NEXT_PUBLIC_API_URL > 기본값
+    if (process.env.API_URL) {
+      apiUrl = process.env.API_URL;
+    } else if (process.env.NEXT_PUBLIC_API_URL) {
+      apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      // 환경 변수가 없을 때 NODE_ENV 기반으로 설정
+      const nodeEnv = process.env.NODE_ENV;
+      if (nodeEnv === 'production') {
+        apiUrl = 'http://www.motclub.co.kr';
+      } else {
+        // development 또는 기타 환경에서는 localhost 사용
+        apiUrl = 'http://localhost:8084';
+      }
+    }
+    
+    console.log('=== API URL 설정 ===');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('API_URL:', process.env.API_URL);
+    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('최종 API URL:', apiUrl);
+    console.log('==================');
+    
     return [
       {
         source: '/api/:path*',

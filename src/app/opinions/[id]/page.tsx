@@ -8,6 +8,7 @@ import { FiDownload, FiEye, FiArrowLeft, FiX, FiFileText, FiList, FiUser, FiCale
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import FileViewer from '@/components/common/FileViewer';
+import { getApiUrl } from '@/config/api';
 
 interface Article {
   id: number;
@@ -58,7 +59,7 @@ export default function OpinionDetailPage() {
     
     console.log('파일 조회 요청:', { fileName, filePath, storedFileName, encodedFileName });
     
-    const fileUrl = `http://localhost:8084/api/attachments/view/${encodedFileName}`;
+    const fileUrl = getApiUrl(`/api/attachments/view/${encodedFileName}`);
     setSelectedFile({ url: fileUrl, name: fileName.trim() });
   };
 
@@ -70,7 +71,7 @@ export default function OpinionDetailPage() {
     async function fetchDetail() {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:8084/api/opinions/${articleId}`);
+        const res = await axios.get(getApiUrl(`/api/opinions/${articleId}`));
         const articleData = res.data;
         
         // 등록승인 또는 등록대기 상태의 기고만 표시
@@ -82,7 +83,7 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attRes = await axios.get('http://localhost:8084/api/attachments', {
+        const attRes = await axios.get(getApiUrl('/api/attachments'), {
           params: { refTable: 'opinions', refId: articleId }
         });
         setAttachments(attRes.data);
@@ -213,7 +214,7 @@ export default function OpinionDetailPage() {
                            const storedFileName = pathParts[pathParts.length - 1];
                            
                            const encodedFileName = encodeURIComponent(storedFileName);
-                           window.open(`http://localhost:8084/api/attachments/download/${encodedFileName}`, '_blank');
+                           window.open(getApiUrl(`/api/attachments/download/${encodedFileName}`), '_blank');
                          }}
                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                        >

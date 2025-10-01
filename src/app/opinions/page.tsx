@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import FileViewer from '@/components/common/FileViewer';
+import { getApiUrl } from '@/config/api';
 
 interface Article {
   id: number;
@@ -55,11 +56,11 @@ export default function OpinionsPage() {
       setLoading(true);
       try {
         console.log('Fetching opinions from API...');
-        console.log('Request URL:', 'http://localhost:8084/api/opinions');
+        console.log('Request URL:', getApiUrl('/api/opinions'));
         console.log('Current origin:', window.location.origin);
         console.log('Auth state:', { isAuthenticated, user: user?.email });
         
-        const res = await axios.get('http://localhost:8084/api/opinions', {
+        const res = await axios.get(getApiUrl('/api/opinions'), {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -89,7 +90,7 @@ export default function OpinionsPage() {
         // 각 기고의 첨부파일 불러오기
         const attachmentPromises = filteredArticles.map(async (article: Article) => {
           try {
-            const attachmentRes = await axios.get(`http://localhost:8084/api/attachments`, {
+            const attachmentRes = await axios.get(getApiUrl(`/api/attachments`), {
               params: {
                 refTable: 'opinions',
                 refId: article.id
@@ -128,7 +129,7 @@ export default function OpinionsPage() {
   // Agora 카테고리 불러오기
   useEffect(() => {
     console.log('Fetching categories from API...');
-    fetch('http://localhost:8084/api/codes/agora-details', {
+    fetch(getApiUrl('/api/codes/agora-details'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -238,7 +239,7 @@ export default function OpinionsPage() {
     const storedFileName = pathParts[pathParts.length - 1];
     
     const encodedFileName = encodeURIComponent(storedFileName);
-    const fileUrl = `http://localhost:8084/api/attachments/view/${encodedFileName}`;
+    const fileUrl = getApiUrl(`/api/attachments/view/${encodedFileName}`);
     setSelectedFile({ url: fileUrl, name: fileName });
   };
 

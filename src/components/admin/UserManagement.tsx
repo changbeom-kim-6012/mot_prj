@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '@/config/api';
 
 // 날짜 포맷팅 함수 (yy.mm.dd 형식)
 const formatDate = (dateString: string | null | undefined): string => {
@@ -60,7 +61,7 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('http://localhost:8084/api/users');
+        const response = await fetch(getApiUrl('/api/users'));
         if (!response.ok) {
           throw new Error('사용자 목록을 불러오는데 실패했습니다.');
         }
@@ -109,7 +110,7 @@ export default function UserManagement() {
     if (!editingUser) return;
 
     try {
-      const response = await fetch(`http://localhost:8084/api/users/${userId}`, {
+      const response = await fetch(`getApiUrl('/api/users')/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingUser),
@@ -144,7 +145,7 @@ export default function UserManagement() {
     // 비밀번호는 항상 '12345'로 자동 설정
     const password = '12345';
     try {
-      const response = await fetch('http://localhost:8084/api/users', {
+      const response = await fetch(getApiUrl('/api/users'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...addingUser, password }),
@@ -183,7 +184,7 @@ export default function UserManagement() {
     // 비밀번호는 항상 '12345'로 자동 설정
     const usersToAdd = bulkUsers.map(u => ({ ...u, password: '12345' }));
     try {
-      const response = await fetch('http://localhost:8084/api/users/bulk', {
+      const response = await fetch(getApiUrl('/api/users/bulk'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(usersToAdd),
@@ -208,7 +209,7 @@ export default function UserManagement() {
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const response = await fetch(`http://localhost:8084/api/users/${userId}`, {
+      const response = await fetch(`getApiUrl('/api/users')/${userId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('회원 삭제에 실패했습니다.');
@@ -222,14 +223,14 @@ export default function UserManagement() {
   const handleUpdateCreatedAt = async () => {
     if (!window.confirm('가입일이 없는 사용자들의 가입일을 오늘 날짜로 업데이트하시겠습니까?')) return;
     try {
-      const response = await fetch('http://localhost:8084/api/users/update-created-at', {
+      const response = await fetch(getApiUrl('/api/users/update-created-at'), {
         method: 'POST',
       });
       if (!response.ok) throw new Error('가입일 업데이트에 실패했습니다.');
       const result = await response.json();
       alert(result.message);
       // 사용자 목록 새로고침
-      const usersResponse = await fetch('http://localhost:8084/api/users');
+      const usersResponse = await fetch(getApiUrl('/api/users'));
       if (usersResponse.ok) {
         const data = await usersResponse.json();
         setUsers(data);

@@ -8,6 +8,7 @@ import FileViewer from '@/components/common/FileViewer';
 import RegisterLibraryItemForm from '@/components/library/RegisterLibraryItemForm';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
+import { getApiUrl } from '@/config/api';
 
 interface LibraryItem {
   id: number;
@@ -81,7 +82,7 @@ export default function LibraryPage() {
 
   // 카테고리 불러오기
   useEffect(() => {
-    fetch('http://localhost:8084/api/codes/menu/Library/details')
+    fetch(getApiUrl('/api/codes/menu/Library/details'))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -98,7 +99,7 @@ export default function LibraryPage() {
 
   const fetchLibraryItems = async () => {
     try {
-      const response = await fetch('http://localhost:8084/api/library');
+      const response = await fetch(getApiUrl('/api/library'));
       if (response.ok) {
         const data = await response.json();
         
@@ -157,7 +158,7 @@ export default function LibraryPage() {
     const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
+    const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
     
     console.log('=== 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);
@@ -214,7 +215,7 @@ export default function LibraryPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8084/api/library/${item.id}`, {
+      const response = await fetch(getApiUrl(`/api/library/${item.id}`), {
         method: 'DELETE',
       });
 
@@ -385,7 +386,7 @@ export default function LibraryPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleSearch(e);
+                      handleSearch();
                     }
                   }}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -582,7 +583,7 @@ export default function LibraryPage() {
                                      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                        return '%' + c.charCodeAt(0).toString(16);
                                      });
-                                     const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
+                                     const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
                                      setViewingFile({ fileName: fileName.trim(), fileUrl });
                                      setViewModalOpen(true);
                                    } : undefined}
@@ -605,7 +606,7 @@ export default function LibraryPage() {
                                        const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
                                          return '%' + c.charCodeAt(0).toString(16);
                                        });
-                                       window.open(`http://localhost:8084/api/library/download/${encodedPath}`, '_blank');
+                                       window.open(getApiUrl(`/api/library/download/${encodedPath}`), '_blank');
                                      } : undefined}
                                      disabled={!isAuthenticated || !user}
                                      className={`inline-flex items-center px-2 py-1 border text-xs font-medium rounded ${

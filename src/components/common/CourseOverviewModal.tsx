@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FiX, FiArrowRight, FiBookOpen, FiSettings, FiUsers, FiTrendingUp, FiTarget, FiZap, FiDollarSign, FiDatabase } from 'react-icons/fi';
 import PDFViewerModal from './PDFViewerModal';
+import { getApiUrl } from '@/config/api';
 
 interface CourseOverviewModalProps {
   isOpen: boolean;
@@ -152,7 +153,7 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                  <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
                  <button
                    onClick={() => handlePdfViewerOpen(
-                     'http://localhost:8084/api/library/view/MOT%20교육과정%20Overview.pdf',
+                     getApiUrl('/api/library/view/MOT%20교육과정%20Overview.pdf'),
                      'MOT 교육과정 Overview'
                    )}
                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"

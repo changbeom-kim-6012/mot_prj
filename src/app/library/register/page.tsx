@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiSave, FiArrowLeft, FiUpload, FiPaperclip, FiX, FiEye, FiDownload } from 'react-icons/fi';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
+import { getApiUrl } from '@/config/api';
 
 interface LibraryItem {
   id: number;
@@ -63,7 +64,7 @@ export default function RegisterLibraryItemPage() {
 
   const fetchLibraryItem = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:8084/api/library/${id}`);
+      const response = await fetch(`getApiUrl('/api/library')/${id}`);
       if (response.ok) {
         const editItem: LibraryItem = await response.json();
         
@@ -223,13 +224,13 @@ export default function RegisterLibraryItemPage() {
 
       if (editId) {
         // 수정(UPDATE)
-        response = await fetch(`http://localhost:8084/api/library/${editId}`, {
+        response = await fetch(`getApiUrl('/api/library')/${editId}`, {
           method: 'PUT',
           body: formData,
         });
       } else {
         // 신규 등록(CREATE)
-        response = await fetch('http://localhost:8084/api/library', {
+        response = await fetch(getApiUrl('/api/library'), {
         method: 'POST',
         body: formData,
       });
@@ -394,7 +395,7 @@ export default function RegisterLibraryItemPage() {
                                 const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                   return '%' + c.charCodeAt(0).toString(16);
                                 });
-                                const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
+                                const fileUrl = `getApiUrl('/api/library')/view/${encodedPath}`;
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
@@ -408,7 +409,7 @@ export default function RegisterLibraryItemPage() {
                                   const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                     return '%' + c.charCodeAt(0).toString(16);
                                   });
-                                  window.open(`http://localhost:8084/api/library/download/${encodedPath}`, '_blank');
+                                  window.open(`getApiUrl('/api/library')/download/${encodedPath}`, '_blank');
                                 }}
                                 className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                               >
@@ -464,7 +465,7 @@ export default function RegisterLibraryItemPage() {
                                 const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                   return '%' + c.charCodeAt(0).toString(16);
                                 });
-                                const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
+                                const fileUrl = `getApiUrl('/api/library')/view/${encodedPath}`;
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
@@ -478,7 +479,7 @@ export default function RegisterLibraryItemPage() {
                                   const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
                                     return '%' + c.charCodeAt(0).toString(16);
                                   });
-                                  window.open(`http://localhost:8084/api/library/download/${encodedPath}`, '_blank');
+                                  window.open(`getApiUrl('/api/library')/download/${encodedPath}`, '_blank');
                                 }}
                                 className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                               >

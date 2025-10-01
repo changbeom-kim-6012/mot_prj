@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from '@/components/Navigation';
+import { getApiUrl } from '@/config/api';
 
 const ResetPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ const ResetPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8084/api/users/reset-password", {
+      const res = await fetch("getApiUrl('/api/users/reset-password')", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, newPassword: password })

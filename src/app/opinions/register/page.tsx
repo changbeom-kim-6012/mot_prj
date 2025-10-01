@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
 import QuillEditor from '@/components/common/QuillEditor';
+import { getApiUrl } from '@/config/api';
 
 interface FileWithType {
   file: File;
@@ -79,7 +80,7 @@ export default function OpinionRegisterPage() {
     if (isEditMode && editId) {
       const fetchArticle = async () => {
         try {
-          const response = await axios.get(`http://localhost:8084/api/opinions/${editId}`);
+          const response = await axios.get(`getApiUrl('/api/opinions')/${editId}`);
           const article = response.data;
           
           setFormData({
@@ -95,7 +96,7 @@ export default function OpinionRegisterPage() {
 
           // 기존 첨부파일 불러오기
           try {
-            const attachmentsResponse = await axios.get(`http://localhost:8084/api/attachments?refTable=opinions&refId=${editId}`);
+            const attachmentsResponse = await axios.get(`getApiUrl('/api/attachments')?refTable=opinions&refId=${editId}`);
             const attachments = attachmentsResponse.data.map((att: any) => ({
               id: att.id,
               fileName: att.fileName,
@@ -140,7 +141,7 @@ export default function OpinionRegisterPage() {
 
   const removeExistingAttachment = async (attachmentId: number) => {
     try {
-      await axios.delete(`http://localhost:8084/api/attachments/${attachmentId}`);
+      await axios.delete(`getApiUrl('/api/attachments')/${attachmentId}`);
       setExistingAttachments(prev => prev.filter(att => att.id !== attachmentId));
       alert('첨부파일이 삭제되었습니다.');
     } catch (error) {
@@ -165,7 +166,7 @@ export default function OpinionRegisterPage() {
       const newType = currentType === 'view-only' ? 'downloadable' : 'view-only';
       const note = newType === 'downloadable' ? 'Opinion 첨부파일 (다운로드 가능)' : 'Opinion 첨부파일 (보기만 가능)';
       
-      await axios.put(`http://localhost:8084/api/attachments/${attachmentId}`, {
+      await axios.put(`getApiUrl('/api/attachments')/${attachmentId}`, {
         note: note
       });
       
@@ -217,7 +218,7 @@ export default function OpinionRegisterPage() {
       
       if (isEditMode && editId) {
         // Edit 모드: 기존 기고 수정
-        const res = await axios.put(`http://localhost:8084/api/opinions/${editId}`, {
+        const res = await axios.put(`getApiUrl('/api/opinions')/${editId}`, {
           title: formData.title,
           authorName: formData.authorName,
           abstractText: formData.abstractText,
@@ -230,7 +231,7 @@ export default function OpinionRegisterPage() {
         opinionId = editId;
       } else {
         // 새 기고 등록
-        const res = await axios.post('http://localhost:8084/api/opinions', {
+        const res = await axios.post(getApiUrl('/api/opinions'), {
           title: formData.title,
           authorName: formData.authorName,
           abstractText: formData.abstractText,
@@ -252,7 +253,7 @@ export default function OpinionRegisterPage() {
         form.append('uploadedBy', user?.email || '');
         form.append('note', 'Opinion 첨부파일');
         
-        await axios.post('http://localhost:8084/api/attachments', form, {
+        await axios.post(getApiUrl('/api/attachments'), form, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -275,7 +276,7 @@ export default function OpinionRegisterPage() {
       
       if (isEditMode && editId) {
         // Edit 모드: 기존 기고 임시저장
-        const res = await axios.put(`http://localhost:8084/api/opinions/${editId}`, {
+        const res = await axios.put(`getApiUrl('/api/opinions')/${editId}`, {
           title: formData.title,
           authorName: formData.authorName,
           abstractText: formData.abstractText,
@@ -288,7 +289,7 @@ export default function OpinionRegisterPage() {
         opinionId = editId;
       } else {
         // 새 기고 임시저장
-        const res = await axios.post('http://localhost:8084/api/opinions', {
+        const res = await axios.post(getApiUrl('/api/opinions'), {
           title: formData.title,
           authorName: formData.authorName,
           abstractText: formData.abstractText,
@@ -310,7 +311,7 @@ export default function OpinionRegisterPage() {
         form.append('uploadedBy', user?.email || '');
         form.append('note', 'Opinion 첨부파일');
         
-        await axios.post('http://localhost:8084/api/attachments', form, {
+        await axios.post(getApiUrl('/api/attachments'), form, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -341,13 +342,13 @@ export default function OpinionRegisterPage() {
 
     try {
       // 기고 삭제
-      await axios.delete(`http://localhost:8084/api/opinions/${editId}`);
+      await axios.delete(`getApiUrl('/api/opinions')/${editId}`);
       
       // 첨부파일도 함께 삭제 (서버에서 cascade로 처리되거나 별도 삭제)
       if (existingAttachments.length > 0) {
         for (const attachment of existingAttachments) {
           try {
-            await axios.delete(`http://localhost:8084/api/attachments/${attachment.id}`);
+            await axios.delete(`getApiUrl('/api/attachments')/${attachment.id}`);
           } catch (error) {
             console.error('첨부파일 삭제 실패:', error);
           }

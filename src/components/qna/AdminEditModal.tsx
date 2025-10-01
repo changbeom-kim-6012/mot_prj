@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiX, FiSave, FiTrash2, FiEdit3, FiMessageSquare, FiUser, FiCalendar, FiEye, FiDownload } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
+import { getApiUrl } from '@/config/api';
 
 interface Question {
   id: number;
@@ -107,7 +108,7 @@ export default function AdminEditModal({
       formData.append('isPublic', questionForm.isPublic.toString());
       formData.append('contactInfo', questionForm.contactInfo);
 
-      const response = await fetch(`http://localhost:8084/api/questions/${question.id}`, {
+      const response = await fetch(`getApiUrl('/api/questions/')${question.id}`, {
         method: 'PUT',
         headers: {
           'User-Email': user?.email || '',
@@ -139,7 +140,7 @@ export default function AdminEditModal({
     setError(null);
 
     try {
-      const url = new URL(`http://localhost:8084/api/answers/${editingAnswerId}`);
+      const url = new URL(`getApiUrl('/api/answers/')${editingAnswerId}`);
       url.searchParams.append('userEmail', user?.email || '');
       url.searchParams.append('userRole', user?.role || '');
 
@@ -176,7 +177,7 @@ export default function AdminEditModal({
     setError(null);
 
     try {
-      const url = new URL(`http://localhost:8084/api/answers/${answerId}`);
+      const url = new URL(`getApiUrl('/api/answers/')${answerId}`);
       url.searchParams.append('userEmail', user?.email || '');
       url.searchParams.append('userRole', user?.role || '');
 
@@ -211,7 +212,7 @@ export default function AdminEditModal({
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `http://localhost:8084/api/library/qna/download/${filePath}`;
+    link.href = `getApiUrl('/api/library/qna/download/')${filePath}`;
     link.download = filePath;
     document.body.appendChild(link);
     link.click();

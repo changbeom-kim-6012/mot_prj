@@ -6,6 +6,7 @@ import { FiThumbsUp, FiCheck, FiEdit2, FiX, FiCheck as FiSave, FiTrash2 } from '
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { formatDate } from '@/utils/dateUtils';
+import { getApiUrl } from '@/config/api';
 
 interface AnswerListProps {
   answers: Answer[];
@@ -64,7 +65,7 @@ export default function AnswerList({
       console.log('답변 삭제 요청 시작:', answerId);
       console.log('사용자 정보:', user?.email, user?.role);
       
-      const response = await axios.delete(`http://localhost:8084/api/answers/${answerId}`, {
+      const response = await axios.delete(getApiUrl(`/api/answers/${answerId}`), {
         params: {
           userEmail: user?.email,
           userRole: user?.role
@@ -114,7 +115,7 @@ export default function AnswerList({
       console.log('답변 수정 요청:', answerId);
       console.log('사용자 정보:', user?.email, user?.role);
       
-      await axios.put(`http://localhost:8084/api/answers/${answerId}`, {
+      await axios.put(getApiUrl(`/api/answers/${answerId}`), {
         content: editContent
       }, {
         params: {

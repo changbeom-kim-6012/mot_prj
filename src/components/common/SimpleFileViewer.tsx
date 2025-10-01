@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FiX, FiEye, FiDownload } from 'react-icons/fi';
+import { getApiUrl } from '@/config/api';
 
 interface SimpleFileViewerProps {
   fileName: string;
@@ -21,7 +22,7 @@ export default function SimpleFileViewer({
 
   // API URL 생성
   const getFileUrl = () => {
-    const baseUrl = 'http://localhost:8084';
+    const baseUrl = getApiUrl('');
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';

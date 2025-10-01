@@ -130,21 +130,10 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
     }
   }, [numPages, scale, rotation]);
 
-  // 초기 스케일 계산 함수
+  // 초기 스케일 계산 함수 - 100%로 고정
   const calculateInitialScale = (pageWidth: number, pageHeight: number, currentRotation: number = 0) => {
-    const isRotated = currentRotation === 90 || currentRotation === 270;
-    const actualWidth = isRotated ? pageHeight : pageWidth;
-    const actualHeight = isRotated ? pageWidth : pageHeight;
-    
-    const screenWidth = window.innerWidth;
-    const modalWidth = screenWidth * 0.90;
-    const availableWidth = modalWidth - 40; // 여백 증가
-    
-    // 가로 너비에 맞춰 스케일 계산 (세로 스크롤 허용)
-    const widthScale = availableWidth / actualWidth;
-    const finalScale = Math.max(widthScale, 0.8); // 최소 스케일 0.8로 조정
-    
-    return finalScale;
+    // 항상 100% (1.0)로 고정
+    return 1.0;
   };
 
   // 자동 회전 계산 함수

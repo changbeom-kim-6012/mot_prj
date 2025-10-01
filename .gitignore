@@ -11,8 +11,8 @@ package-lock.json
 
 
 # 환경설정 파일
-.env.local
-.env.*.local
+#.env.local
+#.env.*.local
 # .env.development
 # .env.*.development
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiUsers, FiUserPlus, FiUserCheck, FiSearch, FiX, FiMail } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
+import { getApiUrl } from '@/config/api';
 
 interface CreateDialogueRoomForm {
   title: string;
@@ -162,7 +163,7 @@ export default function CreateDialoguePage() {
 
     try {
       // 백엔드 API로 회원 검증
-      const response = await fetch(`http://localhost:8084/api/users/email/${email}`);
+      const response = await fetch(`getApiUrl('/api/users/email/')${email}`);
       
       if (response.ok) {
         const userData = await response.json();

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
+import { getApiUrl } from '@/config/api';
 import { 
   FiBook, 
   FiUsers, 
@@ -41,7 +42,7 @@ export default function Home() {
   useEffect(() => {
     const fetchActiveNotices = async () => {
       try {
-        const response = await fetch('http://localhost:8084/api/notices/active');
+        const response = await fetch(getApiUrl('/api/notices/active'));
         if (response.ok) {
           const notices = await response.json();
           setActiveNotices(notices);
@@ -77,7 +78,7 @@ export default function Home() {
 
   const handleFileDownload = async (attachmentPath: string, attachmentName: string) => {
     try {
-      const response = await fetch(`http://localhost:8084/api/notices/download/${attachmentPath}`);
+      const response = await fetch(getApiUrl(`/api/notices/download/${attachmentPath}`));
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -98,7 +99,7 @@ export default function Home() {
   };
 
   const handleFileView = (attachmentPath: string, attachmentName: string) => {
-    const fileUrl = `http://localhost:8084/api/notices/download/${attachmentPath}`;
+    const fileUrl = getApiUrl(`/api/notices/download/${attachmentPath}`);
     setSelectedFile({ url: fileUrl, name: attachmentName });
   };
 

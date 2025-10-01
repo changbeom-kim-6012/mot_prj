@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FiMenu, FiX, FiUser, FiLogOut, FiKey, FiSearch } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 
@@ -9,6 +10,15 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const [showPwModal, setShowPwModal] = useState(false);
+  const pathname = usePathname();
+  
+  // 현재 경로가 메뉴와 일치하는지 확인하는 함수
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
 
   const handleLogout = () => {
     logout();
@@ -68,9 +78,9 @@ export default function Navigation() {
                 </>
               )}
 
-              <Link href="/en" className="hover:text-gray-900 transition-colors">
+              {/* <Link href="/en" className="hover:text-gray-900 transition-colors">
                 ENGLISH
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>
@@ -95,7 +105,11 @@ export default function Navigation() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="text-gray-900 hover:text-blue-600 px-4 py-2 text-lg font-medium transition-colors duration-200 relative"
+                    className={`px-4 py-2 text-lg font-medium transition-colors duration-200 relative ${
+                      isActive(item.href) 
+                        ? 'text-blue-600 bg-blue-50 rounded-md' 
+                        : 'text-gray-900 hover:text-blue-600'
+                    }`}
                   >
                     {item.name}
                     {index < navigation.length - 1 && (
@@ -122,7 +136,11 @@ export default function Navigation() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-900 hover:text-blue-600 px-4 py-2 text-lg font-medium transition-colors duration-200 relative"
+                  className={`px-4 py-2 text-lg font-medium transition-colors duration-200 relative ${
+                    isActive(item.href) 
+                      ? 'text-blue-600 bg-blue-50 rounded-md' 
+                      : 'text-gray-900 hover:text-blue-600'
+                  }`}
                 >
                   {item.name}
                   {index < navigation.length - 1 && (
@@ -167,7 +185,11 @@ export default function Navigation() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                    className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                      isActive(item.href) 
+                        ? 'text-blue-600 bg-blue-50' 
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
                     {item.name}
@@ -189,7 +211,11 @@ export default function Navigation() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                    isActive(item.href) 
+                      ? 'text-blue-600 bg-blue-50' 
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}

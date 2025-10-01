@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import FileViewer from '@/components/common/FileViewer';
+import { getApiUrl } from '@/config/api';
 
 interface TopicItem {
   subtitle: string;
@@ -135,7 +136,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
   const fetchMaterials = async (itemKey: string) => {
     try {
       const [courseId, sectionId, topicId, itemId] = itemKey.split('-');
-      const response = await fetch(`http://localhost:8084/api/course-materials?courseId=${courseId}&sectionId=${sectionId}&topicId=${topicId}&itemId=${itemId}`);
+      const response = await fetch(`getApiUrl('/api/course-materials')?courseId=${courseId}&sectionId=${sectionId}&topicId=${topicId}&itemId=${itemId}`);
       if (response.ok) {
         const data = await response.json();
         setMaterialsMap(prev => ({ ...prev, [itemKey]: data }));
@@ -223,7 +224,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
         formData.append('file', fileWithType.file);
         formData.append('fileType', fileWithType.fileType);
 
-        const response = await fetch('http://localhost:8084/api/course-materials', {
+        const response = await fetch(getApiUrl('/api/course-materials'), {
           method: 'POST',
           body: formData,
         });
@@ -254,7 +255,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     
     try {
-      const response = await fetch(`http://localhost:8084/api/course-materials/${materialId}`, {
+      const response = await fetch(`getApiUrl('/api/course-materials')/${materialId}`, {
         method: 'DELETE',
       });
       
@@ -271,7 +272,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
 
   const handleDownload = async (material: CourseMaterial) => {
     try {
-      const response = await fetch(`http://localhost:8084/api/course-materials/download/${material.id}`);
+      const response = await fetch(`getApiUrl('/api/course-materials')/download/${material.id}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -295,7 +296,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
     const encodedPath = encodeURIComponent(materialId.toString()).replace(/[!'()*]/g, function(c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
-    const fileUrl = `http://localhost:8084/api/course-materials/view/${encodedPath}`;
+    const fileUrl = `getApiUrl('/api/course-materials')/view/${encodedPath}`;
     
     console.log('=== Course 파일 보기 디버깅 ===');
     console.log('원본 fileName:', fileName);
@@ -787,7 +788,7 @@ export default function CourseDetailPage({ course }: CourseDetailPageProps) {
         {viewModalOpen && viewingFile && (
           <FileViewer
             fileName={viewingFile.fileName}
-            fileUrl={`http://localhost:8084/api/course-materials/view/${encodeURIComponent(viewingFile.filePath).replace(/[!'()*]/g, function(c) {
+            fileUrl={`getApiUrl('/api/course-materials')/view/${encodeURIComponent(viewingFile.filePath).replace(/[!'()*]/g, function(c) {
               return '%' + c.charCodeAt(0).toString(16);
             })}`}
             onClose={handleCloseViewModal}

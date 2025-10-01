@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiEye, FiCalendar, FiFileText, FiDownload, FiUpload, FiFile, FiX } from 'react-icons/fi';
 import FileViewer from '@/components/common/FileViewer';
 import { useAuth } from '@/context/AuthContext';
+import { getApiUrl } from '@/config/api';
 
 interface Notice {
   id: number;
@@ -57,7 +58,7 @@ export default function NoticeManagement() {
     try {
       console.log('=== 공지사항 조회 시작 ===');
       
-      const response = await fetch('http://localhost:8084/api/notices');
+      const response = await fetch(getApiUrl('/api/notices'));
       
       console.log('공지사항 조회 응답 상태:', response.status);
       
@@ -131,7 +132,7 @@ export default function NoticeManagement() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8084/api/notices/${id}`, {
+      const response = await fetch(`getApiUrl('/api/notices')/${id}`, {
         method: 'DELETE',
       });
 
@@ -221,8 +222,8 @@ export default function NoticeManagement() {
 
     try {
       const url = editingNotice 
-        ? `http://localhost:8084/api/notices/${editingNotice.id}`
-        : 'http://localhost:8084/api/notices';
+        ? getApiUrl(`/api/notices/${editingNotice.id}`)
+        : getApiUrl('/api/notices');
       
       const method = editingNotice ? 'PUT' : 'POST';
 
@@ -270,7 +271,7 @@ export default function NoticeManagement() {
 
   const handleFileDownload = async (attachmentPath: string, attachmentName: string) => {
     try {
-      const response = await fetch(`http://localhost:8084/api/notices/download/${attachmentPath}`);
+      const response = await fetch(`getApiUrl('/api/notices')/download/${attachmentPath}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -291,7 +292,7 @@ export default function NoticeManagement() {
   };
 
   const handleFileView = (attachmentPath: string, attachmentName: string) => {
-    const fileUrl = `http://localhost:8084/api/notices/download/${attachmentPath}`;
+    const fileUrl = `getApiUrl('/api/notices')/download/${attachmentPath}`;
     setSelectedFile({ url: fileUrl, name: attachmentName });
   };
 

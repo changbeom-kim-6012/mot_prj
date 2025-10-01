@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText, FiArrowRight, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
+import { getApiUrl } from '@/config/api';
 
 interface SubjectEditModalProps {
   isOpen: boolean;
@@ -91,6 +92,7 @@ export default function SubjectEditModal({
       console.log('hasFilePath:', !!subject.curriculumFilePath);
       console.log('isAuthenticated:', isAuthenticated);
       console.log('user:', user);
+      console.log('Subject.relatedProgramList:', subject.relatedProgramList);
       console.log('user.role:', user?.role);
       console.log('isAdmin:', isAdmin);
       console.log('curriculumFile 상태:', curriculumFile);
@@ -101,7 +103,7 @@ export default function SubjectEditModal({
         subjectDescription: subject.subjectDescription || '',
         subjectContent: subject.subjectContent || '',
         categoryId: subject.categoryId || 0,
-        selectedPrograms: []
+        selectedPrograms: subject.relatedProgramList || []
       });
       
       // curriculumFile 상태 초기화 (새 파일 선택 취소)
@@ -155,19 +157,33 @@ export default function SubjectEditModal({
     setErrors({});
 
     try {
+      console.log('=== Subject 수정 데이터 ===');
+      console.log('선택된 프로그램들:', formData.selectedPrograms);
+      console.log('전체 formData:', formData);
+      
       const formDataToSend = new FormData();
-      formDataToSend.append('subject', JSON.stringify({
+      
+      // 서버로 전송할 subject 데이터 구성 (selectedPrograms 필드 제외)
+      const subjectData = {
         subjectCode: formData.subjectCode,
         subjectDescription: formData.subjectDescription,
         subjectContent: formData.subjectContent,
-        categoryId: formData.categoryId
-      }));
+        categoryId: formData.categoryId,
+        relatedProgramList: formData.selectedPrograms
+      };
+      
+      formDataToSend.append('subject', JSON.stringify(subjectData));
+      
+      console.log('전송할 subject 데이터:', JSON.stringify(subjectData));
+      console.log('subjectData 객체:', subjectData);
+      console.log('selectedPrograms 값:', formData.selectedPrograms);
+      console.log('relatedProgramList 값:', subjectData.relatedProgramList);
 
       if (curriculumFile) {
         formDataToSend.append('curriculumFile', curriculumFile);
       }
 
-      const response = await fetch(`http://localhost:8084/api/subjects/${subject.id}/with-file`, {
+      const response = await fetch(getApiUrl(`/api/subjects/${subject.id}/with-file`), {
         method: 'PUT',
         body: formDataToSend
       });
@@ -207,7 +223,7 @@ export default function SubjectEditModal({
     }
 
     try {
-      const response = await fetch(`http://localhost:8084/api/subjects/${subject.id}`, {
+      const response = await fetch(getApiUrl(`/api/subjects/${subject.id}`), {
         method: 'DELETE',
       });
 
@@ -277,7 +293,7 @@ export default function SubjectEditModal({
         return '%' + c.charCodeAt(0).toString(16);
       });
       
-      const fileUrl = `http://localhost:8084/api/library/view/${encodedPath}`;
+      const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
       
       setViewingFile({ fileName, fileUrl });
       setViewModalOpen(true);
@@ -339,11 +355,11 @@ export default function SubjectEditModal({
             <h2 className="text-2xl font-bold text-gray-900">
               Subject {isAdmin ? '수정' : '조회'}
             </h2>
-            {!isAdmin && (
+            {/* {!isAdmin && (
               <p className="text-sm text-red-500 mt-1">
                 관리자 권한이 필요합니다. 수정 및 삭제는 관리자만 가능합니다.
               </p>
-            )}
+            )} */}
           </div>
           <button
             onClick={onClose}
