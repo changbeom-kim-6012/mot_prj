@@ -221,16 +221,15 @@ export default function QnaPage() {
     }
   };
 
-  const handleCategoryChange = async (categoryName: string) => {
+  const handleCategoryChange = (categoryName: string) => {
     console.log('카테고리 변경:', categoryName);
     console.log('사용 가능한 카테고리 목록:', categories);
     
-    // 빈 값이면 전체 목록 조회
+    // 빈 값이면 전체 목록으로 설정
     if (!categoryName || categoryName.trim() === '') {
-      console.log('빈 카테고리 선택, 전체 목록 조회');
+      console.log('빈 카테고리 선택');
       setSelectedCategory('');
       setSelectedCategoryId(null);
-      await fetchQuestionsByCategory(null);
       return;
     }
     
@@ -245,8 +244,7 @@ export default function QnaPage() {
     
     console.log('찾은 카테고리 ID:', categoryId);
     
-    // 카테고리별 DB 검색 (카테고리 ID로)
-    await fetchQuestionsByCategory(categoryId);
+    // 자동 검색 제거 - 검색 버튼이나 엔터키로만 검색
   };
 
   const fetchQuestionsByCategory = async (categoryId: number | null) => {
@@ -958,9 +956,7 @@ export default function QnaPage() {
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  
+                  </div>                  
 
                     {/* 답변 작성 버튼과 삭제 버튼 */}
                     <div className="flex justify-between items-center">

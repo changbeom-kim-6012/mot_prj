@@ -15,6 +15,8 @@ body {
     rgb(var(--background-start-rgb)) 0%,
     rgb(var(--background-end-rgb)) 100%
   );
+  /* 스크롤바 고정 - 화면이 밀리지 않도록 */
+  overflow-y: scroll;
 }
 
 @keyframes blob {
@@ -94,4 +96,28 @@ select {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 스크롤바 스타일링 - 화면 밀림 방지 */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+/* 웹킷 브라우저용 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

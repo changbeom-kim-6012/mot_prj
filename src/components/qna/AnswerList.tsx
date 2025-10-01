@@ -187,7 +187,7 @@ export default function AnswerList({
                 {/* 디버깅 정보 표시 */}
                 {user && (
                   <div className="text-xs text-gray-400">
-                    사용자: {user.email} | 권한: {user.role} | 관리자: {isAdmin() ? '예' : '아니오'}
+                    사용자: {user.email} {/* | 권한: {user.role} | 관리자: {isAdmin() ? '예' : '아니오'} */}
                   </div>
                 )}
               </div>
@@ -223,14 +223,14 @@ export default function AnswerList({
                 <div className="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">{answer.content}</div>
               )}
             </div>
-            <div className="flex flex-col items-center gap-2 ml-4">
+            {/* <div className="flex flex-col items-center gap-2 ml-4">
               <button
                 onClick={() => onVoteAnswer?.(answer.id.toString())}
                 className="flex flex-col items-center text-gray-500 hover:text-violet-600"
               >
                 <FiThumbsUp className="w-5 h-5" />
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       ))}

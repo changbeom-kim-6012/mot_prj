@@ -151,7 +151,7 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
              <div className="flex items-center justify-between p-6 border-b border-gray-200">
                <div className="flex items-center gap-4">
                  <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
-                 <button
+                 {/* <button
                    onClick={() => handlePdfViewerOpen(
                      getApiUrl('/api/library/view/MOT%20교육과정%20Overview.pdf'),
                      'MOT 교육과정 Overview'
@@ -160,7 +160,7 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                  >
                    <FiBookOpen className="w-4 h-4" />
                    PDF 보기
-                 </button>
+                 </button> */}
                </div>
                <button
                  onClick={onClose}

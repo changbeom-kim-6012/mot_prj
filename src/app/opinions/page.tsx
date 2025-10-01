@@ -50,6 +50,12 @@ export default function OpinionsPage() {
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [attachments, setAttachments] = useState<{ [key: number]: Attachment[] }>({});
   const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
+  
+  // 페이징 상태
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(10); // 기고는 10개씩 표시
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
     async function fetchArticles() {
@@ -85,6 +91,13 @@ export default function OpinionsPage() {
         
         setArticles(filteredArticles);
         setFilteredArticles(filteredArticles); // 최초 전체 목록
+        
+        // 초기 페이징 정보 설정
+        const totalPages = Math.ceil(filteredArticles.length / pageSize);
+        setTotalPages(totalPages);
+        setTotalElements(filteredArticles.length);
+        setCurrentPage(0);
+        
         setError(null);
         
         // 각 기고의 첨부파일 불러오기
@@ -121,10 +134,7 @@ export default function OpinionsPage() {
     fetchArticles();
   }, [isAuthenticated, user]); // 의존성 배열에 isAuthenticated와 user 추가
 
-  // 검색어나 카테고리가 변경될 때 자동으로 필터링 적용
-  useEffect(() => {
-    handleSearch();
-  }, [searchTerm, selectedCategory, isAuthenticated, user]);
+  // 자동 검색 제거 - 엔터키나 검색버튼 클릭 시에만 검색
 
   // Agora 카테고리 불러오기
   useEffect(() => {
@@ -182,6 +192,12 @@ export default function OpinionsPage() {
       return matchesSearch && matchesCategory;
     });
     setFilteredArticles(filtered);
+    
+    // 페이징 정보 업데이트
+    const totalPages = Math.ceil(filtered.length / pageSize);
+    setTotalPages(totalPages);
+    setTotalElements(filtered.length);
+    setCurrentPage(0); // 검색/필터링 시 첫 페이지로 이동
   };
 
   const years = ["2024", "2023", "2022", "2021"];
@@ -312,7 +328,7 @@ export default function OpinionsPage() {
             
             {/* 제목/키워드 선택, 단어검색, 검색 버튼을 중앙정렬 */}
             <div className="flex-1 flex justify-center items-center gap-4">
-              <div className="w-32">
+              {/* <div className="w-32">
                 <select 
                   className="w-full h-10 pl-3 pr-6 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   defaultValue="title"
@@ -321,12 +337,17 @@ export default function OpinionsPage() {
                     <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
-              </div>
+              </div> */}
               <div className="relative w-1/3">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
                   className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   placeholder="검색어를 입력하세요"
                 />
@@ -381,7 +402,13 @@ export default function OpinionsPage() {
             <div className="text-center text-red-500 py-12">{error}</div>
           ) : filteredArticles.length === 0 ? (
             <div className="text-center text-gray-400 py-12">등록된 Agora가 없습니다.</div>
-          ) : filteredArticles.map((article) => (
+          ) : (() => {
+            // 현재 페이지에 해당하는 기고만 표시
+            const startIndex = currentPage * pageSize;
+            const endIndex = startIndex + pageSize;
+            const currentPageArticles = filteredArticles.slice(startIndex, endIndex);
+            
+            return currentPageArticles.map((article) => (
             <motion.div
               key={article.id}
               variants={itemVariants}
@@ -500,8 +527,71 @@ export default function OpinionsPage() {
                   </div>
               </div>
             </motion.div>
-          ))}
+            ));
+          })()}
         </motion.div>
+        
+        {/* 페이징 컴포넌트 */}
+        {!loading && !error && totalPages > 0 && (
+          <div className="flex justify-center items-center space-x-2 mt-8">
+            {/* 이전 페이지 버튼 */}
+            {totalPages > 1 && (
+              <button
+                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+            )}
+
+            {/* 페이지 번호들 */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i;
+              } else if (currentPage < 3) {
+                pageNum = i;
+              } else if (currentPage >= totalPages - 3) {
+                pageNum = totalPages - 5 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                    currentPage === pageNum
+                      ? 'text-white bg-blue-600 border border-blue-600'
+                      : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum + 1}
+                </button>
+              );
+            })}
+
+            {/* 다음 페이지 버튼 */}
+            {totalPages > 1 && (
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
+                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 전체 결과 수 표시 */}
+        {!loading && !error && totalElements > 0 && (
+          <div className="text-center text-sm text-gray-500 mt-4">
+            총 {totalElements}개의 기고 중 {currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, totalElements)}번째
+          </div>
+        )}
       </div>
 
       {/* Abstract Modal */}

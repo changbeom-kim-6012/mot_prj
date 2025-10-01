@@ -223,8 +223,7 @@ export default function DialoguePage() {
 
   const handleStatusFilter = (status: string) => {
     setFilterStatus(status);
-    // 상태 필터 변경 시 즉시 검색 실행
-    performSearch(status, searchTerm);
+    // 자동 검색 제거 - 검색 버튼이나 엔터키로만 검색
   };
 
   // 실제 검색 로직을 별도 함수로 분리
