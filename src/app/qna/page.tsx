@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft, FiLock } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEye, FiMessageSquare, FiCalendar, FiUser, FiX, FiDownload, FiTrash2, FiArrowLeft, FiLock, FiFileText } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import AdminEditModal from '@/components/qna/AdminEditModal';
@@ -169,9 +169,18 @@ export default function QnaPage() {
       setLoading(true);
       console.log('=== 검색어로 Q&A 목록 조회 시작 ===');
       console.log('검색어:', keyword);
+      console.log('선택된 카테고리 ID:', selectedCategoryId);
       
-      const url = `/api/questions/category/${selectedCategoryId}?keyword=${keyword}&page=0&size=1000`;
-      console.log('검색 API URL:', url);
+      let url;
+      if (selectedCategoryId && selectedCategoryId > 0) {
+        // 특정 카테고리에서 검색
+        url = `/api/questions/category/${selectedCategoryId}?keyword=${encodeURIComponent(keyword)}&page=0&size=1000`;
+        console.log('카테고리별 검색 API URL:', url);
+      } else {
+        // 전체 검색
+        url = `/api/questions/search?keyword=${encodeURIComponent(keyword)}&page=0&size=1000`;
+        console.log('전체 검색 API URL:', url);
+      }
       
       const response = await fetch(url);
       console.log('API 응답 상태:', response.status, response.statusText);
@@ -192,11 +201,24 @@ export default function QnaPage() {
         
         console.log('처리된 검색 데이터:', processedData);
         
-        setAllQuestions(processedData);
-        setQuestions(processedData);
-        setFilteredQuestions(processedData);
-        setTotalElements(processedData.length);
-        setTotalPages(Math.ceil(processedData.length / pageSize));
+        // 클라이언트 사이드에서 추가 필터링 (정확한 검색어 매칭)
+        const keywordLower = keyword.toLowerCase();
+        const exactMatchData = processedData.filter((question: any) => {
+          const titleMatch = question.title.toLowerCase().includes(keywordLower);
+          const contentMatch = question.content.toLowerCase().includes(keywordLower);
+          const authorMatch = question.authorEmail.toLowerCase().includes(keywordLower);
+          return titleMatch || contentMatch || authorMatch;
+        });
+        
+        console.log('클라이언트 사이드 필터링 후 결과:', exactMatchData);
+        console.log('필터링 전 개수:', processedData.length);
+        console.log('필터링 후 개수:', exactMatchData.length);
+        
+        setAllQuestions(exactMatchData);
+        setQuestions(exactMatchData);
+        setFilteredQuestions(exactMatchData);
+        setTotalElements(exactMatchData.length);
+        setTotalPages(Math.ceil(exactMatchData.length / pageSize));
       } else {
         const errorText = await response.text();
         console.error('검색 실패:', response.status, response.statusText);
@@ -746,27 +768,64 @@ export default function QnaPage() {
                         }`}>
                           {question.isPublic ? '공개' : '비공개'}
                         </span>
+                        {/* 첨부파일 표시 */}
+                        {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-600 break-all overflow-wrap-break-word">{question.filePath}</span>
+                              <div className="relative group">
+                                <button
+                                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                                    isAuthenticated 
+                                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => {
+                                    if (isAuthenticated) {
+                                      handleFileDownload(question.filePath!);
+                                    }
+                                  }}
+                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
+                                  disabled={!isAuthenticated}
+                                >
+                                  {question.filePath?.toLowerCase().endsWith('.pdf') ? (
+                                    <FiFileText className="w-3 h-3" />
+                                  ) : (
+                                    <FiFileText className="w-3 h-3" />
+                                  )}
+                                  <span>파일다운로드</span>
+                                </button>
+                                
+                                {/* 툴팁 */}
+                                {!isAuthenticated && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    파일조회에는 로그인이 필요합니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                       </div>
                       
                       <button 
                         onClick={() => handleViewDetail(question)}
                         className="block w-full text-left"
                       >
-                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2 break-all overflow-wrap-break-word">
                           {question.title}
                         </h3>
                       </button>
                       
                       {/* 비공개 질문은 내용 숨김 */}
                       {question.isPublic ? (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2 break-all overflow-wrap-break-word">
                           {question.content}
                         </p>
                       ) : (
                         <div className="bg-gray-100 rounded-lg p-4 mb-4">
                           <div className="flex items-center text-gray-500">
                             <FiLock className="w-4 h-4 mr-2" />
-                            <span className="text-sm">비공개 질문입니다. 로그인 후 상세 보기를 클릭하여 내용을 확인하세요.</span>
+                            <span className="text-sm break-all overflow-wrap-break-word">비공개 질문입니다. 로그인 후 상세 보기를 클릭하여 내용을 확인하세요.</span>
                           </div>
                         </div>
                       )}
@@ -791,6 +850,43 @@ export default function QnaPage() {
                             <FiMessageSquare className="w-4 h-4 mr-1" />
                             <span>{question.answerCount}개 답변</span>
                           </div>
+                          {/* 첨부파일 표시 - 오른쪽으로 이동 */}
+                          {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
+                            <div className="flex items-center gap-1">
+                               <span className="text-[10px] text-gray-500 break-all overflow-wrap-break-word max-w-20 truncate">{question.filePath}</span>
+                              <div className="relative group">
+                                <button
+                                  className={`flex items-center gap-1 px-1 py-0.5 text-[10px] rounded transition-colors ${
+                                    isAuthenticated 
+                                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => {
+                                    if (isAuthenticated) {
+                                      handleFileDownload(question.filePath!);
+                                    }
+                                  }}
+                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
+                                  disabled={!isAuthenticated}
+                                >
+                                  {question.filePath?.toLowerCase().endsWith('.pdf') ? (
+                                    <FiFileText className="w-2 h-2" />
+                                  ) : (
+                                    <FiFileText className="w-2 h-2" />
+                                  )}
+                                   <span className="text-[10px]">다운로드</span>
+                                </button>
+                                
+                                {/* 툴팁 */}
+                                {!isAuthenticated && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    로그인 필요
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -873,7 +969,7 @@ export default function QnaPage() {
                             </span>
                           )}
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-3">{selectedQuestion.title}</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-3 break-all overflow-wrap-break-word">{selectedQuestion.title}</h2>
                         <div className="flex items-center space-x-6 text-sm text-gray-500">
                           <div className="flex items-center">
                             <FiUser className="w-4 h-4 mr-1" />
@@ -897,7 +993,7 @@ export default function QnaPage() {
 
                     {/* 질문 내용 */}
                     <div className="prose max-w-none mb-4">
-                      <div className="whitespace-pre-wrap text-gray-700">{selectedQuestion.content}</div>
+                      <div className="whitespace-pre-wrap text-gray-700 break-all overflow-wrap-break-word">{selectedQuestion.content}</div>
                     </div>
 
                     {/* 첨부파일 */}
@@ -905,7 +1001,7 @@ export default function QnaPage() {
                       <div className="border-t border-gray-200 pt-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 break-all overflow-wrap-break-word">
                             {selectedQuestion.filePath}
                           </span>
                           {/* 관리자나 전문가는 공개/비공개 관계없이 파일보기 가능 */}
@@ -915,7 +1011,7 @@ export default function QnaPage() {
                               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                               <FiDownload className="w-4 h-4 mr-2" />
-                              파일보기
+                              파일다운로드
                             </button>
                           ) : (
                             /* 일반 사용자는 공개 질문만 파일보기 가능 */
@@ -926,7 +1022,7 @@ export default function QnaPage() {
                                   className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                 >
                                   <FiDownload className="w-4 h-4 mr-2" />
-                                  파일보기
+                                  파일다운로드
                                 </button>
                               ) : (
                                 <div className="relative group">
@@ -935,7 +1031,7 @@ export default function QnaPage() {
                                     className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                                   >
                                     <FiDownload className="w-4 h-4 mr-2" />
-                                    파일보기
+                                    파일다운로드
                                   </button>
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                                     로그인이 필요합니다
@@ -949,7 +1045,7 @@ export default function QnaPage() {
                                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                               >
                                 <FiDownload className="w-4 h-4 mr-2" />
-                                파일보기
+                                파일다운로드
                               </button>
                             )
                           )}
@@ -1039,7 +1135,7 @@ export default function QnaPage() {
                       </h3>
                       <div className="flex items-center text-sm text-gray-600">
                         <FiUser className="w-4 h-4 mr-1" />
-                        <span>답변자: {user?.email} ({user?.role?.toUpperCase() === 'EXPERT' ? '전문가' : user?.role?.toUpperCase() === 'ADMIN' ? '관리자' : '사용자'})</span>
+                        <span className="break-all overflow-wrap-break-word">답변자: {user?.email} ({user?.role?.toUpperCase() === 'EXPERT' ? '전문가' : user?.role?.toUpperCase() === 'ADMIN' ? '관리자' : '사용자'})</span>
                       </div>
                     </div>
                     <form onSubmit={handleSubmitAnswer}>

@@ -533,7 +533,7 @@ export default function DialoguePage() {
       <Navigation />
       <div className="pt-28">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-800 to-blue-900 text-white">
+        <div className="relative overflow-hidden bg-gradient-to-br from-rose-500 via-rose-800 to-rose-600 text-white">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6,#1d4ed8)] opacity-30">
               <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -545,7 +545,7 @@ export default function DialoguePage() {
                 <rect width="100%" height="100%" fill="url(#grid)"></rect>
               </svg>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-rose-500 to-transparent"></div>
           </div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center gap-4 mb-6">

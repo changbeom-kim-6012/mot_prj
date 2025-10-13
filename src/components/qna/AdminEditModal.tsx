@@ -69,6 +69,44 @@ export default function AdminEditModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 카테고리 목록 상태
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  // 카테고리 목록 가져오기
+  const fetchCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      console.log('=== AdminEditModal 카테고리 데이터 요청 시작 ===');
+      const response = await fetch(getApiUrl('/api/codes/menu/qna/details'));
+      console.log('카테고리 API 응답 상태:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('카테고리 API 데이터:', data);
+        
+        if (Array.isArray(data)) {
+          const categoryList = data.map((c: any) => c.codeName);
+          console.log('처리된 카테고리 목록:', categoryList);
+          setCategories(categoryList);
+        } else {
+          console.error('카테고리 데이터가 배열이 아닙니다:', data);
+          setCategories(['일반', '기술', '비즈니스', '교육', '기타']);
+        }
+      } else {
+        console.error('카테고리 목록 조회 실패:', response.status);
+        // 기본 카테고리 목록 설정
+        setCategories(['일반', '기술', '비즈니스', '교육', '기타']);
+      }
+    } catch (error) {
+      console.error('카테고리 목록 조회 중 오류:', error);
+      // 기본 카테고리 목록 설정
+      setCategories(['일반', '기술', '비즈니스', '교육', '기타']);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
   // 모달이 열릴 때 폼 데이터 초기화
   useEffect(() => {
     if (isOpen && question) {
@@ -83,6 +121,8 @@ export default function AdminEditModal({
       setEditingAnswerId(null);
       setAnswerForm({ content: '' });
       setError(null);
+      // 카테고리 목록 가져오기
+      fetchCategories();
     }
   }, [isOpen, question]);
 
@@ -292,12 +332,23 @@ export default function AdminEditModal({
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       카테고리
                     </label>
-                    <input
-                      type="text"
-                      value={questionForm.category1}
-                      onChange={(e) => setQuestionForm({ ...questionForm, category1: e.target.value })}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
+                    {isLoadingCategories ? (
+                      <div className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50">
+                        <span className="text-gray-500">카테고리 로딩 중...</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={questionForm.category1}
+                        onChange={(e) => setQuestionForm({ ...questionForm, category1: e.target.value })}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      >
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -347,7 +398,7 @@ export default function AdminEditModal({
             ) : (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <h4 className="text-lg font-semibold text-gray-900">{question.title}</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 break-all overflow-wrap-break-word">{question.title}</h4>
                   <div className="flex items-center space-x-2">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       question.isPublic ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -359,12 +410,12 @@ export default function AdminEditModal({
                     </span>
                   </div>
                 </div>
-                <p className="text-gray-700 mb-3 whitespace-pre-wrap">{question.content}</p>
+                <p className="text-gray-700 mb-3 whitespace-pre-wrap break-all overflow-wrap-break-word">{question.content}</p>
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-1">
                       <FiUser className="w-4 h-4" />
-                      <span>{question.authorEmail}</span>
+                      <span className="break-all overflow-wrap-break-word">{question.authorEmail}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <FiCalendar className="w-4 h-4" />
@@ -377,7 +428,7 @@ export default function AdminEditModal({
                   </div>
                   {question.contactInfo && (
                     <div className="text-gray-600">
-                      연락처: {question.contactInfo}
+                      <span className="break-all overflow-wrap-break-word">연락처: {question.contactInfo}</span>
                     </div>
                   )}
                 </div>
@@ -387,7 +438,7 @@ export default function AdminEditModal({
                   <div className="border-t border-gray-200 pt-4 mt-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h4>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 break-all overflow-wrap-break-word">
                         {question.filePath}
                       </span>
                       <button
@@ -453,7 +504,7 @@ export default function AdminEditModal({
                       <>
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <p className="text-gray-700 whitespace-pre-wrap">{answer.content}</p>
+                            <p className="text-gray-700 whitespace-pre-wrap break-all overflow-wrap-break-word">{answer.content}</p>
                           </div>
                           <div className="flex items-center space-x-2 ml-4">
                             <button
@@ -476,7 +527,7 @@ export default function AdminEditModal({
                           <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-1">
                               <FiUser className="w-4 h-4" />
-                              <span>{answer.authorEmail}</span>
+                              <span className="break-all overflow-wrap-break-word">{answer.authorEmail}</span>
                             </div>
                             <div className="flex items-center space-x-1">
                               <FiCalendar className="w-4 h-4" />

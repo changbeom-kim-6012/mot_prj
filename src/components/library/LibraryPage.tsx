@@ -82,7 +82,7 @@ export default function LibraryPage() {
 
   // 카테고리 불러오기
   useEffect(() => {
-    fetch(getApiUrl('/api/codes/menu/Library/details'))
+    fetch('/api/codes/menu/Library/details')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -99,9 +99,19 @@ export default function LibraryPage() {
 
   const fetchLibraryItems = async () => {
     try {
-      const response = await fetch(getApiUrl('/api/library'));
+      setLoading(true);
+      console.log('=== Library 목록 조회 시작 ===');
+      
+      const url = '/api/library';
+      console.log('API URL:', url);
+      
+      const response = await fetch(url);
+      console.log('API 응답 상태:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
+        
+        console.log('서버에서 받은 데이터:', data);
         
         // 날짜 데이터 검증 및 로깅
         if (Array.isArray(data)) {
@@ -119,10 +129,17 @@ export default function LibraryPage() {
         setLibraryItems(data);
         setFilteredItems(data); // 최초 전체 목록
       } else {
-        console.error('자료 목록 조회 실패:', response.status);
+        const errorText = await response.text();
+        console.error('자료 목록 조회 실패:', response.status, response.statusText);
+        console.error('에러 응답 내용:', errorText);
+        setLibraryItems([]);
+        setFilteredItems([]);
       }
     } catch (error) {
       console.error('자료 목록 조회 중 오류:', error);
+      console.error('에러 상세:', error);
+      setLibraryItems([]);
+      setFilteredItems([]);
     } finally {
       setLoading(false);
     }
@@ -182,11 +199,11 @@ export default function LibraryPage() {
     console.log('현재 사용자:', user);
     console.log('사용자 권한:', user?.role);
     console.log('자료 작성자:', item.author);
-    console.log('사용자명:', user?.username);
+    console.log('사용자명:', user?.name);
     console.log('관리자 권한:', user?.role === 'ADMIN');
     console.log('전문가 권한:', user?.role === 'EXPERT');
-    console.log('자신의 자료:', user?.username === item.author);
-    console.log('수정/삭제 가능:', user?.role === 'ADMIN' || (user?.role === 'EXPERT' && user?.username === item.author));
+    console.log('자신의 자료:', user?.name === item.author);
+    console.log('수정/삭제 가능:', user?.role === 'ADMIN' || (user?.role === 'EXPERT' && user?.name === item.author));
     console.log('========================');
     
     setSelectedItem(item);
@@ -205,7 +222,7 @@ export default function LibraryPage() {
       return;
     }
     
-    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.username === item.author)) {
+    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.name === item.author)) {
       alert('자료를 삭제할 권한이 없습니다.');
       return;
     }
@@ -240,7 +257,7 @@ export default function LibraryPage() {
       return;
     }
     
-    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.username === item.author)) {
+    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.name === item.author)) {
       alert('자료를 수정할 권한이 없습니다.');
       return;
     }
@@ -636,7 +653,7 @@ export default function LibraryPage() {
               <div className="flex justify-between mt-6">
                 {isAuthenticated && user && (
                   (user.role === 'ADMIN' || 
-                   (user.role === 'EXPERT' && selectedItem && selectedItem.author === user.username)
+                   (user.role === 'EXPERT' && selectedItem && selectedItem.author === user.name)
                   )) && (
                   <div className="flex space-x-2">
                     <button

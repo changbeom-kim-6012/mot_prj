@@ -227,7 +227,7 @@ export default function NewsPage() {
               </div>
               <h1 className="text-2xl font-bold text-white">정보마당</h1>
             </div>
-                         <p className="text-base text-rose-100 max-w-[1150px] text-right">
+               <p className="text-base text-rose-100 max-w-[1150px] text-right">
                MOT Club 회원들과 나누고 싶은 소식을 자유롭게 등록할 수 있습니다.<br/>
                등록 내용이 본 사이트의 취지에 맞지 않는 경우에는 사전통지 없이 삭제될 수 있습니다.
              </p>
