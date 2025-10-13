@@ -189,7 +189,7 @@ export default function RegisterLibraryItemPage() {
       return;
     }
     
-    if (files.length === 0 && !existingFileName) {
+    if (files.length === 0 && existingFileNames.length === 0) {
       setError('문서 파일을 등록해주세요.');
       fileUploadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;

@@ -158,7 +158,11 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
       console.log('모든 페이지 렌더링 시작');
       
       const container = canvasContainerRef.current;
-      container.innerHTML = '';
+      
+      // 기존 캔버스들을 모두 제거
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
       
       // PDF 객체에서 직접 페이지 수 가져오기
       const totalPages = pdfRef.current.numPages;
@@ -368,19 +372,16 @@ export default function LocalPDFViewer({ fileUrl, fileName, onClose }: LocalPDFV
   const zoomIn = () => {
     const newScale = Math.min(scale + 0.2, 5);
     setScale(newScale);
-    renderAllPages();
   };
 
   const zoomOut = () => {
     const newScale = Math.max(scale - 0.2, 0.5);
     setScale(newScale);
-    renderAllPages();
   };
 
   const rotate = () => {
     const newRotation = (rotation + 90) % 360;
     setRotation(newRotation);
-    renderAllPages();
   };
 
   const toggleAutoRotation = () => {

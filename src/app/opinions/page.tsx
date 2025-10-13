@@ -89,8 +89,17 @@ export default function OpinionsPage() {
         
         console.log('Filtered articles:', filteredArticles);
         
-        setArticles(filteredArticles);
-        setFilteredArticles(filteredArticles); // 최초 전체 목록
+        // 임시저장된 기고를 맨 앞으로 정렬
+        const sortedArticles = filteredArticles.sort((a: Article, b: Article) => {
+          // 임시저장 상태를 우선순위로 정렬
+          if (a.status === '임시저장' && b.status !== '임시저장') return -1;
+          if (a.status !== '임시저장' && b.status === '임시저장') return 1;
+          // 같은 상태라면 생성일 기준 내림차순
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        
+        setArticles(sortedArticles);
+        setFilteredArticles(sortedArticles); // 최초 전체 목록
         
         // 초기 페이징 정보 설정
         const totalPages = Math.ceil(filteredArticles.length / pageSize);
@@ -191,12 +200,22 @@ export default function OpinionsPage() {
       const matchesCategory = !selectedCategory || article.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-    setFilteredArticles(filtered);
+    
+    // 임시저장된 기고를 맨 앞으로 정렬
+    const sortedFiltered = filtered.sort((a: Article, b: Article) => {
+      // 임시저장 상태를 우선순위로 정렬
+      if (a.status === '임시저장' && b.status !== '임시저장') return -1;
+      if (a.status !== '임시저장' && b.status === '임시저장') return 1;
+      // 같은 상태라면 생성일 기준 내림차순
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    
+    setFilteredArticles(sortedFiltered);
     
     // 페이징 정보 업데이트
-    const totalPages = Math.ceil(filtered.length / pageSize);
+    const totalPages = Math.ceil(sortedFiltered.length / pageSize);
     setTotalPages(totalPages);
-    setTotalElements(filtered.length);
+    setTotalElements(sortedFiltered.length);
     setCurrentPage(0); // 검색/필터링 시 첫 페이지로 이동
   };
 
@@ -610,7 +629,7 @@ export default function OpinionsPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden"
+              className="relative bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -635,7 +654,7 @@ export default function OpinionsPage() {
               </div>
 
               {/* Content */}
-              <div className="p-3 max-h-[75vh] overflow-y-auto">
+              <div className="p-3 flex-1 overflow-y-auto">
                 {modalType === 'abstract' ? (
                   <>
                     <div className="bg-gray-50 rounded-lg p-4">
@@ -662,7 +681,7 @@ export default function OpinionsPage() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-4 py-2 flex justify-between items-center">
+              <div className="bg-gray-50 px-4 py-2 flex justify-between items-center flex-shrink-0">
                 <div></div>
                 <div className="flex items-center space-x-3">
                   {modalType === 'abstract' && selectedArticle.fullText && (

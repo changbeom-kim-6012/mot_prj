@@ -8,7 +8,7 @@ import { FiDownload, FiEye, FiArrowLeft, FiX, FiFileText, FiList, FiUser, FiCale
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import FileViewer from '@/components/common/FileViewer';
-import { getApiUrl } from '@/config/api';
+import { getApiUrl, getRelativeApiUrl } from '@/config/api';
 
 interface Article {
   id: number;
@@ -71,7 +71,17 @@ export default function OpinionDetailPage() {
     async function fetchDetail() {
       setLoading(true);
       try {
-        const res = await axios.get(getApiUrl(`/api/opinions/${articleId}`));
+        console.log('=== Opinion Detail API 호출 ===');
+        console.log('Article ID:', articleId);
+        console.log('API URL:', getApiUrl(`/api/opinions/${articleId}`));
+        
+        // 운영 환경에서는 상대 경로 사용, 개발 환경에서는 절대 경로 사용
+        const apiUrl = process.env.NODE_ENV === 'production' 
+          ? getRelativeApiUrl(`/api/opinions/${articleId}`)
+          : getApiUrl(`/api/opinions/${articleId}`);
+        
+        const res = await axios.get(apiUrl);
+        console.log('API 응답:', res.data);
         const articleData = res.data;
         
         // 등록승인 또는 등록대기 상태의 기고만 표시
@@ -83,13 +93,19 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attRes = await axios.get(getApiUrl('/api/attachments'), {
+        const attApiUrl = process.env.NODE_ENV === 'production' 
+          ? getRelativeApiUrl('/api/attachments')
+          : getApiUrl('/api/attachments');
+        
+        const attRes = await axios.get(attApiUrl, {
           params: { refTable: 'opinions', refId: articleId }
         });
         setAttachments(attRes.data);
         setError(null);
-      } catch (e) {
-        setError('상세 정보를 불러오지 못했습니다.');
+      } catch (e: any) {
+        console.error('Opinion Detail API 오류:', e);
+        console.error('오류 상세:', e.response?.data || e.message);
+        setError(`상세 정보를 불러오지 못했습니다. (${e.response?.status || '연결 오류'})`);
       } finally {
         setLoading(false);
       }
@@ -128,12 +144,12 @@ export default function OpinionDetailPage() {
                 목록으로 돌아가기
               </motion.button>
             </div>
-            <h1 className="text-2xl font-bold leading-relaxed mb-4">
+            <h1 className="text-2xl font-bold leading-relaxed mb-4 break-all overflow-wrap-break-word">
               {article.title}
             </h1>
             <div className="flex items-center text-indigo-100">
               <span className="font-medium">저자:</span>
-              <span className="ml-2">{article.authorName}</span>
+              <span className="ml-2 break-all overflow-wrap-break-word">{article.authorName}</span>
             </div>
           </div>
 
@@ -143,7 +159,7 @@ export default function OpinionDetailPage() {
             <div className="border-b border-gray-200 pb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">참고문헌</h2>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-700 whitespace-pre-line">
+                <p className="text-gray-700 whitespace-pre-line break-all overflow-wrap-break-word">
                   {article.references}
                 </p>
               </div>
@@ -153,7 +169,7 @@ export default function OpinionDetailPage() {
             <div className="border-b border-gray-200 pb-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">초록/요약</h2>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed break-all overflow-wrap-break-word">
                   {article.abstractText}
                 </p>
               </div>
@@ -197,7 +213,7 @@ export default function OpinionDetailPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-gray-900">첨부파일</h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-900">{attachments[0].fileName}</span>
+                    <span className="text-sm text-gray-900 break-all overflow-wrap-break-word">{attachments[0].fileName}</span>
                     <span className="text-xs text-gray-500">({(attachments[0].fileSize/1024).toFixed(1)} KB)</span>
                     <div className="flex space-x-2">
                       <button
@@ -234,7 +250,7 @@ export default function OpinionDetailPage() {
                 {article.keywords.split(',').map((keyword, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 break-all overflow-wrap-break-word"
                   >
                     {keyword.trim()}
                   </span>
@@ -294,10 +310,10 @@ export default function OpinionDetailPage() {
                     <FiX className="h-6 w-6" />
                   </button>
                 </div>
-                <h3 className="text-lg font-medium mt-2 text-opacity-90">
+                <h3 className="text-lg font-medium mt-2 text-opacity-90 break-all overflow-wrap-break-word">
                   {article.title}
                 </h3>
-                <p className="text-sm text-opacity-80 mt-1">
+                <p className="text-sm text-opacity-80 mt-1 break-all overflow-wrap-break-word">
                   {article.authorName}
                 </p>
               </div>
@@ -306,7 +322,7 @@ export default function OpinionDetailPage() {
               <div className="p-6 max-h-[70vh] overflow-y-auto">
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div 
-                    className="text-gray-700 leading-relaxed prose max-w-none"
+                    className="text-gray-700 leading-relaxed prose max-w-none break-all overflow-wrap-break-word"
                     dangerouslySetInnerHTML={{ __html: article.fullText || '' }}
                   />
                 </div>
