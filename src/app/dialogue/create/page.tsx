@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiUsers, FiUserPlus, FiUserCheck, FiSearch, FiX, FiMail } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
@@ -34,23 +34,63 @@ export default function CreateDialoguePage() {
   const [errors, setErrors] = useState<Partial<CreateDialogueRoomForm>>({});
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
-
-  // 더미 회원 데이터
-  const members: Member[] = [
-    { id: '1', name: '홍길동', email: 'hong@company.com', avatar: '/experts/member1.jpg' },
-    { id: '2', name: '김철수', email: 'kim@company.com', avatar: '/experts/member2.jpg' },
-    { id: '3', name: '이영희', email: 'lee@company.com', avatar: '/experts/member3.jpg' },
-    { id: '4', name: '박민수', email: 'park@company.com', avatar: '/experts/member4.jpg' },
-    { id: '5', name: '최지영', email: 'choi@company.com', avatar: '/experts/member5.jpg' },
-    { id: '6', name: '정수진', email: 'jung@company.com', avatar: '/experts/member6.jpg' },
-    { id: '7', name: '강동원', email: 'kang@company.com', avatar: '/experts/member7.jpg' },
-    { id: '8', name: '윤서연', email: 'yoon@company.com', avatar: '/experts/member8.jpg' }
-  ];
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
   // 선택된 회원 정보 가져오기
   const selectedMemberDetails = members.filter(member => 
     formData.selectedMembers.includes(member.id)
   );
+  
+  console.log('선택된 회원 ID들:', formData.selectedMembers);
+  console.log('선택된 회원 상세 정보:', selectedMemberDetails);
+
+  // 회원 목록 불러오기
+  const fetchMembers = async () => {
+    try {
+      setLoadingMembers(true);
+      const response = await fetch(getApiUrl('/api/users'), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('회원 목록 API 응답:', data);
+        
+        // API 응답이 배열인지 확인하고, 아니면 빈 배열로 설정
+        const membersData = Array.isArray(data) ? data : [];
+        
+        // Member 형식으로 변환
+        const formattedMembers = membersData.map((user: any) => ({
+          id: user.id.toString(),
+          name: user.name || user.email.split('@')[0],
+          email: user.email,
+          avatar: '/experts/member1.jpg' // 기본 아바타 사용
+        }));
+        
+        setMembers(formattedMembers);
+        console.log('변환된 회원 목록:', formattedMembers);
+      } else {
+        console.error('회원 목록 불러오기 실패');
+        setMembers([]);
+      }
+    } catch (error) {
+      console.error('회원 목록 불러오기 오류:', error);
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  // 페이지 로드 시 회원 목록 불러오기
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMembers();
+    }
+  }, [isAuthenticated]);
 
   // 로그인 체크
   if (!isAuthenticated) {
@@ -83,16 +123,24 @@ export default function CreateDialoguePage() {
   const validateForm = () => {
     const newErrors: Partial<CreateDialogueRoomForm> = {};
 
+    // 제목 검증
     if (!formData.title.trim()) {
       newErrors.title = '제목을 입력해주세요.';
     } else if (formData.title.trim().length < 5) {
       newErrors.title = '제목은 5자 이상 입력해주세요.';
     }
 
+    // 질문 내용 검증
     if (!formData.question.trim()) {
       newErrors.question = '질문 내용을 입력해주세요.';
     } else if (formData.question.trim().length < 10) {
       newErrors.question = '질문 내용은 10자 이상 입력해주세요.';
+    }
+
+    // 사용자 이메일 검증
+    if (!user?.email) {
+      alert('사용자 정보가 없습니다. 다시 로그인해주세요.');
+      return false;
     }
 
     setErrors(newErrors);
@@ -109,14 +157,47 @@ export default function CreateDialoguePage() {
     setLoading(true);
 
     try {
-      // 더미 데이터로 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // 성공 시 대화방 목록으로 이동
-      router.push('/dialogue');
+      // 전송할 데이터 준비 및 검증
+      const requestData = {
+        title: formData.title.trim(),
+        question: formData.question.trim(),
+        isPublic: formData.isPublic,
+        authorEmail: user?.email || '',
+        participantEmails: selectedMemberDetails.map(member => member.email),
+      };
+
+      // 필수 필드 재검증
+      if (!requestData.authorEmail) {
+        throw new Error('작성자 이메일이 없습니다.');
+      }
+
+      console.log('대화방 생성 요청 데이터:', requestData);
+
+      const response = await fetch(getApiUrl('/api/dialogue/rooms'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('대화방 생성 성공:', data);
+        alert('대화방이 성공적으로 생성되었습니다.');
+        // 대화방 목록 페이지로 이동하면서 새로고침 파라미터 추가
+        router.push('/dialogue?refresh=true');
+      } else {
+        const errorData = await response.json();
+        console.error('서버 오류 응답:', errorData);
+        throw new Error(errorData.message || `서버 오류 (${response.status}): 대화방 생성에 실패했습니다.`);
+      }
     } catch (error) {
       console.error('대화방 생성 실패:', error);
-      alert('대화방 생성에 실패했습니다. 다시 시도해주세요.');
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      alert(`대화방 생성에 실패했습니다: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -163,21 +244,29 @@ export default function CreateDialoguePage() {
 
     try {
       // 백엔드 API로 회원 검증
-      const response = await fetch(`getApiUrl('/api/users/email/')${email}`);
+      const response = await fetch(getApiUrl(`/api/users/email/${email}`), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
       
       if (response.ok) {
         const userData = await response.json();
+        console.log('API 응답 데이터:', userData);
         
         // 회원 정보를 더미 데이터 형식으로 변환
         const member = {
           id: userData.id.toString(),
-          name: userData.name,
+          name: userData.name || userData.email.split('@')[0], // 이름이 없으면 이메일 앞부분 사용
           email: userData.email,
           avatar: '/experts/member1.jpg' // 기본 아바타 사용
         };
         
-        // 더미 데이터에 추가 (임시)
-        members.push(member);
+        console.log('변환된 회원 정보:', member);
+        
+        // 동적으로 회원 목록에 추가
+        setMembers(prev => [...prev, member]);
         
         handleInputChange('selectedMembers', [...formData.selectedMembers, member.id]);
         setEmailInput('');
@@ -286,8 +375,50 @@ export default function CreateDialoguePage() {
                     </div>
                   )}
 
-                  {/* 이메일 입력 */}
+                  {/* 기존 회원 목록 */}
                   <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <FiUsers className="w-5 h-5 text-gray-400" />
+                      <span className="text-sm text-gray-600">기존 회원에서 선택</span>
+                    </div>
+                    {loadingMembers ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-sm text-gray-500">회원 목록을 불러오는 중...</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                        {members.map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            onClick={() => {
+                              if (formData.selectedMembers.includes(member.id)) {
+                                handleRemoveMember(member.id);
+                              } else {
+                                handleInputChange('selectedMembers', [...formData.selectedMembers, member.id]);
+                              }
+                            }}
+                            className={`flex items-center space-x-2 p-2 rounded-md border text-sm transition-colors ${
+                              formData.selectedMembers.includes(member.id)
+                                ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-blue-700">
+                                {member.name.charAt(0)}
+                              </span>
+                            </div>
+                            <span className="truncate">{member.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 이메일 입력 */}
+                  <div className="space-y-3 mt-6">
                     <div className="flex items-center space-x-2">
                       <FiMail className="w-5 h-5 text-gray-400" />
                       <span className="text-sm text-gray-600">회원 이메일로 참여자 추가</span>
@@ -433,15 +564,6 @@ export default function CreateDialoguePage() {
               </form>
             </div>
 
-            {/* 더미 데이터 안내 */}
-            <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center">
-                <FiSave className="w-5 h-5 text-yellow-600 mr-2" />
-                <p className="text-yellow-800 text-sm">
-                  현재 더미 데이터로 시뮬레이션되고 있습니다. 실제 서버 연동 시 실제 데이터로 저장됩니다.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

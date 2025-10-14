@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2 } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -37,7 +38,8 @@ interface DialogueParticipant {
 }
 
 export default function DialoguePage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
   const [rooms, setRooms] = useState<DialogueRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,74 +125,107 @@ export default function DialoguePage() {
     return isInParticipants;
   };
 
-  // 더미 데이터
-  const dummyRooms: DialogueRoom[] = [
-    {
-      id: 1,
-      title: "R&D 프로젝트 관리 방법론에 대한 질문",
-      question: "현재 진행 중인 R&D 프로젝트의 효율적인 관리 방법과 리스크 관리 전략에 대해 전문가들의 의견을 듣고 싶습니다.",
-      authorEmail: "user1@example.com",
-      createdAt: "2024-01-15T10:30:00Z",
-      isPublic: true,
-      status: 'OPEN',
-      participantCount: 8,
-      messageCount: 15
-    },
-    {
-      id: 2,
-      title: "기술사업화 전략 수립 가이드",
-      question: "연구개발 결과물의 성공적인 기술사업화를 위한 전략적 접근 방법과 사례 분석을 공유해주세요.",
-      authorEmail: "user2@example.com",
-      createdAt: "2024-01-14T14:20:00Z",
-      isPublic: false,
-      status: 'OPEN',
-      participantCount: 5,
-      messageCount: 12
-    },
-    {
-      id: 3,
-      title: "MOT 교육과정 설계 방안",
-      question: "기업 내 MOT(Management of Technology) 교육과정의 효과적인 설계와 운영 방안에 대해 논의해보겠습니다.",
-      authorEmail: "user3@example.com",
-      createdAt: "2024-01-13T09:15:00Z",
-      isPublic: true,
-      status: 'CLOSED',
-      participantCount: 12,
-      messageCount: 28
-    },
-    {
-      id: 4,
-      title: "혁신기술 투자 의사결정 프레임워크",
-      question: "신기술 투자 시 활용할 수 있는 의사결정 프레임워크와 평가 지표에 대한 전문가들의 경험을 공유해주세요.",
-      authorEmail: "user4@example.com",
-      createdAt: "2024-01-12T16:45:00Z",
-      isPublic: true,
-      status: 'OPEN',
-      participantCount: 6,
-      messageCount: 9
-    },
-    {
-      id: 5,
-      title: "기업 기술전략 수립 프로세스",
-      question: "기업의 기술전략 수립 시 고려해야 할 핵심 요소들과 프로세스 개선 방안에 대해 토론해보겠습니다.",
-      authorEmail: "user5@example.com",
-      createdAt: "2024-01-11T11:30:00Z",
-      isPublic: false,
-      status: 'CLOSED',
-      participantCount: 10,
-      messageCount: 22
-    }
-  ];
+  // 대화방 목록 불러오기
+  const fetchRooms = async () => {
+    try {
+      setLoading(true);
+      console.log('user: ', user);
+      console.log('authLoading: ', authLoading);
+      console.log('isAuthenticated: ', isAuthenticated);
 
-  // 페이지 로드 시 더미 데이터 설정
-  useEffect(() => {
-    // 로딩 시뮬레이션
-    setTimeout(() => {
-      setRooms(dummyRooms);
-      setFilteredRooms(dummyRooms);
+      // 인증 로딩 중이면 대기
+      if (authLoading) {
+        console.log('인증 로딩 중, 대기...');
+        setLoading(false);
+        return;
+      }
+
+      // 사용자 정보 검증
+      if (!user?.email) {
+        console.warn('사용자 이메일이 없습니다.');
+        setRooms([]);
+        setFilteredRooms([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('대화방 목록 요청:', { userEmail: user.email, userRole: user.role });
+
+      const response = await fetch(getApiUrl('/api/dialogue/rooms'), {
+        headers: {
+          'User-Email': user.email,
+          'User-Role': user.role || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('대화방 목록 응답:', data);
+        
+        // API 응답 구조 확인 및 처리
+        let roomsData = [];
+        if (Array.isArray(data)) {
+          // 직접 배열로 응답하는 경우
+          roomsData = data;
+        } else if (data && Array.isArray(data.rooms)) {
+          // { rooms: [...] } 형태로 응답하는 경우
+          roomsData = data.rooms;
+        } else if (data && Array.isArray(data.data)) {
+          // { data: [...] } 형태로 응답하는 경우
+          roomsData = data.data;
+        }
+        
+        console.log('처리된 대화방 데이터:', roomsData);
+        console.log('대화방 개수:', roomsData.length);
+        
+        setRooms(roomsData);
+        setFilteredRooms(roomsData);
+      } else {
+        const errorData = await response.json();
+        console.error('서버 오류 응답:', errorData);
+        throw new Error(errorData.message || `서버 오류 (${response.status}): 대화방 목록을 불러올 수 없습니다.`);
+      }
+    } catch (error) {
+      console.error('대화방 목록 불러오기 실패:', error);
+      // 에러 발생 시 빈 배열로 설정
+      setRooms([]);
+      setFilteredRooms([]);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      alert(`대화방 목록을 불러오는데 실패했습니다: ${errorMessage}`);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+
+  // 페이지 로드 시 데이터 불러오기 (인증 로딩 완료 후)
+  useEffect(() => {
+    if (!authLoading) {
+      fetchRooms();
+    }
+  }, [authLoading]);
+
+  // 페이지 포커스 시 데이터 새로고침 (대화방 생성 후 돌아올 때)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('페이지 포커스 감지, 데이터 새로고침');
+      fetchRooms();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  // URL 파라미터 변경 감지하여 데이터 새로고침
+  useEffect(() => {
+    if (!authLoading && searchParams.get('refresh') === 'true') {
+      // 새로고침 파라미터가 있으면 데이터 다시 불러오기
+      console.log('새로고침 파라미터 감지, 데이터 다시 불러오기');
+      fetchRooms();
+      // URL에서 refresh 파라미터 제거
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams, authLoading]);
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -215,6 +250,51 @@ export default function DialoguePage() {
     };
   }, [isStatusDropdownOpen, isPublicDropdownOpen]);
 
+  // 인증 로딩 중
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-500">사용자 정보를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // 로그인 체크
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiMessageSquare className="w-8 h-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
+              <p className="text-gray-600 mb-6">대화방을 조회하려면 로그인해주세요.</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => window.location.href = '/login'}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  로그인
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // 검색 및 필터링은 검색 버튼 클릭 시에만 실행됨
 
   const handleSearch = () => {
@@ -228,7 +308,13 @@ export default function DialoguePage() {
 
   // 실제 검색 로직을 별도 함수로 분리
   const performSearch = (status: string, term: string) => {
-    let filtered = dummyRooms;
+    // rooms가 배열인지 확인
+    if (!Array.isArray(rooms)) {
+      setFilteredRooms([]);
+      return;
+    }
+
+    let filtered = rooms;
 
     // 상태 필터 적용
     if (status) {
@@ -249,7 +335,7 @@ export default function DialoguePage() {
   };
 
   // 대화방 팝업 열기
-  const handleOpenDialogue = (room: DialogueRoom) => {
+  const handleOpenDialogue = async (room: DialogueRoom) => {
     if (!isAuthenticated) {
       alert('대화내용 조회 및 대화방 참여는 로그인이 필요합니다.');
       return;
@@ -263,84 +349,46 @@ export default function DialoguePage() {
     setSelectedRoom(room);
     setIsPopupOpen(true);
     
-    // 더미 메시지 데이터 로드
-    const dummyMessages: DialogueMessage[] = [
-      {
-        id: 1,
-        content: "안녕하세요! R&D 프로젝트 관리에 대해 궁금한 점이 있어서 질문드립니다.",
-        authorEmail: "user1@example.com",
-        authorName: "질문자",
-        createdAt: "2024-01-15T10:30:00Z",
-        isExpert: false
-      },
-      {
-        id: 2,
-        content: "안녕하세요! 좋은 질문이네요. R&D 프로젝트 관리에서 가장 중요한 것은 체계적인 계획 수립입니다.",
-        authorEmail: "expert1@example.com",
-        authorName: "김전문가",
-        createdAt: "2024-01-15T10:35:00Z",
-        isExpert: true
-      },
-      {
-        id: 3,
-        content: "저도 동의합니다. 특히 리스크 관리 측면에서 프로젝트 초기 단계에서 예상되는 문제점들을 미리 파악하는 것이 중요해요.",
-        authorEmail: "expert2@example.com",
-        authorName: "이박사",
-        createdAt: "2024-01-15T10:40:00Z",
-        isExpert: true
-      },
-      {
-        id: 4,
-        content: "구체적으로 어떤 리스크 관리 도구를 사용하시나요?",
-        authorEmail: "user1@example.com",
-        authorName: "질문자",
-        createdAt: "2024-01-15T10:45:00Z",
-        isExpert: false
-      },
-      {
-        id: 5,
-        content: "저희 회사에서는 FMEA(Failure Mode and Effects Analysis)를 주로 사용합니다. 이 방법론에 대해 설명드릴까요?",
-        authorEmail: "expert1@example.com",
-        authorName: "김전문가",
-        createdAt: "2024-01-15T10:50:00Z",
-        isExpert: true
-      }
-    ];
-    
-    const dummyParticipants: DialogueParticipant[] = [
-      {
-        email: "expert1@example.com",
-        name: "김전문가",
-        role: "EXPERT",
-        joinedAt: "2024-01-15T10:30:00Z"
-      },
-      {
-        email: "expert2@example.com",
-        name: "이박사",
-        role: "EXPERT",
-        joinedAt: "2024-01-15T10:30:00Z"
-      },
-      {
-        email: "user1@example.com",
-        name: "질문자",
-        role: "USER",
-        joinedAt: "2024-01-15T10:30:00Z"
-      }
-    ];
+    try {
+      // 메시지 목록 불러오기
+      const messagesResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${room.id}/messages`), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
 
-    // 테스트를 위해 현재 사용자가 참여자가 아닌 경우를 시뮬레이션
-    // 실제 환경에서는 백엔드에서 참여자 목록을 가져와야 함
-    // 현재 사용자가 참여자 목록에 있으면 제거 (테스트용)
-    const filteredParticipants = dummyParticipants.filter(p => p.email !== user?.email);
+      if (messagesResponse.ok) {
+        const messagesData = await messagesResponse.json();
+        // API 응답이 배열인지 확인하고, 아니면 빈 배열로 설정
+        const messagesArray = Array.isArray(messagesData) ? messagesData : [];
+        setMessages(messagesArray);
+      } else {
+        console.error('메시지 목록 불러오기 실패');
+        setMessages([]);
+      }
 
-    // 참여자 체크를 위해 현재 사용자가 참여자 목록에 있는지 확인
-    // 실제 환경에서는 백엔드에서 참여자 목록을 가져와야 함
-    console.log('더미 참여자 목록:', dummyParticipants.map(p => p.email));
-    console.log('필터링된 참여자 목록:', filteredParticipants.map(p => p.email));
-    console.log('현재 사용자:', user?.email);
-    
-    setMessages(dummyMessages);
-    setParticipants(filteredParticipants);
+      // 참여자 목록 불러오기
+      const participantsResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${room.id}/participants`), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (participantsResponse.ok) {
+        const participantsData = await participantsResponse.json();
+        // API 응답이 배열인지 확인하고, 아니면 빈 배열로 설정
+        const participantsArray = Array.isArray(participantsData) ? participantsData : [];
+        setParticipants(participantsArray);
+      } else {
+        console.error('참여자 목록 불러오기 실패');
+        setParticipants([]);
+      }
+    } catch (error) {
+      console.error('대화방 데이터 불러오기 실패:', error);
+      alert('대화방 데이터를 불러오는데 실패했습니다.');
+    }
   };
 
   // 메시지 전송
@@ -356,20 +404,25 @@ export default function DialoguePage() {
     setSendingMessage(true);
     
     try {
-      // 더미 메시지 전송 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const newMsg: DialogueMessage = {
-        id: messages.length + 1,
-        content: newMessage,
-        authorEmail: user?.email || 'unknown@example.com',
-        authorName: user?.name || '사용자',
-        createdAt: new Date().toISOString(),
-        isExpert: user?.role === 'EXPERT'
-      };
-      
-      setMessages(prev => [...prev, newMsg]);
-      setNewMessage('');
+      const response = await fetch(getApiUrl(`/api/dialogue/rooms/${selectedRoom.id}/messages`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+        body: JSON.stringify({
+          content: newMessage,
+        }),
+      });
+
+      if (response.ok) {
+        const newMsg = await response.json();
+        setMessages(prev => [...prev, newMsg]);
+        setNewMessage('');
+      } else {
+        throw new Error('메시지 전송에 실패했습니다.');
+      }
     } catch (error) {
       console.error('메시지 전송 실패:', error);
       alert('메시지 전송에 실패했습니다.');
@@ -620,7 +673,7 @@ export default function DialoguePage() {
 
             {/* 대화방 목록 */}
             <div className="space-y-6">
-              {filteredRooms.length === 0 ? (
+              {!Array.isArray(filteredRooms) || filteredRooms.length === 0 ? (
                 <div className="text-center py-12">
                   <FiMessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">검색 결과가 없습니다</h3>
@@ -693,15 +746,6 @@ export default function DialoguePage() {
               )}
             </div>
 
-            {/* 더미 데이터 안내 */}
-            <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center">
-                <FiMessageSquare className="w-5 h-5 text-blue-600 mr-2" />
-                <p className="text-blue-800 text-sm">
-                  현재 더미 데이터를 사용하여 표시되고 있습니다. 실제 서버 연동 시 실제 데이터로 교체됩니다.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
