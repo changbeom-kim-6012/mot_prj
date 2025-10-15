@@ -107,19 +107,53 @@ export default function DialoguePage() {
 
   // 대화방 참여자 체크 함수
   const isParticipant = () => {
-    if (!user || !selectedRoom) return false;
+    if (!user || !selectedRoom) {
+      console.log('참여자 체크 실패: user 또는 selectedRoom이 없음');
+      return false;
+    }
     
     // 관리자는 모든 대화방에 참여자로 간주
-    if (user.role === 'ADMIN') return true;
+    if (user.role === 'ADMIN') {
+      console.log('관리자 권한으로 참여자 인정');
+      return true;
+    }
+    
+    // 대화방 작성자는 항상 참여자로 간주
+    if (user.email === selectedRoom.authorEmail) {
+      console.log('대화방 작성자로 참여자 인정');
+      return true;
+    }
+    
+    // 전문가인 경우 참여자로 간주 (임시 해결책)
+    if (user.role === 'EXPERT') {
+      console.log('전문가로 참여자 인정');
+      return true;
+    }
+    
+    // 참여자 목록이 비어있는 경우 (403 오류로 인해 로드되지 않았을 수 있음)
+    if (participants.length === 0) {
+      console.log('참여자 목록이 비어있음 - 403 오류로 인해 로드되지 않았을 수 있음');
+      
+      // 참여자 목록을 가져올 수 없는 경우, 대화방 작성자나 전문가가 아닌 경우에도
+      // 일단 메시지 전송을 허용하고 서버에서 권한을 체크하도록 함
+      console.log('참여자 목록 없음 - 서버에서 권한 체크하도록 허용');
+      return true;
+    }
     
     // 참여자 목록에서 현재 사용자 찾기
     const isInParticipants = participants.some(participant => participant.email === user.email);
     
     // 디버깅을 위한 로그
-    console.log('참여자 체크:', {
+    console.log('참여자 체크 상세:', {
       userEmail: user.email,
-      participants: participants.map(p => p.email),
-      isInParticipants
+      userRole: user.role,
+      selectedRoomAuthor: selectedRoom.authorEmail,
+      participantsCount: participants.length,
+      participants: participants.map(p => ({ email: p.email, name: p.name })),
+      isInParticipants,
+      isAuthor: user.email === selectedRoom.authorEmail,
+      isAdmin: (user.role as string) === 'ADMIN',
+      isExpert: (user.role as string) === 'EXPERT'
     });
     
     return isInParticipants;
@@ -178,6 +212,16 @@ export default function DialoguePage() {
         console.log('처리된 대화방 데이터:', roomsData);
         console.log('대화방 개수:', roomsData.length);
         
+        // 각 대화방의 참여자 수 확인
+        roomsData.forEach((room: any, index: number) => {
+          console.log(`대화방 ${index} (${room.title}):`, {
+            id: room.id,
+            title: room.title,
+            participantCount: room.participantCount,
+            messageCount: room.messageCount
+          });
+        });
+        
         setRooms(roomsData);
         setFilteredRooms(roomsData);
       } else {
@@ -197,12 +241,68 @@ export default function DialoguePage() {
     }
   };
 
+  // 메시지 새로고침 함수
+  const refreshMessages = async () => {
+    if (!selectedRoom || !user) return;
+    
+    try {
+      const messagesResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${selectedRoom.id}/messages`), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (messagesResponse.ok) {
+        const responseText = await messagesResponse.text();
+        let messagesData;
+        try {
+          messagesData = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('메시지 새로고침 JSON 파싱 오류:', parseError);
+          return;
+        }
+        
+        let messagesArray = [];
+        if (Array.isArray(messagesData)) {
+          messagesArray = messagesData;
+        } else if (messagesData && Array.isArray(messagesData.messages)) {
+          messagesArray = messagesData.messages;
+        }
+        
+        // 메시지가 변경된 경우에만 업데이트
+        setMessages(prevMessages => {
+          if (prevMessages.length !== messagesArray.length) {
+            console.log('메시지 새로고침: 메시지 수 변경됨', prevMessages.length, '->', messagesArray.length);
+            return messagesArray;
+          }
+          return prevMessages;
+        });
+      }
+    } catch (error) {
+      console.error('메시지 새로고침 실패:', error);
+    }
+  };
+
   // 페이지 로드 시 데이터 불러오기 (인증 로딩 완료 후)
   useEffect(() => {
     if (!authLoading) {
       fetchRooms();
     }
   }, [authLoading]);
+
+  // 선택된 대화방이 있을 때 주기적으로 메시지 새로고침
+  useEffect(() => {
+    if (!selectedRoom || !user) return;
+    
+    // 즉시 한 번 실행
+    refreshMessages();
+    
+    // 5초마다 새로고침
+    const interval = setInterval(refreshMessages, 5000);
+    
+    return () => clearInterval(interval);
+  }, [selectedRoom, user]);
 
   // 페이지 포커스 시 데이터 새로고침 (대화방 생성 후 돌아올 때)
   useEffect(() => {
@@ -359,35 +459,164 @@ export default function DialoguePage() {
       });
 
       if (messagesResponse.ok) {
-        const messagesData = await messagesResponse.json();
-        // API 응답이 배열인지 확인하고, 아니면 빈 배열로 설정
-        const messagesArray = Array.isArray(messagesData) ? messagesData : [];
-        setMessages(messagesArray);
+        try {
+          const responseText = await messagesResponse.text();
+          console.log('메시지 목록 원본 응답:', responseText);
+          
+          // JSON 파싱 시도
+          let messagesData;
+          try {
+            messagesData = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('메시지 JSON 파싱 오류:', parseError);
+            console.log('잘못된 메시지 JSON 응답:', responseText);
+            setMessages([]);
+            return;
+          }
+          
+          // API 응답 구조 확인 및 메시지 배열 추출
+          let messagesArray = [];
+          if (Array.isArray(messagesData)) {
+            messagesArray = messagesData;
+          } else if (messagesData && Array.isArray(messagesData.messages)) {
+            messagesArray = messagesData.messages;
+          } else {
+            console.log('예상하지 못한 메시지 응답 구조:', messagesData);
+            messagesArray = [];
+          }
+          console.log('처리된 메시지 목록:', messagesArray);
+          
+          // 각 메시지의 createdAt 확인 및 수정
+          const processedMessages = messagesArray.map((msg, index) => {
+            console.log(`메시지 ${index} createdAt:`, msg.createdAt, '타입:', typeof msg.createdAt);
+            
+            if (!msg.createdAt) {
+              console.log(`메시지 ${index} createdAt이 없어서 현재 시간으로 설정`);
+              msg.createdAt = new Date().toISOString();
+            }
+            
+            return msg;
+          });
+          
+          console.log('처리된 메시지 목록 (createdAt 수정 후):', processedMessages);
+          setMessages(processedMessages);
+        } catch (error) {
+          console.error('메시지 목록 처리 중 오류:', error);
+          setMessages([]);
+        }
       } else {
         console.error('메시지 목록 불러오기 실패');
         setMessages([]);
       }
 
       // 참여자 목록 불러오기
+      console.log(`참여자 목록 요청: /api/dialogue/rooms/${room.id}/participants`);
+      console.log('사용자 정보:', {
+        email: user?.email,
+        role: user?.role,
+        isAuthenticated: isAuthenticated
+      });
+      console.log('선택된 대화방 정보:', {
+        id: room.id,
+        authorEmail: room.authorEmail,
+        isPublic: room.isPublic
+      });
+      
       const participantsResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${room.id}/participants`), {
         headers: {
           'User-Email': user?.email || '',
           'User-Role': user?.role || '',
         },
       });
+      
+      console.log('참여자 목록 응답 상태:', {
+        ok: participantsResponse.ok,
+        status: participantsResponse.status,
+        statusText: participantsResponse.statusText
+      });
 
       if (participantsResponse.ok) {
-        const participantsData = await participantsResponse.json();
-        // API 응답이 배열인지 확인하고, 아니면 빈 배열로 설정
-        const participantsArray = Array.isArray(participantsData) ? participantsData : [];
-        setParticipants(participantsArray);
+        try {
+          const responseText = await participantsResponse.text();
+          console.log('참여자 목록 원본 응답:', responseText);
+          
+          // JSON 파싱 시도
+          let participantsData;
+          try {
+            participantsData = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('JSON 파싱 오류:', parseError);
+            console.log('잘못된 JSON 응답:', responseText);
+            setParticipants([]);
+            return;
+          }
+          
+          console.log('참여자 목록 API 응답:', participantsData);
+          
+          // API 응답 구조 확인 및 처리
+          let participantsArray = [];
+          if (Array.isArray(participantsData)) {
+            // 직접 배열로 응답하는 경우
+            participantsArray = participantsData;
+          } else if (participantsData && Array.isArray(participantsData.participants)) {
+            // { participants: [...] } 형태로 응답하는 경우
+            participantsArray = participantsData.participants;
+          } else if (participantsData && Array.isArray(participantsData.data)) {
+            // { data: [...] } 형태로 응답하는 경우
+            participantsArray = participantsData.data;
+          }
+          
+          console.log('처리된 참여자 목록:', participantsArray);
+          console.log('참여자 수:', participantsArray.length);
+          
+          setParticipants(participantsArray);
+        } catch (error) {
+          console.error('참여자 목록 처리 중 오류:', error);
+          setParticipants([]);
+        }
       } else {
-        console.error('참여자 목록 불러오기 실패');
-        setParticipants([]);
+        let errorData = null;
+        try {
+          errorData = await participantsResponse.json();
+        } catch (e) {
+          console.log('오류 응답을 JSON으로 파싱할 수 없음');
+        }
+        
+        console.error('참여자 목록 불러오기 실패:', {
+          status: participantsResponse.status,
+          statusText: participantsResponse.statusText,
+          error: errorData,
+          url: getApiUrl(`/api/dialogue/rooms/${room.id}/participants`),
+          headers: {
+            'User-Email': user?.email || '',
+            'User-Role': user?.role || '',
+          }
+        });
+        
+        // 403 오류인 경우 빈 배열로 설정하고 계속 진행
+        if (participantsResponse.status === 403) {
+          console.log('403 Forbidden - 권한 없음, 빈 참여자 목록으로 설정');
+          setParticipants([]);
+        } else {
+          setParticipants([]);
+        }
       }
     } catch (error) {
       console.error('대화방 데이터 불러오기 실패:', error);
-      alert('대화방 데이터를 불러오는데 실패했습니다.');
+      console.error('오류 상세:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      
+      // JSON 파싱 오류인 경우 특별 처리
+      if (error instanceof SyntaxError && (error as Error).message.includes('JSON')) {
+        console.log('JSON 파싱 오류로 인한 실패 - 빈 데이터로 설정');
+        setMessages([]);
+        setParticipants([]);
+      } else {
+        alert('대화방 데이터를 불러오는데 실패했습니다.');
+      }
     }
   };
 
@@ -395,16 +624,36 @@ export default function DialoguePage() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom) return;
     
+    console.log('메시지 전송 시도 - 참여자 체크:', {
+      userEmail: user?.email,
+      userRole: user?.role,
+      selectedRoomId: selectedRoom.id,
+      selectedRoomAuthor: selectedRoom.authorEmail,
+      participantsCount: participants.length,
+      isParticipantResult: isParticipant()
+    });
+    
     // 참여자가 아닌 경우 메시지 전송 불가
     if (!isParticipant()) {
+      console.log('참여자가 아님 - 메시지 전송 차단');
       alert('대화방 참여자만 메시지를 등록할 수 있습니다.');
       return;
     }
     
+    console.log('참여자 확인됨 - 메시지 전송 진행');
+    
     setSendingMessage(true);
     
     try {
-      const response = await fetch(getApiUrl(`/api/dialogue/rooms/${selectedRoom.id}/messages`), {
+      const requestUrl = getApiUrl(`/api/dialogue/rooms/${selectedRoom.id}/messages?authorEmail=${encodeURIComponent(user?.email || '')}`);
+      console.log('메시지 전송 요청:', {
+        url: requestUrl,
+        userEmail: user?.email,
+        userRole: user?.role,
+        messageContent: newMessage
+      });
+      
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -416,16 +665,75 @@ export default function DialoguePage() {
         }),
       });
 
+      console.log('메시지 전송 응답:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText
+      });
+
       if (response.ok) {
-        const newMsg = await response.json();
-        setMessages(prev => [...prev, newMsg]);
+        const responseData = await response.json();
+        console.log('메시지 전송 성공 - 응답 데이터:', responseData);
+        
+        // 서버 응답에서 실제 메시지 데이터 추출
+        let newMsg;
+        if (responseData.messageData) {
+          // messageData가 있는 경우 사용
+          newMsg = responseData.messageData;
+        } else if (responseData.allMessages && responseData.allMessages.length > 0) {
+          // allMessages 배열에서 마지막 메시지 사용
+          newMsg = responseData.allMessages[responseData.allMessages.length - 1];
+        } else {
+          // 직접 메시지 객체인 경우
+          newMsg = responseData;
+        }
+        
+        console.log('추출된 새 메시지:', newMsg);
+        console.log('새 메시지 createdAt:', newMsg.createdAt);
+        console.log('새 메시지 createdAt 타입:', typeof newMsg.createdAt);
+        
+        // createdAt이 없는 경우 현재 시간으로 설정
+        if (!newMsg.createdAt) {
+          newMsg.createdAt = new Date().toISOString();
+          console.log('createdAt이 없어서 현재 시간으로 설정:', newMsg.createdAt);
+        }
+        
+        // 메시지 즉시 추가
+        setMessages(prev => {
+          const updatedMessages = [...prev, newMsg];
+          console.log('메시지 추가됨:', newMsg);
+          console.log('전체 메시지 수:', updatedMessages.length);
+          return updatedMessages;
+        });
         setNewMessage('');
       } else {
-        throw new Error('메시지 전송에 실패했습니다.');
+        // 403 오류인 경우 특별 처리
+        if (response.status === 403) {
+          console.error('403 Forbidden - 메시지 전송 권한 없음');
+          alert('이 대화방에서 메시지를 전송할 권한이 없습니다.');
+        } else {
+          let errorData = null;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            console.log('오류 응답을 JSON으로 파싱할 수 없음');
+          }
+          
+          console.error('메시지 전송 실패:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+          
+          throw new Error(`메시지 전송에 실패했습니다. (${response.status})`);
+        }
       }
     } catch (error) {
       console.error('메시지 전송 실패:', error);
-      alert('메시지 전송에 실패했습니다.');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('권한이 없습니다')) {
+        alert('메시지 전송에 실패했습니다.');
+      }
     } finally {
       setSendingMessage(false);
     }
@@ -817,7 +1125,7 @@ export default function DialoguePage() {
                             </span>
                             <div className="flex items-center space-x-2">
                               <span className="text-xs opacity-75">
-                                {formatDate(message.createdAt)}
+                                {message.createdAt ? formatDate(message.createdAt) : '날짜 없음'}
                               </span>
                               {/* 삭제 버튼 - 관리자이거나 최신 메시지 작성자인 경우에만 표시 */}
                               {canDeleteMessage(message) && (

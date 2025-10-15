@@ -19,6 +19,7 @@ interface Member {
   name: string;
   email: string;
   avatar: string;
+  role?: string;
 }
 
 export default function CreateDialoguePage() {
@@ -68,7 +69,8 @@ export default function CreateDialoguePage() {
           id: user.id.toString(),
           name: user.name || user.email.split('@')[0],
           email: user.email,
-          avatar: '/experts/member1.jpg' // 기본 아바타 사용
+          avatar: '/experts/member1.jpg', // 기본 아바타 사용
+          role: user.role || 'USER'
         }));
         
         setMembers(formattedMembers);
@@ -157,13 +159,18 @@ export default function CreateDialoguePage() {
     setLoading(true);
 
     try {
-      // 전송할 데이터 준비 및 검증
+      // 작성자도 참여자에 포함
+      const allParticipantEmails = [
+        user?.email || '', // 작성자 이메일 추가
+        ...selectedMemberDetails.map(member => member.email)
+      ].filter((email, index, array) => array.indexOf(email) === index); // 중복 제거
+      
       const requestData = {
         title: formData.title.trim(),
         question: formData.question.trim(),
         isPublic: formData.isPublic,
         authorEmail: user?.email || '',
-        participantEmails: selectedMemberDetails.map(member => member.email),
+        participantEmails: allParticipantEmails,
       };
 
       // 필수 필드 재검증
@@ -171,6 +178,9 @@ export default function CreateDialoguePage() {
         throw new Error('작성자 이메일이 없습니다.');
       }
 
+      console.log('작성자 이메일:', user?.email);
+      console.log('선택된 참여자 이메일:', selectedMemberDetails.map(member => member.email));
+      console.log('최종 참여자 이메일 목록:', allParticipantEmails);
       console.log('대화방 생성 요청 데이터:', requestData);
 
       const response = await fetch(getApiUrl('/api/dialogue/rooms'), {
@@ -186,6 +196,8 @@ export default function CreateDialoguePage() {
       if (response.ok) {
         const data = await response.json();
         console.log('대화방 생성 성공:', data);
+        console.log('생성된 대화방 ID:', data.id);
+        console.log('전송된 참여자 목록:', allParticipantEmails);
         alert('대화방이 성공적으로 생성되었습니다.');
         // 대화방 목록 페이지로 이동하면서 새로고침 파라미터 추가
         router.push('/dialogue?refresh=true');
