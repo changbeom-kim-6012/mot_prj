@@ -19,6 +19,7 @@ interface SubjectEditModalProps {
     categoryId: number;
     curriculumFilePath?: string;
     curriculumFileName?: string;
+    createdBy?: string;
   };
   categories: Array<{
     id: number;
@@ -55,6 +56,13 @@ export default function SubjectEditModal({
   
   // 관리자 권한 확인 (ADMIN만)
   const isAdmin = isAuthenticated && user && user.role === 'ADMIN';
+  
+  // 파일 선택 권한 확인 (관리자, 전문가, 또는 파일 등록자)
+  const canEditFile = isAuthenticated && user && (
+    user.role === 'ADMIN' || 
+    user.role === 'EXPERT' || 
+    (subject && subject.createdBy && user.email === subject.createdBy)
+  );
   const [formData, setFormData] = useState<SubjectFormData>({
     subjectCode: '',
     subjectDescription: '',
@@ -92,9 +100,12 @@ export default function SubjectEditModal({
       console.log('hasFilePath:', !!subject.curriculumFilePath);
       console.log('isAuthenticated:', isAuthenticated);
       console.log('user:', user);
-      console.log('Subject.relatedProgramList:', subject.relatedProgramList);
+      console.log('Subject.relatedProgramList:', (subject as any).relatedProgramList);
       console.log('user.role:', user?.role);
       console.log('isAdmin:', isAdmin);
+      console.log('canEditFile:', canEditFile);
+      console.log('subject.createdBy:', subject.createdBy);
+      console.log('user.email:', user?.email);
       console.log('curriculumFile 상태:', curriculumFile);
       console.log('========================');
       
@@ -103,7 +114,7 @@ export default function SubjectEditModal({
         subjectDescription: subject.subjectDescription || '',
         subjectContent: subject.subjectContent || '',
         categoryId: subject.categoryId || 0,
-        selectedPrograms: subject.relatedProgramList || []
+        selectedPrograms: (subject as any).relatedProgramList || []
       });
       
       // curriculumFile 상태 초기화 (새 파일 선택 취소)
@@ -479,7 +490,7 @@ export default function SubjectEditModal({
             </label>
             <div className="flex items-center gap-4">
               <label className={`flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg transition-colors ${
-                isAdmin ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed bg-gray-100'
+                canEditFile ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed bg-gray-100'
               }`}>
                 <FiUpload className="w-5 h-5 text-gray-500" />
                 <span className="text-gray-700">파일 선택</span>
@@ -487,7 +498,7 @@ export default function SubjectEditModal({
                   type="file"
                   onChange={handleFileChange}
                   accept=".pdf,.doc,.docx,.ppt,.pptx"
-                  disabled={!isAdmin}
+                  disabled={!canEditFile}
                   className="hidden"
                 />
               </label>
@@ -509,7 +520,7 @@ export default function SubjectEditModal({
                     isAuthenticated ? (
                       <button
                         type="button"
-                        onClick={() => handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath)}
+                        onClick={() => handleViewCurriculumFile(subject.curriculumFileName || '', subject.curriculumFilePath || null)}
                         className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors border border-emerald-200"
                         title="파일 보기"
                       >
