@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2 } from 'react-icons/fi';
@@ -55,6 +55,9 @@ export default function DialoguePage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isPublicDropdownOpen, setIsPublicDropdownOpen] = useState(false);
+  
+  // 메시지 영역 스크롤을 위한 ref
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 메시지 삭제 함수
   const handleDeleteMessage = async (messageId: number) => {
@@ -303,6 +306,13 @@ export default function DialoguePage() {
     
     return () => clearInterval(interval);
   }, [selectedRoom, user]);
+
+  // 메시지가 업데이트될 때마다 스크롤을 맨 아래로 이동
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // 페이지 포커스 시 데이터 새로고침 (대화방 생성 후 돌아올 때)
   useEffect(() => {
@@ -913,11 +923,11 @@ export default function DialoguePage() {
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiMessageSquare className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white">Dialogue</h1>
+              <h1 className="text-3xl font-bold text-white">대화/토론방</h1>
             </div>
             <p className="text-lg text-blue-50 max-w-[1150px] text-right">
-              질문과 대답을 대화식으로 하는 공간<br/>
-              전문가들과 실시간으로 소통하고 답변을 받아보세요.
+              MOT/연구관리 관련 기업내 이슈 및 타사 사례 등 궁금한 사항을 주제로하여<br/>
+              다양한 분야의 경험과 전문지식을 갖춘 전문가와 답변을 주고 받을 수 있는 Q&A 열린 광장입니다.
             </p>
           </div>
         </div>
@@ -1144,6 +1154,8 @@ export default function DialoguePage() {
                       </div>
                     </div>
                   ))}
+                  {/* 스크롤 자동 이동을 위한 빈 div */}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* 메시지 입력 - 참여자만 표시 */}

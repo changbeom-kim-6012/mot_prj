@@ -609,10 +609,10 @@ export default function QnaPage() {
   };
 
   if (loading) {
-      return (
-    <main className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">질문 목록을 불러오는 중...</p>
@@ -647,11 +647,11 @@ export default function QnaPage() {
             <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiMessageSquare className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">Q&A</h1>
+            <h1 className="text-3xl font-bold text-white">질문방</h1>
           </div>
           <p className="text-lg text-purple-50 max-w-[1150px] text-right">
-            기술경영, R&D 기획 및 관리에 대한 이슈, 타사 사례 등 MOT 관련 정보 한마당<br/>
-            전문가에게 질문하고 답변을 받아보세요.
+            MOT/연구관리 업무 관련하여 기업내 이슈 및 타사 사례등 궁금한 사항을 문의하고<br/>
+            다양한 분야의 경험과 전문지식을 갖춘 전문가와 답변을 주고 받는 Q&A 열린 광장입니다.
           </p>
         </div>
       </div>

@@ -313,11 +313,11 @@ export default function OpinionsPage() {
             <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiBookOpen className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">기고 안내</h1>
+            <h1 className="text-2xl font-bold text-white">논단, 칼럼, 시선 공유</h1>
           </div>
                      <p className="text-base text-amber-100 max-w-[1150px] text-right">
-             R&D 및 MOT 관련 주제에 대한 여러분의 기고를 환영합니다.<br/>
-             다양한 관점과 혁신적인 아이디어를 자유롭게 공유해 주세요.
+             R&D 및 MOT 관련하여 다양한 주제에 대해서<br/>
+             다양한 분야의 전문가가 각자의 관점에서 다채롭게 전개하는 의견을 공유하는 광장입니다.
            </p>
         </div>
       </div>

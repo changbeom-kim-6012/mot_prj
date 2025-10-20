@@ -131,13 +131,11 @@ export default function ExpertPage() {
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiUser className="w-6 h-6" />
               </div>
-              <h1 className="text-2xl font-bold text-white">전문가 프로필</h1>
+              <h1 className="text-2xl font-bold text-white">함께하는 전문가</h1>
             </div>
                          <p className="text-base text-blue-100 max-w-[1150px] text-right">
-               기술경영 지식을 나누며 함께 성장하는 MOT Club입니다.
-             </p>
-             <p className="text-base text-blue-100 max-w-[1150px] text-right">
-               여러분의 귀한 경험과 통찰을 지식 나눔을 통해 함께 발전해 나갈 분들 환영합니다.
+               국내 기업의 R&D 관리 및 MOT 역량 강화를 목표로<br/>
+               함께 연구하고 교육하며, 현장 경험을 공유하는 기술경영 전문가 그룹
              </p>
           </div>
         </div>

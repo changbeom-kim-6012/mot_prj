@@ -447,7 +447,7 @@ export default function LearningPage() {
               <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiUsers className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white">Learning</h1>
+              <h1 className="text-3xl font-bold text-white">MOT 교육 광장</h1>
             </div>
             <div className="flex items-center gap-3">
               {isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') && (
@@ -464,13 +464,13 @@ export default function LearningPage() {
                 className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
               >
                 <FiInfo className="w-5 h-5" />
-                Program Overview
+                MOT Program
               </button>
             </div>
           </div>
           <p className="text-lg text-emerald-50 max-w-[1150px] text-right">
-            협회에서 실시하는 MOT 관련 모든 교육과목 및 과정과 프로그램 정보를<br/>
-            체계적으로 관리하고, 이를 통해 회원들이 필요로하는 MOT 교육에 대한 정보를 제공합니다.
+            MOT 관련된 모든 교과목을 체계적으로 관리하고<br/>
+            교육과정(Program)과 교과목을 연계하여 교육에 대해 정보를 제공합니다.
           </p>
         </div>
       </div>
