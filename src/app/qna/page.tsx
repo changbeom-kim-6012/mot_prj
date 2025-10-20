@@ -608,20 +608,6 @@ export default function QnaPage() {
     document.body.removeChild(link);
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">질문 목록을 불러오는 중...</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-50">
       <Navigation />
