@@ -299,7 +299,7 @@ export default function OpinionManagement() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">초록</label>
-                        <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{selectedOpinion.abstractText}</p>
+                        <p className="mt-1 text-sm text-gray-900 whitespace-pre-line break-words overflow-wrap-break-word">{selectedOpinion.abstractText}</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">키워드</label>

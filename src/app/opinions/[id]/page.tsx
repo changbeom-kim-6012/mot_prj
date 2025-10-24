@@ -75,10 +75,8 @@ export default function OpinionDetailPage() {
         console.log('Article ID:', articleId);
         console.log('API URL:', getApiUrl(`/api/opinions/${articleId}`));
         
-        // 운영 환경에서는 상대 경로 사용, 개발 환경에서는 절대 경로 사용
-        const apiUrl = process.env.NODE_ENV === 'production' 
-          ? getRelativeApiUrl(`/api/opinions/${articleId}`)
-          : getApiUrl(`/api/opinions/${articleId}`);
+        // 운영 환경에서도 절대 경로 사용 (프록시 설정으로 인해)
+        const apiUrl = getApiUrl(`/api/opinions/${articleId}`);
         
         const res = await axios.get(apiUrl);
         console.log('API 응답:', res.data);
@@ -93,9 +91,7 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attApiUrl = process.env.NODE_ENV === 'production' 
-          ? getRelativeApiUrl('/api/attachments')
-          : getApiUrl('/api/attachments');
+        const attApiUrl = getApiUrl('/api/attachments');
         
         const attRes = await axios.get(attApiUrl, {
           params: { refTable: 'opinions', refId: articleId }
@@ -105,7 +101,19 @@ export default function OpinionDetailPage() {
       } catch (e: any) {
         console.error('Opinion Detail API 오류:', e);
         console.error('오류 상세:', e.response?.data || e.message);
-        setError(`상세 정보를 불러오지 못했습니다. (${e.response?.status || '연결 오류'})`);
+        console.error('API URL:', getApiUrl(`/api/opinions/${articleId}`));
+        console.error('Article ID:', articleId);
+        
+        // 404 오류인 경우 특별 처리
+        if (e.response?.status === 404) {
+          setError('해당 기고를 찾을 수 없습니다.');
+        } else if (e.response?.status === 403) {
+          setError('이 기고에 접근할 권한이 없습니다.');
+        } else if (e.code === 'NETWORK_ERROR' || !e.response) {
+          setError('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
+        } else {
+          setError(`상세 정보를 불러오지 못했습니다. (${e.response?.status || '연결 오류'})`);
+        }
       } finally {
         setLoading(false);
       }
