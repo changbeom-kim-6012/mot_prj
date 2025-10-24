@@ -75,8 +75,10 @@ export default function OpinionDetailPage() {
         console.log('Article ID:', articleId);
         console.log('API URL:', getApiUrl(`/api/opinions/${articleId}`));
         
-        // 운영 환경에서도 절대 경로 사용 (프록시 설정으로 인해)
-        const apiUrl = getApiUrl(`/api/opinions/${articleId}`);
+        // 운영 환경에서는 상대 경로 사용, 개발 환경에서는 절대 경로 사용
+        const apiUrl = process.env.NODE_ENV === 'production' 
+          ? `/api/opinions/${articleId}`
+          : getApiUrl(`/api/opinions/${articleId}`);
         
         const res = await axios.get(apiUrl);
         console.log('API 응답:', res.data);
@@ -91,7 +93,9 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attApiUrl = getApiUrl('/api/attachments');
+        const attApiUrl = process.env.NODE_ENV === 'production' 
+          ? '/api/attachments'
+          : getApiUrl('/api/attachments');
         
         const attRes = await axios.get(attApiUrl, {
           params: { refTable: 'opinions', refId: articleId }
@@ -101,7 +105,9 @@ export default function OpinionDetailPage() {
       } catch (e: any) {
         console.error('Opinion Detail API 오류:', e);
         console.error('오류 상세:', e.response?.data || e.message);
-        console.error('API URL:', getApiUrl(`/api/opinions/${articleId}`));
+        console.error('API URL:', process.env.NODE_ENV === 'production' 
+          ? `/api/opinions/${articleId}`
+          : getApiUrl(`/api/opinions/${articleId}`));
         console.error('Article ID:', articleId);
         
         // 404 오류인 경우 특별 처리
