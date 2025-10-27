@@ -39,9 +39,10 @@ const nextConfig = {
       // 환경 변수가 없을 때 NODE_ENV 기반으로 설정
       const nodeEnv = process.env.NODE_ENV;
       if (nodeEnv === 'production') {
+        // 프로덕션에서는 외부 서버의 백엔드 API 사용
         apiUrl = 'http://www.motclub.co.kr';
       } else {
-        // development 또는 기타 환경에서는 localhost 사용
+        // development 환경에서는 localhost 사용
         apiUrl = 'http://localhost:8084';
       }
     }

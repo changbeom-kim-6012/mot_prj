@@ -671,7 +671,7 @@ export default function DialoguePage() {
           'User-Role': user?.role || '',
         },
         body: JSON.stringify({
-          content: newMessage,
+        content: newMessage,
         }),
       });
 
@@ -715,7 +715,7 @@ export default function DialoguePage() {
           console.log('전체 메시지 수:', updatedMessages.length);
           return updatedMessages;
         });
-        setNewMessage('');
+      setNewMessage('');
       } else {
         // 403 오류인 경우 특별 처리
         if (response.status === 403) {
@@ -742,7 +742,7 @@ export default function DialoguePage() {
       console.error('메시지 전송 실패:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (!errorMessage.includes('권한이 없습니다')) {
-        alert('메시지 전송에 실패했습니다.');
+      alert('메시지 전송에 실패했습니다.');
       }
     } finally {
       setSendingMessage(false);

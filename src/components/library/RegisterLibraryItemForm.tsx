@@ -37,7 +37,7 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
   // 권한 확인
   const isAdmin = isAuthenticated && user && user.role === 'ADMIN';
   const isExpert = isAuthenticated && user && user.role === 'EXPERT';
-  const canEdit = isAdmin || (isExpert && editItem && user.username === editItem.author);
+  const canEdit = isAdmin || isExpert;
   
   const [category, setCategory] = useState('');
   const [categoryEtc, setCategoryEtc] = useState('');

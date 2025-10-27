@@ -1,7 +1,7 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip } from 'react-icons/fi';
+import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip, FiCalendar, FiTag } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -41,6 +41,8 @@ export default function OpinionsPage() {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'abstract' | 'fulltext'>('abstract');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedArticleDetail, setSelectedArticleDetail] = useState<Article | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -268,6 +270,29 @@ export default function OpinionsPage() {
     }
   };
 
+  const handleDetailView = async (article: Article) => {
+    try {
+      // 상세 정보를 가져오는 API 호출
+      const apiUrl = (process.env.NODE_ENV as string) === 'production' 
+        ? `http://www.motclub.co.kr/api/opinions/${article.id}`
+        : `http://localhost:8084/api/opinions/${article.id}`;
+      
+      const response = await axios.get(apiUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        withCredentials: false,
+      });
+      
+      setSelectedArticleDetail(response.data);
+      setShowDetailModal(true);
+    } catch (error) {
+      console.error('상세 정보 로드 실패:', error);
+      alert('상세 정보를 불러오는데 실패했습니다.');
+    }
+  };
+
   const handleFileView = (filePath: string, fileName: string) => {
     // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
     const pathParts = filePath.split('\\');
@@ -446,11 +471,12 @@ export default function OpinionsPage() {
                       </Link>
                     ) : (
                       isAuthenticated ? (
-                        <Link href={`/opinions/${article.id}`}>
-                          <h3 className="text-lg font-medium text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
-                            {article.title}
-                          </h3>
-                        </Link>
+                        <h3 
+                          className="text-lg font-medium text-gray-900 hover:text-indigo-600 transition-colors duration-200 cursor-pointer"
+                          onClick={() => handleDetailView(article)}
+                        >
+                          {article.title}
+                        </h3>
                       ) : (
                         <h3 
                           className="text-lg font-medium text-gray-400 cursor-not-allowed"
@@ -471,7 +497,7 @@ export default function OpinionsPage() {
                   </p>
                 </div>
                 
-                                  {/* 오른쪽: 버튼들 */}
+                  {/* 오른쪽: 버튼들 */}
                   <div className="flex items-center space-x-2 ml-4">
                     {/* 임시저장된 기고는 수정 버튼 표시 */}
                     {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
@@ -738,6 +764,138 @@ export default function OpinionsPage() {
           fileName={selectedFile.name}
           onClose={handleCloseFileViewer}
         />
+      )}
+
+      {/* 상세페이지 팝업 모달 */}
+      {showDetailModal && selectedArticleDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          >
+            {/* 모달 헤더 */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2 break-all overflow-wrap-break-word">
+                    {selectedArticleDetail.title}
+                  </h2>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-1">
+                      <FiUser className="h-4 w-4" />
+                      {selectedArticleDetail.authorName}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FiCalendar className="h-4 w-4" />
+                      {new Date(selectedArticleDetail.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      selectedArticleDetail.status === '등록승인' 
+                        ? 'bg-green-100 text-green-800' 
+                        : selectedArticleDetail.status === '등록대기'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedArticleDetail.status}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setSelectedArticleDetail(null);
+                  }}
+                  className="text-white hover:text-gray-200 transition-colors duration-200"
+                >
+                  <FiX className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* 모달 내용 */}
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              {/* 초록 */}
+              {selectedArticleDetail.abstractText && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FiFileText className="h-5 w-5 text-indigo-600" />
+                    초록
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700 break-all overflow-wrap-break-word whitespace-pre-line">
+                      {selectedArticleDetail.abstractText}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 전문 */}
+              {selectedArticleDetail.fullText && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FiFileText className="h-5 w-5 text-indigo-600" />
+                    전문
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700 break-all overflow-wrap-break-word whitespace-pre-line">
+                      {selectedArticleDetail.fullText}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 참고문헌 */}
+              {selectedArticleDetail.references && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FiBookOpen className="h-5 w-5 text-indigo-600" />
+                    참고문헌
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700 break-all overflow-wrap-break-word whitespace-pre-line">
+                      {selectedArticleDetail.references}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 키워드 */}
+              {selectedArticleDetail.keywords && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FiTag className="h-5 w-5 text-indigo-600" />
+                    키워드
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedArticleDetail.keywords.split(',').map((keyword: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full break-all overflow-wrap-break-word"
+                      >
+                        {keyword.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 모달 푸터 */}
+            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedArticleDetail(null);
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
+              >
+                닫기
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
       </div>
     </main>

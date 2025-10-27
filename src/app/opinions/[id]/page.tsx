@@ -33,7 +33,7 @@ interface Attachment {
 export default function OpinionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const articleId = params.id;
 
   const [article, setArticle] = useState<Article | null>(null);
@@ -69,18 +69,38 @@ export default function OpinionDetailPage() {
 
   useEffect(() => {
     async function fetchDetail() {
+      // 인증 로딩이 완료될 때까지 대기
+      if (authLoading) {
+        return;
+      }
+      
       setLoading(true);
+      setError(null);
+      
       try {
         console.log('=== Opinion Detail API 호출 ===');
+        console.log('NODE_ENV:', process.env.NODE_ENV);
         console.log('Article ID:', articleId);
-        console.log('API URL:', getApiUrl(`/api/opinions/${articleId}`));
+        console.log('Article ID 타입:', typeof articleId);
+        console.log('현재 페이지 URL:', window.location.href);
+        console.log('현재 페이지 경로:', window.location.pathname);
         
-        // 운영 환경에서는 상대 경로 사용, 개발 환경에서는 절대 경로 사용
-        const apiUrl = process.env.NODE_ENV === 'production' 
-          ? `/api/opinions/${articleId}`
-          : getApiUrl(`/api/opinions/${articleId}`);
+        // 환경에 따라 다른 API URL 사용
+        const apiUrl = (process.env.NODE_ENV as string) === 'production' 
+          ? `http://www.motclub.co.kr/api/opinions/${articleId}`
+          : `http://localhost:8084/api/opinions/${articleId}`;
         
-        const res = await axios.get(apiUrl);
+        console.log('사용할 API URL:', apiUrl);
+        console.log('API 호출 시작...');
+        
+        const res = await axios.get(apiUrl, {
+          timeout: 10000, // 10초 타임아웃
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: false, // CORS 문제 방지
+        });
         console.log('API 응답:', res.data);
         const articleData = res.data;
         
@@ -93,45 +113,99 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attApiUrl = process.env.NODE_ENV === 'production' 
-          ? '/api/attachments'
-          : getApiUrl('/api/attachments');
+        const attApiUrl = (process.env.NODE_ENV as string) === 'production' 
+          ? 'http://www.motclub.co.kr/api/attachments'
+          : 'http://localhost:8084/api/attachments';
         
         const attRes = await axios.get(attApiUrl, {
-          params: { refTable: 'opinions', refId: articleId }
+          params: { refTable: 'opinions', refId: articleId },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: false, // CORS 문제 방지
         });
         setAttachments(attRes.data);
         setError(null);
       } catch (e: any) {
-        console.error('Opinion Detail API 오류:', e);
-        console.error('오류 상세:', e.response?.data || e.message);
-        console.error('API URL:', process.env.NODE_ENV === 'production' 
-          ? `/api/opinions/${articleId}`
-          : getApiUrl(`/api/opinions/${articleId}`));
+        console.error('=== Opinion Detail API 오류 상세 ===');
+        console.error('오류 객체:', e);
+        console.error('오류 메시지:', e.message);
+        console.error('오류 코드:', e.code);
+        console.error('응답 상태:', e.response?.status);
+        console.error('응답 데이터:', e.response?.data);
+        console.error('요청 URL:', e.config?.url);
         console.error('Article ID:', articleId);
+        console.error('NODE_ENV:', process.env.NODE_ENV);
+        console.error('================================');
         
-        // 404 오류인 경우 특별 처리
+        // 더 구체적인 에러 메시지
         if (e.response?.status === 404) {
-          setError('해당 기고를 찾을 수 없습니다.');
+          setError(`기고 ID ${articleId}를 찾을 수 없습니다.`);
         } else if (e.response?.status === 403) {
           setError('이 기고에 접근할 권한이 없습니다.');
+        } else if (e.response?.status === 500) {
+          setError('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        } else if (e.code === 'ECONNABORTED' || e.message.includes('timeout')) {
+          setError('요청 시간이 초과되었습니다. 네트워크를 확인해주세요.');
         } else if (e.code === 'NETWORK_ERROR' || !e.response) {
           setError('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
+        } else if (e.response?.status >= 400 && e.response?.status < 500) {
+          setError(`클라이언트 오류 (${e.response.status}): 요청을 처리할 수 없습니다.`);
+        } else if (e.response?.status >= 500) {
+          setError(`서버 오류 (${e.response.status}): 서버에서 오류가 발생했습니다.`);
         } else {
-          setError(`상세 정보를 불러오지 못했습니다. (${e.response?.status || '연결 오류'})`);
+          setError(`알 수 없는 오류가 발생했습니다: ${e.message}`);
         }
       } finally {
         setLoading(false);
       }
     }
     fetchDetail();
-  }, [articleId]);
+  }, [articleId, authLoading]);
+
+  if (authLoading) {
+    return <main className="min-h-screen bg-gray-50"><Navigation /><div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-400">인증 확인 중...</div></main>;
+  }
 
   if (loading) {
     return <main className="min-h-screen bg-gray-50"><Navigation /><div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-400">로딩 중...</div></main>;
   }
   if (error || !article) {
-    return <main className="min-h-screen bg-gray-50"><Navigation /><div className="max-w-4xl mx-auto px-4 py-16 text-center text-red-500">{error || '상세 정보를 찾을 수 없습니다.'}</div></main>;
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 py-16">
+          <div className="text-center text-red-500 mb-4">
+            <h2 className="text-xl font-bold mb-2">오류 발생</h2>
+            <p className="mb-4">{error || '상세 정보를 찾을 수 없습니다.'}</p>
+          </div>
+          
+          {/* 디버깅 정보 (개발 환경에서만 표시) */}
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-600">
+              <h3 className="font-bold mb-2">디버깅 정보:</h3>
+              <p><strong>Article ID:</strong> {articleId}</p>
+              <p><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</p>
+              <p><strong>현재 URL:</strong> {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
+              <p><strong>API URL:</strong> {(process.env.NODE_ENV as string) === 'production' 
+                ? `http://www.motclub.co.kr/api/opinions/${articleId}`
+                : `http://localhost:8084/api/opinions/${articleId}`}</p>
+              <p><strong>에러:</strong> {error}</p>
+            </div>
+          )}
+          
+          <div className="text-center mt-4">
+            <button 
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              뒤로 가기
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
