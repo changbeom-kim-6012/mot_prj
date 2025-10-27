@@ -294,12 +294,27 @@ export default function OpinionsPage() {
   };
 
   const handleFileView = (filePath: string, fileName: string) => {
+    console.log('handleFileView 호출됨:', { filePath, fileName });
+    
     // 파일 경로에서 파일명만 추출 (UUID_originalName 형식)
-    const pathParts = filePath.split('\\');
+    // Windows와 Unix 경로 구분자를 모두 처리
+    const pathParts = filePath.split(/[\\\/]/);
     const storedFileName = pathParts[pathParts.length - 1];
     
+    console.log('추출된 파일명:', storedFileName);
+    
+    // 파일명만 인코딩 (전체 경로가 아닌)
     const encodedFileName = encodeURIComponent(storedFileName);
     const fileUrl = getApiUrl(`/api/attachments/view/${encodedFileName}`);
+    
+    console.log('생성된 파일 URL:', fileUrl);
+    console.log('URL 구성 요소:', {
+      baseUrl: getApiUrl(''),
+      endpoint: '/api/attachments/view/',
+      fileName: storedFileName,
+      encodedFileName: encodedFileName
+    });
+    
     setSelectedFile({ url: fileUrl, name: fileName });
   };
 
