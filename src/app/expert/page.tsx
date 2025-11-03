@@ -234,7 +234,7 @@ export default function ExpertPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto">
             <AnimatePresence>
               {filteredExperts.map((expert, index) => (
                 <motion.div
@@ -243,7 +243,7 @@ export default function ExpertPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col"
                 >
                   {/* 프로필 헤더 */}
                   <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
@@ -259,7 +259,7 @@ export default function ExpertPage() {
                   </div>
 
                   {/* 프로필 내용 */}
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col min-h-[200px]">
                     {/* 연락처 정보 */}
                     <div className="space-y-3 mb-6">
                       <div className="flex items-center text-sm text-gray-600">
@@ -269,10 +269,10 @@ export default function ExpertPage() {
                     </div>
 
                     {/* 학력 및 경력 */}
-                    {(expert.education || expert.career) && (
-                      <div className="space-y-4">
+                    {(expert.education || expert.career || expert.keyPerformanceHistory) && (
+                      <div className="flex flex-col flex-1 space-y-4">
                         {expert.education && (
-                          <div>
+                          <div className="hidden">
                             <h4 className="text-sm font-semibold text-gray-900 mb-2">학력</h4>
                             <div className="text-sm text-gray-600 whitespace-pre-line">
                               {expert.education}
@@ -281,9 +281,17 @@ export default function ExpertPage() {
                         )}
                         {expert.career && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-900 mb-2">경력</h4>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-2">전 소속/수행업무</h4>
                             <div className="text-sm text-gray-600 whitespace-pre-line">
                               {expert.career}
+                            </div>
+                          </div>
+                        )}
+                        {expert.keyPerformanceHistory && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-2">주요 수행 이력</h4>
+                            <div className="text-sm text-gray-600 whitespace-pre-line">
+                              {expert.keyPerformanceHistory}
                             </div>
                           </div>
                         )}

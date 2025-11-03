@@ -20,6 +20,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
     position: '',
     education: '',
     career: '',
+    keyPerformanceHistory: '',
     field: '',
     status: 'ACTIVE'
   });
@@ -38,6 +39,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
         position: expert.position || '',
         education: expert.education || '',
         career: expert.career || '',
+        keyPerformanceHistory: expert.keyPerformanceHistory || '',
         field: expert.field || '',
         status: expert.status
       });
@@ -64,6 +66,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
           position: formData.position,
           education: formData.education,
           career: formData.career,
+          keyPerformanceHistory: formData.keyPerformanceHistory,
           field: formData.field,
           status: formData.status as 'ACTIVE' | 'INACTIVE' | 'PENDING'
         };
@@ -201,7 +204,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
                     {/* 소속기관 */}
                     <div>
                       <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
-                        소속기관
+                        현 소속기관
                       </label>
                       <input
                         type="text"
@@ -210,7 +213,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
                         value={formData.organization}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="소속기관을 입력하세요"
+                        placeholder="현 소속기관을 입력하세요"
                       />
                     </div>
 
@@ -239,7 +242,7 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
                     <textarea
                       id="education"
                       name="education"
-                      rows={3}
+                      rows={2}
                       value={formData.education}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
@@ -249,16 +252,31 @@ export default function ExpertFormModal({ expert, onClose }: ExpertFormModalProp
 
                   <div>
                     <label htmlFor="career" className="block text-sm font-medium text-gray-700 mb-2">
-                      경력
+                      전 소속/수행업무
                     </label>
                     <textarea
                       id="career"
                       name="career"
-                      rows={3}
+                      rows={5}
                       value={formData.career}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                      placeholder="경력을 입력하세요"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none overflow-y-auto"
+                      placeholder="전 소속/수행업무를 입력하세요"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="keyPerformanceHistory" className="block text-sm font-medium text-gray-700 mb-2">
+                      주요 수행 이력
+                    </label>
+                    <textarea
+                      id="keyPerformanceHistory"
+                      name="keyPerformanceHistory"
+                      rows={5}
+                      value={formData.keyPerformanceHistory}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none overflow-y-auto"
+                      placeholder="주요 수행 이력을 입력하세요"
                     />
                   </div>
 

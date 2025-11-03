@@ -59,7 +59,8 @@ export default function LearningPage() {
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   
   // Learning 카테고리 및 Subject 관련 상태
-  const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 탭
+  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM)
+  const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 카테고리 탭
   const [categories, setCategories] = useState<LearningCategory[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -450,7 +451,7 @@ export default function LearningPage() {
               <h1 className="text-3xl font-bold text-white">MOT 교육 광장</h1>
             </div>
             <div className="flex items-center gap-3">
-              {isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') && (
+              {isAuthenticated && user && user.role === 'ADMIN' && (
                 <button
                   onClick={() => setSubjectCreateModalOpen(true)}
                   className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
@@ -475,10 +476,37 @@ export default function LearningPage() {
         </div>
       </div>
 
+      {/* Main Tab Section (SUBJECT / PROGRAM) */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-3">
+        <div className="flex gap-2 border-b-2 border-gray-200">
+          <button
+            onClick={() => setActiveMainTab('SUBJECT')}
+            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+              activeMainTab === 'SUBJECT'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            SUBJECT
+          </button>
+          <button
+            onClick={() => setActiveMainTab('PROGRAM')}
+            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+              activeMainTab === 'PROGRAM'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            PROGRAM
+          </button>
+        </div>
+      </div>
+
       {/* Content Sections */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-        {/* Learning 카테고리 및 Subject 섹션 */}
-        <section className="mb-12">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-6 pb-12">
+        {/* SUBJECT 탭 내용 */}
+        {activeMainTab === 'SUBJECT' && (
+          <section className="mb-12">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {/* Tab Headers */}
             <div className="border-b border-gray-200">
@@ -611,6 +639,20 @@ export default function LearningPage() {
             </div>
           </div>
         </section>
+        )}
+
+        {/* PROGRAM 탭 내용 */}
+        {activeMainTab === 'PROGRAM' && (
+          <section className="mb-12">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-8">
+                <div className="text-center py-12">
+                  <p className="text-gray-600 text-lg">PROGRAM 내용이 여기에 표시됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* 파일 보기 모달 */}

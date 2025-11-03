@@ -7,6 +7,7 @@ export interface Expert {
   position?: string;
   education?: string;
   career?: string;
+  keyPerformanceHistory?: string;
   field?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
   createdAt: string;
@@ -22,6 +23,7 @@ export interface ExpertCreate {
   position?: string;
   education?: string;
   career?: string;
+  keyPerformanceHistory?: string;
   field?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'PENDING';
 }
@@ -34,6 +36,7 @@ export interface ExpertUpdate {
   position?: string;
   education?: string;
   career?: string;
+  keyPerformanceHistory?: string;
   field?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
 }
