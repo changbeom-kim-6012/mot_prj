@@ -59,7 +59,7 @@ export default function LearningPage() {
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   
   // Learning 카테고리 및 Subject 관련 상태
-  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM)
+  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM_PHASE' | 'PROGRAM_ROLE_LEVEL'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM(Phase) / PROGRAM(Role & Level))
   const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 카테고리 탭
   const [categories, setCategories] = useState<LearningCategory[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -476,7 +476,7 @@ export default function LearningPage() {
         </div>
       </div>
 
-      {/* Main Tab Section (SUBJECT / PROGRAM) */}
+      {/* Main Tab Section (SUBJECT / PROGRAM(Phase) / PROGRAM(Role & Level)) */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-3">
         <div className="flex gap-2 border-b-2 border-gray-200">
           <button
@@ -490,14 +490,24 @@ export default function LearningPage() {
             SUBJECT
           </button>
           <button
-            onClick={() => setActiveMainTab('PROGRAM')}
+            onClick={() => setActiveMainTab('PROGRAM_PHASE')}
             className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
-              activeMainTab === 'PROGRAM'
+              activeMainTab === 'PROGRAM_PHASE'
                 ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            PROGRAM
+            PROGRAM(Phase)
+          </button>
+          <button
+            onClick={() => setActiveMainTab('PROGRAM_ROLE_LEVEL')}
+            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+              activeMainTab === 'PROGRAM_ROLE_LEVEL'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            PROGRAM(Role & Level)
           </button>
         </div>
       </div>
@@ -641,13 +651,26 @@ export default function LearningPage() {
         </section>
         )}
 
-        {/* PROGRAM 탭 내용 */}
-        {activeMainTab === 'PROGRAM' && (
+        {/* PROGRAM(Phase) 탭 내용 */}
+        {activeMainTab === 'PROGRAM_PHASE' && (
           <section className="mb-12">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-8">
                 <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">PROGRAM 내용이 여기에 표시됩니다.</p>
+                  <p className="text-gray-600 text-lg">PROGRAM(Phase) 내용이 여기에 표시됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* PROGRAM(Role & Level) 탭 내용 */}
+        {activeMainTab === 'PROGRAM_ROLE_LEVEL' && (
+          <section className="mb-12">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-8">
+                <div className="text-center py-12">
+                  <p className="text-gray-600 text-lg">PROGRAM(Role & Level) 내용이 여기에 표시됩니다.</p>
                 </div>
               </div>
             </div>
