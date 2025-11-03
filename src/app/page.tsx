@@ -180,8 +180,8 @@ export default function Home() {
           <div className="flex justify-end">
             <div style={{ maxWidth: 'calc(100% - 320px - 20px)', width: '100%' }}>
               <p className="text-lg text-fuchsia-200 leading-relaxed text-right" style={{wordBreak: 'keep-all'}}>
-                MOT Club은 한국산업기술진흥협회와 함께하는 기술경영 지식공유 커뮤니티입니다.<br/>
-                교육참가자 및 기술경영에 관심을 가진 모든 분들이 함께 만들어가는 공유마당입니다.
+                MOT Club은 한국산업기술진흥협회와 함께하는 기술경영 지식 공유 플랫폼으로<br/>
+                교육 수료생뿐만 아니라, 기술경영에 열정을 가진 모든 분들을 위한 역동적인 지식 교류와 성장의 허브입니다.
               </p>
             </div>
           </div>

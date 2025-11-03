@@ -926,8 +926,8 @@ export default function DialoguePage() {
               <h1 className="text-3xl font-bold text-white">대화/토론방</h1>
             </div>
             <p className="text-lg text-blue-50 max-w-[1150px] text-right">
-              MOT/연구관리 관련 기업내 이슈 및 타사 사례 등 궁금한 사항을 주제로하여<br/>
-              다양한 분야의 경험과 전문지식을 갖춘 전문가와 답변을 주고 받을 수 있는 Q&A 열린 광장입니다.
+              기술경영, 연구 기획 및 관리와 관련된 다양한 주제에 대해<br/>
+              해당 분야의 경험과 지식을 갖춘 MOT 전문가와 대화할 수 있는 열린 대화방입니다.
             </p>
           </div>
         </div>

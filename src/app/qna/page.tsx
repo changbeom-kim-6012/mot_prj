@@ -636,8 +636,8 @@ export default function QnaPage() {
             <h1 className="text-3xl font-bold text-white">질문방</h1>
           </div>
           <p className="text-lg text-purple-50 max-w-[1150px] text-right">
-            MOT/연구관리 업무 관련하여 기업내 이슈 및 타사 사례등 궁금한 사항을 문의하고<br/>
-            다양한 분야의 경험과 전문지식을 갖춘 전문가와 답변을 주고 받는 Q&A 열린 광장입니다.
+            R&D 기획 및 관리 업무 관련하여 기업내 이슈 및 타사 사례등 궁금한 사항을 문의하고<br/>
+            다양한 분야의 실무 경험과 지식을 갖춘 MOT 전문가의 답변을 받을 수 있는 Q&A 광장입니다.
           </p>
         </div>
       </div>

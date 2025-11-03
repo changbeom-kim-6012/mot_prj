@@ -364,8 +364,8 @@ export default function LibraryPage() {
             <h1 className="text-3xl font-bold text-white">자료실</h1>
           </div>
           <p className="text-lg text-blue-50 max-w-[1150px] text-right">
-            기술경영 및 R&D 관련 교육교재, 기술과 혁신 웹진 등 MOT 관련된 자료 공유방<br/>
-            연구관리 및 기술경영과 관련된 모든 자료를 축적하고, 회원들의 자유로운 접근이 가능한 공간입니다.
+            MOT Club 자료 공유방은 교육 교재, 웹진 등 기술경영 관련 지식자산 플랫폼으로<br/>
+            회원이라면 누구나 자유롭게 접근하고 활용할 수 있는 열린공간입니다.
           </p>
         </div>
       </div>
