@@ -1,19 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
   output: 'standalone',
   distDir: 'dist',
   trailingSlash: false,
+  // Workspace root 경고 해결: Frontend/mot 폴더를 루트로 명시
+  outputFileTracingRoot: require('path').join(__dirname),
   typescript: {
     // 빌드 시 TypeScript 에러가 있어도 빌드를 계속 진행
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // 빌드 시 ESLint 에러가 있어도 빌드를 계속 진행
-    ignoreDuringBuilds: true,
-  },
+  // Next.js 16에서는 eslint 설정이 next.config.js에서 제거됨
+  // eslint 설정은 eslint.config.mjs 파일에서 관리
+  
+  // webpack 설정 (--webpack 플래그 사용 시에만 적용)
   webpack: (config, { isServer }) => {
     // PDF.js 워커 파일 처리
     if (!isServer) {
@@ -24,6 +25,14 @@ const nextConfig = {
         crypto: false,
       };
     }
+    
+    // 1) node_modules 안의 .mjs를 "자바스크립트"로 강제 처리
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: 'javascript/auto',
+    });
+
     return config;
   },
   async rewrites() {
@@ -60,17 +69,6 @@ const nextConfig = {
         destination: `${apiUrl}/api/:path*`,
       },
     ];
-  },
-
-  webpack(config) {
-    // 1) node_modules 안의 .mjs를 "자바스크립트"로 강제 처리
-    config.module.rules.push({
-      test: /\.mjs$/,
-      include: /node_modules/,
-      type: 'javascript/auto',
-    });
-
-    return config;
   },
 };
 

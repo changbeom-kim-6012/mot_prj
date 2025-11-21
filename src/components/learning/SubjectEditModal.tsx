@@ -11,6 +11,7 @@ interface SubjectEditModalProps {
   onClose: () => void;
   onSuccess: () => void;
   onDelete?: () => void;
+  onSubjectUpdate?: (updatedSubject: any) => void;
   subject: {
     id: number;
     subjectCode: string;
@@ -35,13 +36,6 @@ interface SubjectFormData {
   subjectContent: string;
   categoryId: number;
   curriculumFile?: File;
-  selectedPrograms: string[];
-}
-
-interface Program {
-  id: string;
-  name: string;
-  description: string;
 }
 
 export default function SubjectEditModal({ 
@@ -49,6 +43,7 @@ export default function SubjectEditModal({
   onClose, 
   onSuccess,
   onDelete,
+  onSubjectUpdate,
   subject,
   categories 
 }: SubjectEditModalProps) {
@@ -67,8 +62,7 @@ export default function SubjectEditModal({
     subjectCode: '',
     subjectDescription: '',
     subjectContent: '',
-    categoryId: 0,
-    selectedPrograms: []
+    categoryId: 0
   });
   
   const [curriculumFile, setCurriculumFile] = useState<File | null>(null);
@@ -78,16 +72,6 @@ export default function SubjectEditModal({
   // 파일보기 관련 상태
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingFile, setViewingFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
-
-  // 프로그램 목록 (예시 데이터)
-  const [programs] = useState<Program[]>([
-    { id: '1', name: 'MOT 기초 과정', description: '기술경영의 기초를 다지는 과정' },
-    { id: '2', name: 'MOT 중급 과정', description: '기술경영의 심화 과정' },
-    { id: '3', name: 'MOT 고급 과정', description: '기술경영의 전문가 과정' },
-    { id: '4', name: 'R&D 관리 과정', description: 'R&D 조직 관리 전문 과정' },
-    { id: '5', name: '기술사업화 과정', description: '기술을 사업화하는 과정' },
-    { id: '6', name: '혁신경영 과정', description: '혁신적인 경영 방법론 과정' }
-  ]);
 
   // subject 데이터가 변경될 때 폼 데이터 초기화
   useEffect(() => {
@@ -113,8 +97,7 @@ export default function SubjectEditModal({
         subjectCode: subject.subjectCode || '',
         subjectDescription: subject.subjectDescription || '',
         subjectContent: subject.subjectContent || '',
-        categoryId: subject.categoryId || 0,
-        selectedPrograms: (subject as any).relatedProgramList || []
+        categoryId: subject.categoryId || 0
       });
       
       // curriculumFile 상태 초기화 (새 파일 선택 취소)
@@ -169,26 +152,22 @@ export default function SubjectEditModal({
 
     try {
       console.log('=== Subject 수정 데이터 ===');
-      console.log('선택된 프로그램들:', formData.selectedPrograms);
       console.log('전체 formData:', formData);
       
       const formDataToSend = new FormData();
       
-      // 서버로 전송할 subject 데이터 구성 (selectedPrograms 필드 제외)
+      // 서버로 전송할 subject 데이터 구성
       const subjectData = {
         subjectCode: formData.subjectCode,
         subjectDescription: formData.subjectDescription,
         subjectContent: formData.subjectContent,
-        categoryId: formData.categoryId,
-        relatedProgramList: formData.selectedPrograms
+        categoryId: formData.categoryId
       };
       
       formDataToSend.append('subject', JSON.stringify(subjectData));
       
       console.log('전송할 subject 데이터:', JSON.stringify(subjectData));
       console.log('subjectData 객체:', subjectData);
-      console.log('selectedPrograms 값:', formData.selectedPrograms);
-      console.log('relatedProgramList 값:', subjectData.relatedProgramList);
 
       if (curriculumFile) {
         formDataToSend.append('curriculumFile', curriculumFile);
@@ -202,13 +181,23 @@ export default function SubjectEditModal({
       if (response.ok) {
         const result = await response.json();
         console.log('Subject 수정 성공:', result);
+        console.log('반환된 파일 정보:', {
+          curriculumFileName: result.curriculumFileName,
+          curriculumFilePath: result.curriculumFilePath
+        });
         
         // 수정 성공 alert 표시
         alert('Subject가 성공적으로 수정되었습니다.');
         
-        // 성공 콜백 호출
+        // 업데이트된 Subject 데이터를 부모 컴포넌트에 전달
+        if (onSubjectUpdate) {
+          onSubjectUpdate(result);
+        }
+        
+        // 목록 새로고침 (선택적)
         onSuccess();
-        onClose();
+        
+        // 모달은 열어둠 (onClose 호출하지 않음)
       } else {
         const errorData = await response.text();
         console.error('Subject 수정 실패:', response.status, errorData);
@@ -268,22 +257,82 @@ export default function SubjectEditModal({
         return;
       }
       
-      // 파일 형식 제한 (PDF, DOC, DOCX, PPT, PPTX)
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      ];
+      // 파일 형식 제한 (PDF만) - MIME 타입과 확장자 모두 확인
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      const isValidPdfType = file.type === 'application/pdf' || file.type === '';
+      const isValidPdfExtension = fileExtension === '.pdf';
       
-      if (!allowedTypes.includes(file.type)) {
-        setErrors({ curriculumFile: 'PDF, DOC, DOCX, PPT, PPTX 파일만 업로드 가능합니다.' });
+      if (!isValidPdfType && !isValidPdfExtension) {
+        setErrors({ curriculumFile: 'PDF 파일만 업로드 가능합니다.' });
+        return;
+      }
+      
+      // 확장자가 .pdf가 아니면 에러
+      if (!isValidPdfExtension) {
+        setErrors({ curriculumFile: 'PDF 파일만 업로드 가능합니다.' });
         return;
       }
       
       setCurriculumFile(file);
       setErrors({ ...errors, curriculumFile: '' });
+    }
+  };
+
+  // 기존 파일 삭제 핸들러
+  const handleDeleteExistingFile = async () => {
+    // 관리자 권한 확인
+    if (!isAdmin) {
+      alert('관리자 권한이 필요합니다.');
+      return;
+    }
+    
+    if (!subject.curriculumFileName || subject.curriculumFileName === '[NULL]') {
+      alert('삭제할 파일이 없습니다.');
+      return;
+    }
+    
+    if (!confirm(`"${subject.curriculumFileName}" 파일을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(getApiUrl(`/api/subjects/${subject.id}/curriculum-file`), {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('커리큘럼 파일이 성공적으로 삭제되었습니다.');
+        
+        // Subject 데이터를 다시 불러와서 업데이트
+        try {
+          const subjectResponse = await fetch(getApiUrl(`/api/subjects/${subject.id}`));
+          if (subjectResponse.ok) {
+            const updatedSubject = await subjectResponse.json();
+            // 부모 컴포넌트에 업데이트된 subject 전달
+            if (onSubjectUpdate) {
+              onSubjectUpdate(updatedSubject);
+            }
+            // 목록 새로고침 (선택적)
+            onSuccess();
+          } else {
+            console.error('Subject 데이터 재조회 실패:', subjectResponse.status);
+            // 재조회 실패해도 목록은 새로고침
+            onSuccess();
+          }
+        } catch (error) {
+          console.error('Subject 데이터 재조회 중 오류:', error);
+          // 재조회 실패해도 목록은 새로고침
+          onSuccess();
+        }
+      } else {
+        const errorData = await response.text();
+        console.error('파일 삭제 실패:', response.status, errorData);
+        alert(`파일 삭제에 실패했습니다: ${errorData}`);
+      }
+    } catch (error) {
+      console.error('파일 삭제 중 오류:', error);
+      alert('파일 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -328,21 +377,6 @@ export default function SubjectEditModal({
     }
   };
 
-  // 프로그램 선택/해제
-  const handleProgramToggle = (programId: string) => {
-    // 관리자 권한 확인
-    if (!isAdmin) {
-      alert('관리자 권한이 필요합니다.');
-      return;
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      selectedPrograms: prev.selectedPrograms.includes(programId)
-        ? prev.selectedPrograms.filter(id => id !== programId)
-        : [...prev.selectedPrograms, programId]
-    }));
-  };
 
   console.log('=== SubjectEditModal 렌더링 ===');
   console.log('isOpen:', isOpen);
@@ -497,7 +531,7 @@ export default function SubjectEditModal({
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  accept=".pdf"
                   disabled={!canEditFile}
                   className="hidden"
                 />
@@ -537,6 +571,17 @@ export default function SubjectEditModal({
                   ) : (
                     <span className="text-xs text-gray-400">(파일 경로 없음)</span>
                   )}
+                  {canEditFile && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteExistingFile}
+                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200 transition-colors border border-red-200"
+                      title="파일 삭제"
+                    >
+                      <FiTrash2 className="w-3 h-3" />
+                      <span>파일 삭제</span>
+                    </button>
+                  )}
                 </div>
               )}
               
@@ -552,82 +597,10 @@ export default function SubjectEditModal({
               </p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              PDF, DOC, DOCX, PPT, PPTX 파일만 업로드 가능합니다. (최대 10MB)
+              PDF 파일만 업로드 가능합니다. (최대 10MB)
             </p>
           </div>
 
-          {/* 프로그램 선택 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              관련 프로그램 (2개 이상 선택 권장)
-            </label>
-            
-            {/* 프로그램 선택 드롭다운 */}
-            <div className="flex gap-3 mb-3">
-              <select
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  if (selectedId && !formData.selectedPrograms.includes(selectedId)) {
-                    handleProgramToggle(selectedId);
-                    e.target.value = ''; // 선택 후 드롭다운 초기화
-                  }
-                }}
-                disabled={!isAdmin}
-                className={`flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                  !isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-              >
-                <option value="">프로그램을 선택하세요</option>
-                {programs
-                  .filter(program => !formData.selectedPrograms.includes(program.id))
-                  .map((program) => (
-                    <option key={program.id} value={program.id}>
-                      {program.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* 선택된 프로그램 리스트 */}
-            {formData.selectedPrograms.length > 0 ? (
-              <div className="flex flex-wrap gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[60px]">
-                {formData.selectedPrograms.map((programId) => {
-                  const program = programs.find(p => p.id === programId);
-                  if (!program) return null;
-                  
-                  return (
-                    <div
-                      key={program.id}
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
-                    >
-                      <span className="font-medium text-gray-900">
-                        {program.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleProgramToggle(program.id)}
-                        disabled={!isAdmin}
-                        className={`rounded-full p-1 transition-colors ${
-                          isAdmin ? 'text-red-500 hover:text-red-700 hover:bg-red-50' : 'text-gray-400 cursor-not-allowed'
-                        }`}
-                        title={isAdmin ? "제거" : "관리자만 제거 가능"}
-                      >
-                        <FiX className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-4 text-center text-gray-500 border border-gray-200 rounded-lg bg-gray-50 min-h-[60px] flex items-center justify-center">
-                <p className="text-sm">위의 드롭다운에서 프로그램을 선택하고 추가해주세요.</p>
-              </div>
-            )}
-            
-            <p className="mt-2 text-sm text-gray-500">
-              현재 {formData.selectedPrograms.length}개 프로그램이 선택되었습니다.
-            </p>
-          </div>
 
           {/* 전체 에러 메시지 */}
           {errors.submit && (

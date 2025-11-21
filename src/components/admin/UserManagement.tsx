@@ -110,7 +110,7 @@ export default function UserManagement() {
     if (!editingUser) return;
 
     try {
-      const response = await fetch(`getApiUrl('/api/users')/${userId}`, {
+      const response = await fetch(`${getApiUrl('/api/users')}/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingUser),
@@ -209,13 +209,17 @@ export default function UserManagement() {
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const response = await fetch(`getApiUrl('/api/users')/${userId}`, {
+      const response = await fetch(`${getApiUrl('/api/users')}/${userId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('회원 삭제에 실패했습니다.');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: '회원 삭제에 실패했습니다.' }));
+        throw new Error(errorData.message || '회원 삭제에 실패했습니다.');
+      }
       setUsers(users.filter(u => u.id !== userId));
+      alert('회원이 성공적으로 삭제되었습니다.');
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || '회원 삭제에 실패했습니다.');
     }
   };
 

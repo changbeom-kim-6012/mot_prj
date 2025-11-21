@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo, FiSettings, FiTrendingUp, FiDatabase, FiTarget, FiFileText } from 'react-icons/fi';
+import { FiArrowRight, FiUsers, FiEye, FiDownload, FiSearch, FiPlus, FiInfo, FiSettings, FiTrendingUp, FiDatabase, FiTarget, FiFileText, FiList } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
 import CourseOverviewModal from '@/components/common/CourseOverviewModal';
 import SubjectCreateModal from '@/components/learning/SubjectCreateModal';
 import SubjectEditModal from '@/components/learning/SubjectEditModal';
+import ProgramDetailModal from '@/components/learning/ProgramDetailModal';
 import { useAuth } from '@/context/AuthContext';
+import { fetchLearningPrograms } from '@/utils/learningProgramApi';
+import { LearningProgram } from '@/types/learningProgram';
 
 interface RelatedMaterial {
   id: number;
@@ -57,14 +60,20 @@ export default function LearningPage() {
   const [subjectCreateModalOpen, setSubjectCreateModalOpen] = useState(false);
   const [subjectEditModalOpen, setSubjectEditModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [programDetailModalOpen, setProgramDetailModalOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<any>(null);
   
   // Learning 카테고리 및 Subject 관련 상태
-  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM_PHASE' | 'PROGRAM_ROLE_LEVEL'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM(Phase) / PROGRAM(Role & Level))
+  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM_PHASE' | 'PROGRAM_ROLE_LEVEL'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM(Level-based) / PROGRAM(Topic-based))
   const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 카테고리 탭
   const [categories, setCategories] = useState<LearningCategory[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  
+  // Learning Program 관련 상태
+  const [programs, setPrograms] = useState<LearningProgram[]>([]);
+  const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
 
   // Learning 카테고리 데이터 로딩
   useEffect(() => {
@@ -77,6 +86,13 @@ export default function LearningPage() {
       fetchSubjects(activeTab);
     }
   }, [activeTab, categories.length]);
+
+  // PROGRAM_PHASE 또는 PROGRAM_ROLE_LEVEL 탭 활성화 시 Program 데이터 로딩
+  useEffect(() => {
+    if (activeMainTab === 'PROGRAM_PHASE' || activeMainTab === 'PROGRAM_ROLE_LEVEL') {
+      fetchPrograms();
+    }
+  }, [activeMainTab]);
 
   // 관련자료 목록 불러오기
   useEffect(() => {
@@ -360,6 +376,11 @@ export default function LearningPage() {
     console.log('모달 열기 완료');
   };
 
+  // Subject 데이터 업데이트 (파일 삭제 후 등)
+  const handleSubjectUpdate = (updatedSubject: any) => {
+    setSelectedSubject(updatedSubject);
+  };
+
   // Curriculum 파일 보기 처리
   const handleViewCurriculumFile = async (fileName: string, filePath: string | null) => {
     console.log('=== Curriculum 파일 보기 시작 ===');
@@ -381,13 +402,11 @@ export default function LearningPage() {
       return;
     }
     
-    // LibraryPage와 동일한 방식으로 파일 경로 처리
+    // 쿼리 파라미터 방식으로 파일 경로 처리 (URL 인코딩 문제 해결)
     try {
-      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
-        return '%' + c.charCodeAt(0).toString(16);
-      });
-      
-      const fileUrl = `/api/library/view/${encodedPath}`;
+      // 쿼리 파라미터로 전달 (더 안전한 방식)
+      const encodedPath = encodeURIComponent(filePath.trim());
+      const fileUrl = `/api/library/view?path=${encodedPath}`;
       
       console.log('=== Curriculum 파일 보기 디버깅 ===');
       console.log('원본 fileName:', fileName);
@@ -411,6 +430,59 @@ export default function LearningPage() {
     const filteredSubjects = subjects.filter(subject => subject.categoryId === activeTab);
     // subjectCode 순서로 정렬
     return filteredSubjects.sort((a, b) => a.subjectCode.localeCompare(b.subjectCode));
+  };
+
+  // Program 데이터 가져오기
+  const fetchPrograms = async () => {
+    try {
+      setIsLoadingPrograms(true);
+      console.log('=== Program 데이터 요청 시작 ===');
+      
+      const data = await fetchLearningPrograms();
+      console.log('Program 데이터 조회 성공:', data);
+      
+      // 데이터 변환 (프론트엔드 형식에 맞게)
+      const transformedPrograms = data.map((program: LearningProgram) => ({
+        id: program.id,
+        programCode: program.code,
+        programName: program.description,
+        programType: program.programType,
+        programGoal: program.programGoal || '',
+        mainContent: program.mainContent || '',
+        curriculumPdf: program.curriculumFileName || program.curriculumPdf || '',
+        curriculumFileName: program.curriculumFileName,
+        curriculumFilePath: program.curriculumFilePath,
+        subjects: program.subjects?.map((subject: any) => ({
+          id: subject.id,
+          subjectCode: subject.subjectCode || subject.code,
+          subjectDescription: subject.subjectDescription || subject.description,
+          curriculumFileName: subject.curriculumFileName,
+          curriculumFilePath: subject.curriculumFilePath
+        })) || []
+      }));
+      
+      setPrograms(transformedPrograms);
+    } catch (error) {
+      console.error('Program 데이터 조회 실패:', error);
+      setPrograms([]);
+    } finally {
+      setIsLoadingPrograms(false);
+    }
+  };
+
+  // Program 생성 성공 핸들러
+  const handleProgramCreateSuccess = () => {
+    fetchPrograms();
+  };
+
+  // Program 수정 성공 핸들러
+  const handleProgramUpdateSuccess = () => {
+    fetchPrograms();
+  };
+
+  // Program 삭제 성공 핸들러
+  const handleProgramDeleteSuccess = () => {
+    fetchPrograms();
   };
 
   // 디버깅용 useEffect
@@ -452,20 +524,36 @@ export default function LearningPage() {
             </div>
             <div className="flex items-center gap-3">
               {isAuthenticated && user && user.role === 'ADMIN' && (
-                <button
-                  onClick={() => setSubjectCreateModalOpen(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
-                >
-                  <FiPlus className="w-5 h-5" />
-                  Subject 추가
-                </button>
+                <>
+                  {activeMainTab === 'SUBJECT' && (
+                    <button
+                      onClick={() => setSubjectCreateModalOpen(true)}
+                      className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+                    >
+                      <FiPlus className="w-5 h-5" />
+                      Subject 추가
+                    </button>
+                  )}
+                  {(activeMainTab === 'PROGRAM_PHASE' || activeMainTab === 'PROGRAM_ROLE_LEVEL') && (
+                    <button
+                      onClick={() => {
+                        setSelectedProgram(null);
+                        setProgramDetailModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+                    >
+                      <FiPlus className="w-5 h-5" />
+                      Program 추가
+                    </button>
+                  )}
+                </>
               )}
               <button
                 onClick={() => setOverviewModalOpen(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
               >
                 <FiInfo className="w-5 h-5" />
-                MOT Program
+                MOT Overview
               </button>
             </div>
           </div>
@@ -476,7 +564,7 @@ export default function LearningPage() {
         </div>
       </div>
 
-      {/* Main Tab Section (SUBJECT / PROGRAM(Phase) / PROGRAM(Role & Level)) */}
+      {/* Main Tab Section (SUBJECT / PROGRAM(Level-based) / PROGRAM(Topic-based)) */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-3">
         <div className="flex gap-2 border-b-2 border-gray-200">
           <button
@@ -497,7 +585,7 @@ export default function LearningPage() {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            PROGRAM(Phase)
+            PROGRAM(Level-based)
           </button>
           <button
             onClick={() => setActiveMainTab('PROGRAM_ROLE_LEVEL')}
@@ -507,7 +595,7 @@ export default function LearningPage() {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            PROGRAM(Role & Level)
+            PROGRAM(Topic-based)
           </button>
         </div>
       </div>
@@ -651,26 +739,338 @@ export default function LearningPage() {
         </section>
         )}
 
-        {/* PROGRAM(Phase) 탭 내용 */}
+        {/* PROGRAM(Level-based) 탭 내용 */}
         {activeMainTab === 'PROGRAM_PHASE' && (
           <section className="mb-12">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-8">
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">PROGRAM(Phase) 내용이 여기에 표시됩니다.</p>
+                {/* PROGRAM(Level-based) 리스트 */}
+                <div className="space-y-4">
+                  {isLoadingPrograms ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Program 목록을 불러오는 중...</p>
+                    </div>
+                  ) : programs.filter((p: any) => p.programType === 'Level-based').length > 0 ? (
+                    programs.filter((p: any) => p.programType === 'Level-based').map((program) => (
+                    <div
+                      key={program.id}
+                      className="p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                    >
+                      {/* 첫 번째 줄: 과정코드, 과정명, PDF 파일 */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full">
+                            {program.programCode}
+                          </span>
+                          <div className="relative group">
+                            <h4 
+                              className={`text-lg font-semibold transition-colors ${
+                                isAuthenticated 
+                                  ? 'text-gray-900 cursor-pointer hover:text-emerald-600' 
+                                  : 'text-gray-400 cursor-not-allowed'
+                              }`}
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  setSelectedProgram(program);
+                                  setProgramDetailModalOpen(true);
+                                }
+                              }}
+                              title={isAuthenticated ? "클릭하여 상세보기" : "로그인이 필요합니다"}
+                            >
+                              {program.programName}
+                            </h4>
+                            
+                            {/* 로그인 필요 툴팁 */}
+                            {!isAuthenticated && (
+                              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                로그인이 필요합니다
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          {(program.curriculumFileName || program.curriculumPdf) && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-600">{program.curriculumFileName || program.curriculumPdf}</span>
+                              <div className="relative group">
+                                <button
+                                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                                    isAuthenticated 
+                                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => {
+                                    if (isAuthenticated && (program.curriculumFilePath || program.curriculumFileName)) {
+                                      handleViewCurriculumFile(
+                                        program.curriculumFileName || program.curriculumPdf || '',
+                                        program.curriculumFilePath
+                                      );
+                                    }
+                                  }}
+                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
+                                  disabled={!isAuthenticated}
+                                >
+                                  <FiEye className="w-3 h-3" />
+                                  <span>파일보기</span>
+                                </button>
+                                
+                                {/* 툴팁 */}
+                                {!isAuthenticated && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    파일조회에는 로그인이 필요합니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* 두 번째 줄: 과정목표 */}
+                      <div className="pl-4 border-l-4 border-emerald-200">
+                        <div className="flex items-start gap-2 mb-2">
+                          <FiTarget className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm font-semibold text-gray-700">과정목표</span>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed pl-6 mb-4">
+                          {program.programGoal}
+                        </p>
+                        
+                        {/* 관련 Subject 목록 (쉼표로 구분) */}
+                        {program.subjects && program.subjects.length > 0 && (
+                          <div className="pl-6">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FiList className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                              <span className="text-sm font-semibold text-gray-700">관련 Subject</span>
+                            </div>
+                            <div className="flex flex-wrap items-center text-sm text-gray-700 pl-6">
+                              {program.subjects.map((subject, index) => (
+                                <span 
+                                  key={subject.id} 
+                                  className={`flex items-center ${
+                                    subject.curriculumFileName && subject.curriculumFilePath && isAuthenticated
+                                      ? 'cursor-pointer hover:text-emerald-600 transition-colors'
+                                      : subject.curriculumFileName && subject.curriculumFilePath && !isAuthenticated
+                                      ? 'cursor-not-allowed text-gray-400'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!isAuthenticated) {
+                                      alert('파일 조회에는 로그인이 필요합니다.');
+                                      return;
+                                    }
+                                    if (subject.curriculumFileName && subject.curriculumFilePath) {
+                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath);
+                                    } else {
+                                      alert('해당 Subject에 등록된 커리큘럼 파일이 없습니다.');
+                                    }
+                                  }}
+                                  title={
+                                    !isAuthenticated 
+                                      ? '로그인이 필요합니다' 
+                                      : subject.curriculumFileName && subject.curriculumFilePath 
+                                      ? '클릭하여 PDF 파일 보기' 
+                                      : '커리큘럼 파일이 없습니다'
+                                  }
+                                >
+                                  <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full">
+                                    {subject.subjectCode}
+                                  </span>
+                                  <span className="ml-1">{subject.subjectDescription}</span>
+                                  {subject.curriculumFileName && subject.curriculumFilePath && (
+                                    <FiFileText className="w-3 h-3 ml-1 text-emerald-600" />
+                                  )}
+                                  {index < program.subjects.length - 1 && (
+                                    <>
+                                      <span className="text-gray-400">,</span>
+                                      <span className="ml-3"></span>
+                                    </>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">등록된 Program이 없습니다.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </section>
         )}
 
-        {/* PROGRAM(Role & Level) 탭 내용 */}
+        {/* PROGRAM(Topic-based) 탭 내용 */}
         {activeMainTab === 'PROGRAM_ROLE_LEVEL' && (
           <section className="mb-12">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-8">
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">PROGRAM(Role & Level) 내용이 여기에 표시됩니다.</p>
+                {/* PROGRAM(Topic-based) 리스트 */}
+                <div className="space-y-4">
+                  {isLoadingPrograms ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Program 목록을 불러오는 중...</p>
+                    </div>
+                  ) : programs.filter((p: any) => p.programType === 'Topic-based').length > 0 ? (
+                    programs.filter((p: any) => p.programType === 'Topic-based').map((program) => (
+                    <div
+                      key={program.id}
+                      className="p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                    >
+                      {/* 첫 번째 줄: 과정코드, 과정명, PDF 파일 */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full">
+                            {program.programCode}
+                          </span>
+                          <div className="relative group">
+                            <h4 
+                              className={`text-lg font-semibold transition-colors ${
+                                isAuthenticated 
+                                  ? 'text-gray-900 cursor-pointer hover:text-emerald-600' 
+                                  : 'text-gray-400 cursor-not-allowed'
+                              }`}
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  setSelectedProgram(program);
+                                  setProgramDetailModalOpen(true);
+                                }
+                              }}
+                              title={isAuthenticated ? "클릭하여 상세보기" : "로그인이 필요합니다"}
+                            >
+                              {program.programName}
+                            </h4>
+                            
+                            {/* 로그인 필요 툴팁 */}
+                            {!isAuthenticated && (
+                              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                로그인이 필요합니다
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          {(program.curriculumFileName || program.curriculumPdf) && (
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-600">{program.curriculumFileName || program.curriculumPdf}</span>
+                              <div className="relative group">
+                                <button
+                                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
+                                    isAuthenticated 
+                                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
+                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  onClick={() => {
+                                    if (isAuthenticated && (program.curriculumFilePath || program.curriculumFileName)) {
+                                      handleViewCurriculumFile(
+                                        program.curriculumFileName || program.curriculumPdf || '',
+                                        program.curriculumFilePath
+                                      );
+                                    }
+                                  }}
+                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
+                                  disabled={!isAuthenticated}
+                                >
+                                  <FiEye className="w-3 h-3" />
+                                  <span>파일보기</span>
+                                </button>
+                                
+                                {/* 툴팁 */}
+                                {!isAuthenticated && (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    파일조회에는 로그인이 필요합니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* 두 번째 줄: 과정목표 */}
+                      <div className="pl-4 border-l-4 border-emerald-200">
+                        <div className="flex items-start gap-2 mb-2">
+                          <FiTarget className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm font-semibold text-gray-700">과정목표</span>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed pl-6 mb-4">
+                          {program.programGoal}
+                        </p>
+                        
+                        {/* 관련 Subject 목록 (쉼표로 구분) */}
+                        {program.subjects && program.subjects.length > 0 && (
+                          <div className="pl-6">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FiList className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                              <span className="text-sm font-semibold text-gray-700">관련 Subject</span>
+                            </div>
+                            <div className="flex flex-wrap items-center text-sm text-gray-700 pl-6">
+                              {program.subjects.map((subject: any, index: number) => (
+                                <span 
+                                  key={subject.id} 
+                                  className={`flex items-center ${
+                                    subject.curriculumFileName && subject.curriculumFilePath && isAuthenticated
+                                      ? 'cursor-pointer hover:text-emerald-600 transition-colors'
+                                      : subject.curriculumFileName && subject.curriculumFilePath && !isAuthenticated
+                                      ? 'cursor-not-allowed text-gray-400'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!isAuthenticated) {
+                                      alert('파일 조회에는 로그인이 필요합니다.');
+                                      return;
+                                    }
+                                    if (subject.curriculumFileName && subject.curriculumFilePath) {
+                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath);
+                                    } else {
+                                      alert('해당 Subject에 등록된 커리큘럼 파일이 없습니다.');
+                                    }
+                                  }}
+                                  title={
+                                    !isAuthenticated 
+                                      ? '로그인이 필요합니다' 
+                                      : subject.curriculumFileName && subject.curriculumFilePath 
+                                      ? '클릭하여 PDF 파일 보기' 
+                                      : '커리큘럼 파일이 없습니다'
+                                  }
+                                >
+                                  <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full">
+                                    {subject.subjectCode}
+                                  </span>
+                                  <span className="ml-1">{subject.subjectDescription}</span>
+                                  {subject.curriculumFileName && subject.curriculumFilePath && (
+                                    <FiFileText className="w-3 h-3 ml-1 text-emerald-600" />
+                                  )}
+                                  {index < program.subjects.length - 1 && (
+                                    <>
+                                      <span className="text-gray-400">,</span>
+                                      <span className="ml-3"></span>
+                                    </>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">등록된 Program이 없습니다.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -720,14 +1120,66 @@ export default function LearningPage() {
          categories={categories}
        />
 
-       {/* Subject 수정 모달 */}
-       <SubjectEditModal
-         isOpen={subjectEditModalOpen}
-         onClose={() => setSubjectEditModalOpen(false)}
-         onSuccess={handleSubjectEditSuccess}
-         onDelete={handleSubjectDeleteSuccess}
-         subject={selectedSubject}
-         categories={categories}
+      {/* Subject 수정 모달 */}
+      <SubjectEditModal
+        isOpen={subjectEditModalOpen}
+        onClose={() => setSubjectEditModalOpen(false)}
+        onSuccess={handleSubjectEditSuccess}
+        onDelete={handleSubjectDeleteSuccess}
+        onSubjectUpdate={handleSubjectUpdate}
+        subject={selectedSubject}
+        categories={categories}
+      />
+
+       {/* Program 상세 모달 */}
+       <ProgramDetailModal
+         isOpen={programDetailModalOpen}
+         onClose={() => {
+           setProgramDetailModalOpen(false);
+           setSelectedProgram(null);
+         }}
+         program={selectedProgram}
+         mode={selectedProgram ? 'view' : 'create'}
+         onSave={async (data) => {
+           try {
+             const curriculumFile = data.curriculumFile;
+             // curriculumFile을 제외한 데이터만 추출
+             const { curriculumFile: _, ...programData } = data;
+             
+             if (selectedProgram?.id) {
+               // 수정
+               const { updateLearningProgram } = await import('@/utils/learningProgramApi');
+               await updateLearningProgram(selectedProgram.id, programData, curriculumFile);
+               handleProgramUpdateSuccess();
+             } else {
+               // 생성
+               const { createLearningProgram } = await import('@/utils/learningProgramApi');
+               await createLearningProgram(programData, curriculumFile);
+               handleProgramCreateSuccess();
+             }
+             setProgramDetailModalOpen(false);
+             setSelectedProgram(null);
+          } catch (error: any) {
+            console.error('Program 저장 실패:', error);
+            console.error('에러 상세:', error?.response, error?.stack);
+            const errorMessage = error?.message || 'Program 저장에 실패했습니다.';
+            alert(`Program 저장에 실패했습니다.\n\n에러 메시지: ${errorMessage}\n\n자세한 내용은 브라우저 콘솔(F12)을 확인하세요.`);
+          }
+         }}
+         onDelete={async () => {
+           if (selectedProgram?.id && confirm('정말 삭제하시겠습니까?')) {
+             try {
+               const { deleteLearningProgram } = await import('@/utils/learningProgramApi');
+               await deleteLearningProgram(selectedProgram.id);
+               handleProgramDeleteSuccess();
+               setProgramDetailModalOpen(false);
+               setSelectedProgram(null);
+             } catch (error) {
+               console.error('Program 삭제 실패:', error);
+               alert('Program 삭제에 실패했습니다.');
+             }
+           }
+         }}
        />
        </div>
      </main>

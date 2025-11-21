@@ -22,13 +22,6 @@ interface SubjectFormData {
   subjectContent: string;
   categoryId: number;
   curriculumFile?: File;
-  selectedPrograms: string[];
-}
-
-interface Program {
-  id: string;
-  name: string;
-  description: string;
 }
 
 export default function SubjectCreateModal({ 
@@ -41,23 +34,12 @@ export default function SubjectCreateModal({
     subjectCode: '',
     subjectDescription: '',
     subjectContent: '',
-    categoryId: categories.length > 0 ? categories[0].id : 0,
-    selectedPrograms: []
+    categoryId: categories.length > 0 ? categories[0].id : 0
   });
   
   const [curriculumFile, setCurriculumFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // 프로그램 목록 (예시 데이터)
-  const [programs] = useState<Program[]>([
-    { id: '1', name: 'MOT 기초 과정', description: '기술경영의 기초를 다지는 과정' },
-    { id: '2', name: 'MOT 중급 과정', description: '기술경영의 심화 과정' },
-    { id: '3', name: 'MOT 고급 과정', description: '기술경영의 전문가 과정' },
-    { id: '4', name: 'R&D 관리 과정', description: 'R&D 조직 관리 전문 과정' },
-    { id: '5', name: '기술사업화 과정', description: '기술을 사업화하는 과정' },
-    { id: '6', name: '혁신경영 과정', description: '혁신적인 경영 방법론 과정' }
-  ]);
 
   // 카테고리가 변경될 때 기본값 설정
   useEffect(() => {
@@ -141,23 +123,28 @@ export default function SubjectCreateModal({
       if (response.ok) {
         const result = await response.json();
         console.log('Subject 생성 성공:', result);
+        console.log('반환된 파일 정보:', {
+          curriculumFileName: result.curriculumFileName,
+          curriculumFilePath: result.curriculumFilePath
+        });
         
         // 성공 메시지 표시
         alert('Subject가 성공적으로 생성되었습니다.');
         
-                 // 폼 초기화
-         setFormData({
-           subjectCode: '',
-           subjectDescription: '',
-           subjectContent: '',
-           categoryId: categories.length > 0 ? categories[0].id : 0,
-           selectedPrograms: []
-         });
+        // 폼 초기화
+        setFormData({
+          subjectCode: '',
+          subjectDescription: '',
+          subjectContent: '',
+          categoryId: categories.length > 0 ? categories[0].id : 0
+        });
         setCurriculumFile(null);
         
-        // 성공 콜백 호출
+        // 목록 새로고침
         onSuccess();
-        onClose();
+        
+        // 모달은 열어둠 (onClose 호출하지 않음)
+        // 생성 모달의 경우는 닫는 것이 맞을 수 있지만, 사용자 요청에 따라 열어둠
       } else {
         const errorData = await response.text();
         console.error('Subject 생성 실패:', response.status, errorData);
@@ -194,17 +181,20 @@ export default function SubjectCreateModal({
         return;
       }
       
-      // 파일 형식 제한 (PDF, DOC, DOCX, PPT, PPTX)
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      ];
+      // 파일 형식 제한 (PDF만) - MIME 타입과 확장자 모두 확인
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      const isValidPdfType = file.type === 'application/pdf' || file.type === '';
+      const isValidPdfExtension = fileExtension === '.pdf';
       
-      if (!allowedTypes.includes(file.type)) {
-        setErrors({ curriculumFile: 'PDF, DOC, DOCX, PPT, PPTX 파일만 업로드 가능합니다.' });
+      if (!isValidPdfType && !isValidPdfExtension) {
+        setErrors({ curriculumFile: 'PDF 파일만 업로드 가능합니다.' });
+        return;
+      }
+      
+      // 확장자가 .pdf가 아니면 에러
+      if (!isValidPdfExtension) {
+        setErrors({ curriculumFile: 'PDF 파일만 업로드 가능합니다.' });
         return;
       }
       
@@ -226,16 +216,6 @@ export default function SubjectCreateModal({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-  };
-
-  // 프로그램 선택/해제
-  const handleProgramToggle = (programId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedPrograms: prev.selectedPrograms.includes(programId)
-        ? prev.selectedPrograms.filter(id => id !== programId)
-        : [...prev.selectedPrograms, programId]
-    }));
   };
 
   if (!isOpen) return null;
@@ -363,12 +343,12 @@ export default function SubjectCreateModal({
                  <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                    <FiUpload className="w-5 h-5 text-gray-500" />
                    <span className="text-gray-700">파일 선택</span>
-                   <input
-                     type="file"
-                     onChange={handleFileChange}
-                     accept=".pdf,.doc,.docx,.ppt,.pptx"
-                     className="hidden"
-                   />
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf"
+                    className="hidden"
+                  />
                  </label>
                  
                  {/* 파일 제거 버튼 */}
@@ -418,7 +398,7 @@ export default function SubjectCreateModal({
                
                {/* 파일 제한 정보 */}
                <p className="text-sm text-gray-500">
-                 PDF, DOC, DOCX, PPT, PPTX 파일만 업로드 가능합니다. (최대 10MB)
+                 PDF 파일만 업로드 가능합니다. (최대 10MB)
                </p>
              </div>
              
@@ -430,72 +410,6 @@ export default function SubjectCreateModal({
              )}
            </div>
 
-                       {/* 프로그램 선택 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                관련 프로그램 (2개 이상 선택 권장)
-              </label>
-              
-              {/* 프로그램 선택 드롭다운 */}
-              <div className="flex gap-3 mb-3">
-                <select
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
-                    if (selectedId && !formData.selectedPrograms.includes(selectedId)) {
-                      handleProgramToggle(selectedId);
-                      e.target.value = ''; // 선택 후 드롭다운 초기화
-                    }
-                  }}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                >
-                  <option value="">프로그램을 선택하세요</option>
-                  {programs
-                    .filter(program => !formData.selectedPrograms.includes(program.id))
-                    .map((program) => (
-                      <option key={program.id} value={program.id}>
-                        {program.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-                             {/* 선택된 프로그램 리스트 */}
-               {formData.selectedPrograms.length > 0 ? (
-                 <div className="flex flex-wrap gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[60px]">
-                   {formData.selectedPrograms.map((programId) => {
-                     const program = programs.find(p => p.id === programId);
-                     if (!program) return null;
-                     
-                     return (
-                       <div
-                         key={program.id}
-                         className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm"
-                       >
-                         <span className="font-medium text-gray-900">
-                           {program.name}
-                         </span>
-                         <button
-                           type="button"
-                           onClick={() => handleProgramToggle(program.id)}
-                           className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors"
-                           title="제거"
-                         >
-                           <FiX className="w-3 h-3" />
-                         </button>
-                       </div>
-                     );
-                   })}
-                 </div>
-               ) : (
-                 <div className="p-4 text-center text-gray-500 border border-gray-200 rounded-lg bg-gray-50 min-h-[60px] flex items-center justify-center">
-                   <p className="text-sm">위의 드롭다운에서 프로그램을 선택하고 추가해주세요.</p>
-                 </div>
-               )}
-              
-              <p className="mt-2 text-sm text-gray-500">
-                현재 {formData.selectedPrograms.length}개 프로그램이 선택되었습니다.
-              </p>
-            </div>
 
           {/* 전체 에러 메시지 */}
           {errors.submit && (

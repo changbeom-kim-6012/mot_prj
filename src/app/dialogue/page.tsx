@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2, FiFileText } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
@@ -55,9 +55,24 @@ export default function DialoguePage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isPublicDropdownOpen, setIsPublicDropdownOpen] = useState(false);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [selectedParticipantForSummary, setSelectedParticipantForSummary] = useState<string | null>(null);
+  const [isParticipantDropdownOpen, setIsParticipantDropdownOpen] = useState(false);
+  
+  // 모달 위치 및 크기 상태
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [modalSize, setModalSize] = useState({ width: 1152, height: 640 }); // max-w-6xl = 1152px, h-[80vh] ≈ 640px
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState<'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, positionX: 0, positionY: 0 });
   
   // 메시지 영역 스크롤을 위한 ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // 메시지 삭제 함수
   const handleDeleteMessage = async (messageId: number) => {
@@ -352,13 +367,126 @@ export default function DialoguePage() {
           setIsPublicDropdownOpen(false);
         }
       }
+      if (isParticipantDropdownOpen) {
+        const target = event.target as Element;
+        if (!target.closest('.participant-dropdown')) {
+          setIsParticipantDropdownOpen(false);
+        }
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isStatusDropdownOpen, isPublicDropdownOpen]);
+  }, [isStatusDropdownOpen, isPublicDropdownOpen, isParticipantDropdownOpen]);
+
+  // 모달 열릴 때 중앙 위치로 초기화
+  useEffect(() => {
+    if (isPopupOpen) {
+      const centerX = (window.innerWidth - modalSize.width) / 2;
+      const centerY = (window.innerHeight - modalSize.height) / 2;
+      setModalPosition({ x: Math.max(0, centerX), y: Math.max(0, centerY) });
+    }
+  }, [isPopupOpen, modalSize.width, modalSize.height]);
+
+  // 드래그 및 리사이즈 이벤트 리스너
+  useEffect(() => {
+    if (!isDragging) return;
+    
+    const handleDragMove = (e: MouseEvent) => {
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      // 화면 경계 체크
+      const maxX = window.innerWidth - modalSize.width;
+      const maxY = window.innerHeight - modalSize.height;
+      
+      setModalPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleDragStop = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragStop);
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragStop);
+    };
+  }, [isDragging, dragStart, modalSize.width, modalSize.height]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    
+    const handleResizeMove = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const deltaX = e.clientX - resizeStart.x;
+      const deltaY = e.clientY - resizeStart.y;
+      
+      const minWidth = 600;
+      const minHeight = 400;
+      const maxWidth = window.innerWidth;
+      const maxHeight = window.innerHeight;
+      
+      const newSize = { ...modalSize };
+      const newPosition = { ...modalPosition };
+      
+      // 가로 리사이즈
+      if (resizeDirection === 'right' || resizeDirection === 'top-right' || resizeDirection === 'bottom-right') {
+        // 우측에서 리사이즈: 너비만 증가
+        newSize.width = Math.max(minWidth, Math.min(resizeStart.width + deltaX, maxWidth - resizeStart.positionX));
+      } else if (resizeDirection === 'left' || resizeDirection === 'top-left' || resizeDirection === 'bottom-left') {
+        // 좌측에서 리사이즈: 너비와 위치 모두 변경
+        const newWidth = Math.max(minWidth, Math.min(resizeStart.width - deltaX, maxWidth - resizeStart.positionX));
+        const widthDelta = resizeStart.width - newWidth;
+        newSize.width = newWidth;
+        newPosition.x = Math.max(0, Math.min(resizeStart.positionX + widthDelta, maxWidth - newWidth));
+      }
+      
+      // 세로 리사이즈
+      if (resizeDirection === 'bottom' || resizeDirection === 'bottom-left' || resizeDirection === 'bottom-right') {
+        // 하단에서 리사이즈: 높이만 증가
+        newSize.height = Math.max(minHeight, Math.min(resizeStart.height + deltaY, maxHeight - resizeStart.positionY));
+      } else if (resizeDirection === 'top' || resizeDirection === 'top-left' || resizeDirection === 'top-right') {
+        // 상단에서 리사이즈: 높이와 위치 모두 변경
+        const newHeight = Math.max(minHeight, Math.min(resizeStart.height - deltaY, maxHeight - resizeStart.positionY));
+        const heightDelta = resizeStart.height - newHeight;
+        newSize.height = newHeight;
+        newPosition.y = Math.max(0, Math.min(resizeStart.positionY + heightDelta, maxHeight - newHeight));
+      }
+      
+      setModalSize(newSize);
+      setModalPosition(newPosition);
+    };
+
+    const handleResizeStop = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      // 포인터 이벤트 복원
+      document.body.style.pointerEvents = '';
+      if (modalRef.current) {
+        (modalRef.current as HTMLElement).style.pointerEvents = '';
+      }
+      // 리사이즈 종료를 약간 지연시켜 이벤트 전파를 완전히 막음
+      setTimeout(() => {
+        setIsResizing(false);
+      }, 50);
+    };
+
+    document.addEventListener('mousemove', handleResizeMove, { passive: false, capture: true });
+    document.addEventListener('mouseup', handleResizeStop, { passive: false, capture: true });
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove, { capture: true } as any);
+      document.removeEventListener('mouseup', handleResizeStop, { capture: true } as any);
+    };
+  }, [isResizing, resizeStart, resizeDirection, modalPosition.x, modalPosition.y]);
 
   // 인증 로딩 중
   if (authLoading) {
@@ -451,15 +579,30 @@ export default function DialoguePage() {
       return;
     }
     
-    // 비공개 대화방인 경우 참여자만 조회 가능
-    if (!room.isPublic) {
-      return; // 클릭해도 아무 동작하지 않음
-    }
-    
     setSelectedRoom(room);
     setIsPopupOpen(true);
     
     try {
+      // 대화방 상세 정보 조회 (권한 체크 포함)
+      const roomResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${room.id}`), {
+        headers: {
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (!roomResponse.ok) {
+        if (roomResponse.status === 403) {
+          const errorData = await roomResponse.json();
+          alert(errorData.error || '비공개 대화방은 관리자와 참여자만 볼 수 있습니다.');
+          setSelectedRoom(null);
+          setIsPopupOpen(false);
+          return;
+        } else {
+          throw new Error('대화방 조회에 실패했습니다.');
+        }
+      }
+
       // 메시지 목록 불러오기
       const messagesResponse = await fetch(getApiUrl(`/api/dialogue/rooms/${room.id}/messages`), {
         headers: {
@@ -867,6 +1010,94 @@ export default function DialoguePage() {
     }
   };
 
+  // 드래그 핸들러
+  const handleDragStart = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, input, select, .status-dropdown, .public-dropdown')) {
+      return; // 버튼이나 입력 필드 클릭 시 드래그 방지
+    }
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - modalPosition.x,
+      y: e.clientY - modalPosition.y
+    });
+  };
+
+  // 리사이즈 핸들러
+  const handleResizeStart = (e: React.MouseEvent, direction: 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: modalSize.width,
+      height: modalSize.height,
+      positionX: modalPosition.x,
+      positionY: modalPosition.y
+    });
+    // 리사이즈 시작 시 배경 클릭 방지
+    document.body.style.pointerEvents = 'none';
+    if (modalRef.current) {
+      (modalRef.current as HTMLElement).style.pointerEvents = 'auto';
+    }
+  };
+
+  // 모달 닫기 핸들러 - 리사이즈 중일 때는 닫지 않음
+  const handleModalBackdropClick = (e: React.MouseEvent) => {
+    // 리사이즈나 드래그 중일 때는 모달을 닫지 않음
+    if (isResizing || isDragging) {
+      return;
+    }
+    // 리사이즈 핸들 영역 클릭 시에도 모달을 닫지 않음
+    const target = e.target as HTMLElement;
+    if (target.closest('.resize-handle')) {
+      return;
+    }
+    handleClosePopup();
+  };
+
+  // 대화방 내용 요약 생성
+  const handleGenerateSummary = async () => {
+    if (!selectedRoom || messages.length === 0) {
+      alert('요약할 메시지가 없습니다.');
+      return;
+    }
+
+    if (!selectedParticipantForSummary) {
+      alert('요약할 참여자를 선택해주세요.');
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+    setSummary('');
+
+    try {
+      const response = await fetch(getApiUrl(`/api/dialogue/rooms/${selectedRoom.id}/summary?participantEmail=${encodeURIComponent(selectedParticipantForSummary)}`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSummary(data.summary || '요약을 생성할 수 없습니다.');
+        setIsSummaryModalOpen(true);
+      } else {
+        const errorData = await response.json().catch(() => ({ message: '요약 생성에 실패했습니다.' }));
+        alert(errorData.message || '요약 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('요약 생성 실패:', error);
+      alert('요약 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'OPEN': return 'bg-green-100 text-green-800';
@@ -1020,12 +1251,8 @@ export default function DialoguePage() {
                           className="block w-full text-left"
                         >
                           <h3 
-                            className={`text-lg font-semibold transition-colors mb-2 ${
-                              !room.isPublic 
-                                ? 'text-gray-400 cursor-not-allowed' 
-                                : 'text-gray-900 hover:text-blue-600'
-                            }`}
-                            title={!room.isPublic ? '비공개 대화방으로 참여자만 입장이 가능합니다.' : ''}
+                            className="text-lg font-semibold transition-colors mb-2 text-gray-900 hover:text-blue-600"
+                            title={!room.isPublic ? '비공개 대화방은 관리자와 참여자만 볼 수 있습니다.' : ''}
                           >
                             {room.title}
                           </h3>
@@ -1070,10 +1297,27 @@ export default function DialoguePage() {
 
       {/* 대화방 팝업 */}
       {isPopupOpen && selectedRoom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[80vh] flex flex-col">
-            {/* 팝업 헤더 */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50" 
+          onClick={handleModalBackdropClick}
+        >
+          <div
+            ref={modalRef}
+            className="bg-white rounded-lg shadow-xl flex flex-col absolute"
+            style={{
+              left: `${modalPosition.x}px`,
+              top: `${modalPosition.y}px`,
+              width: `${modalSize.width}px`,
+              height: `${modalSize.height}px`,
+              cursor: isDragging ? 'move' : 'default'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 팝업 헤더 - 드래그 핸들 */}
+            <div
+              className="flex items-center justify-between p-6 border-b border-gray-200 cursor-move select-none"
+              onMouseDown={handleDragStart}
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <FiMessageSquare className="w-5 h-5 text-blue-600" />
@@ -1108,7 +1352,69 @@ export default function DialoguePage() {
               <div className="flex-1 flex flex-col">
                 {/* 주제/질문 */}
                 <div className="p-6 border-b border-gray-200 bg-gray-50">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">주제/질문</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-700">주제/질문</h3>
+                    <div className="flex items-center gap-2">
+                      {/* 참여자 선택 드롭다운 */}
+                      <div className="relative participant-dropdown">
+                        <button
+                          type="button"
+                          onClick={() => setIsParticipantDropdownOpen(!isParticipantDropdownOpen)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        >
+                          <span className="text-gray-700">
+                            {selectedParticipantForSummary 
+                              ? participants.find(p => p.email === selectedParticipantForSummary)?.name || '참여자 선택'
+                              : '참여자 선택'}
+                          </span>
+                          <FiChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isParticipantDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isParticipantDropdownOpen && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                            {participants.length === 0 ? (
+                              <div className="px-3 py-2 text-sm text-gray-500">참여자가 없습니다</div>
+                            ) : (
+                              participants.map((participant) => (
+                                <button
+                                  key={participant.email}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedParticipantForSummary(participant.email);
+                                    setIsParticipantDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                                    selectedParticipantForSummary === participant.email ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      participant.role === 'ADMIN' 
+                                        ? 'bg-red-100 text-red-600'
+                                        : participant.role === 'EXPERT'
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'bg-blue-100 text-blue-600'
+                                    }`}>
+                                      {participant.role === 'ADMIN' ? '관리자' : participant.role === 'EXPERT' ? '전문가' : '회원'}
+                                    </span>
+                                    <span>{participant.name}</span>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleGenerateSummary}
+                        disabled={isGeneratingSummary || messages.length === 0 || !selectedParticipantForSummary}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title={selectedParticipantForSummary ? "선택된 참여자의 대화 요약" : "참여자를 선택해주세요"}
+                      >
+                        <FiFileText className="w-4 h-4" />
+                        {isGeneratingSummary ? '요약 중...' : '요약 보기'}
+                      </button>
+                    </div>
+                  </div>
                   <p className="text-gray-900">{selectedRoom.question}</p>
                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
                     <span>작성자: {selectedRoom.authorEmail}</span>
@@ -1204,35 +1510,33 @@ export default function DialoguePage() {
               </div>
 
               {/* 참여자 목록 */}
-              <div className="w-96 border-l border-gray-200 bg-gray-50 flex flex-col overflow-visible">
+              <div className="w-[230px] border-l border-gray-200 bg-gray-50 flex flex-col overflow-visible">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-sm font-medium text-gray-700">참여자 ({participants.length}명)</h3>
                 </div>
-                <div className="p-4 space-y-3 flex-1">
+                <div className="p-4 space-y-3 flex-1 max-h-[50%] overflow-y-auto">
                   {participants.map((participant) => (
                     <div key={participant.email} className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                      <div className={`px-2 py-1 rounded-full flex items-center justify-center text-xs font-medium ${
                         participant.role === 'ADMIN' 
                           ? 'bg-red-100 text-red-600'
                           : participant.role === 'EXPERT'
                           ? 'bg-green-100 text-green-600'
                           : 'bg-blue-100 text-blue-600'
                       }`}>
-                        {participant.name.charAt(0)}
+                        {participant.role === 'ADMIN' ? '관리자' : participant.role === 'EXPERT' ? '전문가' : '회원'}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{participant.name}</p>
-                        <p className="text-xs text-gray-500">{participant.email}</p>
+                        <p className={`text-sm font-medium ${
+                          participant.role === 'ADMIN' 
+                            ? 'text-red-700'
+                            : participant.role === 'EXPERT'
+                            ? 'text-green-700'
+                            : 'text-gray-900'
+                        }`}>
+                          {participant.name}
+                        </p>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        participant.role === 'ADMIN'
-                          ? 'bg-red-100 text-red-800'
-                          : participant.role === 'EXPERT'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {participant.role === 'ADMIN' ? '관리자' : participant.role === 'EXPERT' ? '전문가' : '사용자'}
-                      </span>
                     </div>
                   ))}
                 </div>
@@ -1244,12 +1548,16 @@ export default function DialoguePage() {
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-medium text-gray-700">대화방 관리</h4>
                         <button
-                          onClick={handleDeleteRoom}
-                          className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                          title="대화방 삭제"
+                          onClick={() => {
+                            if (selectedRoom) {
+                              window.location.href = `/dialogue/create?roomId=${selectedRoom.id}`;
+                            }
+                          }}
+                          className="inline-flex items-center px-3 py-2 border border-emerald-300 shadow-sm text-sm leading-4 font-medium rounded-md text-emerald-700 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                          title="대화방 수정"
                         >
-                          <FiTrash2 className="w-4 h-4 mr-1" />
-                          대화방 삭제
+                          <FiSettings className="w-4 h-4 mr-1" />
+                          대화방 수정
                         </button>
                       </div>
                       
@@ -1384,6 +1692,103 @@ export default function DialoguePage() {
                   </div>
                 )}
               </div>
+            </div>
+            
+            {/* 리사이즈 핸들들 */}
+            {/* 상단 가장자리 - 세로만 조절 */}
+            <div
+              className="resize-handle absolute top-0 left-0 w-full h-2 cursor-ns-resize z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'top')}
+            />
+            
+            {/* 하단 가장자리 - 세로만 조절 */}
+            <div
+              className="resize-handle absolute bottom-0 left-0 w-full h-2 cursor-ns-resize z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+            />
+            
+            {/* 좌측 가장자리 - 가로만 조절 */}
+            <div
+              className="resize-handle absolute top-0 left-0 w-2 h-full cursor-ew-resize z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'left')}
+            />
+            
+            {/* 우측 가장자리 - 가로만 조절 */}
+            <div
+              className="resize-handle absolute top-0 right-0 w-2 h-full cursor-ew-resize z-10"
+              onMouseDown={(e) => handleResizeStart(e, 'right')}
+            />
+            
+            {/* 좌측 상단 모서리 - 가로, 세로 모두 조절 */}
+            <div
+              className="resize-handle absolute top-0 left-0 w-8 h-8 cursor-nwse-resize z-10 flex items-start justify-start"
+              onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+            >
+              <div className="w-0 h-0 border-r-[16px] border-r-transparent border-t-[16px] border-t-blue-500" />
+            </div>
+            
+            {/* 우측 상단 모서리 - 가로, 세로 모두 조절 */}
+            <div
+              className="resize-handle absolute top-0 right-0 w-8 h-8 cursor-nesw-resize z-10 flex items-start justify-end"
+              onMouseDown={(e) => handleResizeStart(e, 'top-right')}
+            >
+              <div className="w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-blue-500" />
+            </div>
+            
+            {/* 좌측 하단 모서리 - 가로, 세로 모두 조절 */}
+            <div
+              className="resize-handle absolute bottom-0 left-0 w-8 h-8 cursor-nesw-resize z-10 flex items-end justify-start"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
+            >
+              <div className="w-0 h-0 border-r-[16px] border-r-transparent border-b-[16px] border-b-blue-500" />
+            </div>
+            
+            {/* 우측 하단 모서리 - 가로, 세로 모두 조절 */}
+            <div
+              className="resize-handle absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize z-10 flex items-end justify-end"
+              onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+            >
+              <div className="w-0 h-0 border-l-[16px] border-l-transparent border-b-[16px] border-b-blue-500" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 요약 모달 */}
+      {isSummaryModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <FiFileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">대화방 요약</h2>
+                  <p className="text-sm text-gray-500 mt-1">{selectedRoom?.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSummaryModalOpen(false)}
+                className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <FiX className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* 요약 내용 */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {summary ? (
+                <div className="prose max-w-none">
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{summary}</p>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p>요약을 생성하는 중...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

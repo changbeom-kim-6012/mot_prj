@@ -146,11 +146,11 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
           onClick={onClose}
         />
         
-                 <div className="flex min-h-full items-center justify-center p-4">
-           <div className="relative bg-white rounded-2xl shadow-xl max-w-7xl w-full h-[90vh] flex flex-col">
-             <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                 <div className="flex min-h-full items-center justify-center p-2">
+           <div className="relative bg-white rounded-2xl shadow-xl w-full h-[95vh] max-w-[98vw] flex flex-col">
+             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                <div className="flex items-center gap-4">
-                 <h2 className="text-2xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
+                 <h2 className="text-3xl font-bold text-gray-900">기술경영(MOT) 핵심 프로세스</h2>
                  {/* <button
                    onClick={() => handlePdfViewerOpen(
                      getApiUrl('/api/library/view/MOT%20교육과정%20Overview.pdf'),
@@ -209,12 +209,13 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                )}
 
                {/* 메인 콘텐츠 영역 */}
-               <div className={`flex-1 p-6 overflow-y-auto ${selectedArea ? '' : 'w-full'}`}>
+               <div className={`flex-1 p-4 overflow-y-auto ${selectedArea ? '' : 'w-full'}`}>
                  {/* 상단 4개 영역 */}
-                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                 <div className="flex mb-6" style={{ gap: '6%', paddingLeft: '4%', paddingRight: '4%' }}>
                    {/* I. 기술전략 */}
                    <div 
                      className={`relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 border border-emerald-200 cursor-pointer transition-all duration-200 hover:scale-105 overflow-hidden ${selectedArea === 'strategy' ? 'ring-2 ring-emerald-400 shadow-lg' : ''}`}
+                     style={{ width: '27%' }}
                      onClick={() => handleAreaClick('strategy')}
                    >
                      {/* 배경 레이어 - 기술전략 관련 그림 */}
@@ -269,22 +270,22 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                      </div>
                      
                      {/* 상단 레이어 - 반투명 콘텐츠 */}
-                     <div className="relative z-10 bg-white bg-opacity-60 rounded-lg p-2">
-                       <div className="flex items-center gap-2 mb-3">
-                         <FiTarget className="w-5 h-5 text-emerald-700" />
-                         <h3 className="font-bold text-emerald-900">I. 기술전략</h3>
+                     <div className="relative z-10 bg-white bg-opacity-60 rounded-lg p-3">
+                       <div className="flex flex-col items-center gap-2 mb-4">
+                         <FiTarget className="w-7 h-7 text-emerald-700" />
+                         <h3 className="font-bold text-emerald-900 text-xl text-center">I. 기술전략</h3>
                        </div>
-                       <div className="space-y-2 text-sm text-emerald-900 font-medium">
-                         <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-emerald-700 rounded-full"></div>
+                       <div className="space-y-2 text-lg text-emerald-900 font-medium">
+                         <div className="flex items-center gap-2 pl-8">
+                           <div className="w-2 h-2 bg-emerald-700 rounded-full flex-shrink-0"></div>
                            <span>신사업/신제품 구상</span>
                          </div>
-                         <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-emerald-700 rounded-full"></div>
+                         <div className="flex items-center gap-2 pl-8">
+                           <div className="w-2 h-2 bg-emerald-700 rounded-full flex-shrink-0"></div>
                            <span>사업전략과 R&D 전략 연계</span>
                          </div>
-                         <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 bg-emerald-700 rounded-full"></div>
+                         <div className="flex items-center gap-2 pl-8">
+                           <div className="w-2 h-2 bg-emerald-700 rounded-full flex-shrink-0"></div>
                            <span>MOT 환경분석</span>
                          </div>
                        </div>
@@ -294,23 +295,24 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                    {/* II. 기술개발 */}
                    <div 
                      className={`bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 cursor-pointer transition-all duration-200 hover:scale-105 ${selectedArea === 'development' ? 'ring-2 ring-blue-400 shadow-lg' : ''}`}
+                     style={{ width: '27%' }}
                      onClick={() => handleAreaClick('development')}
                    >
-                     <div className="flex items-center gap-2 mb-3">
-                       <FiZap className="w-5 h-5 text-blue-600" />
-                       <h3 className="font-semibold text-blue-900">II. 기술개발</h3>
+                     <div className="flex flex-col items-center gap-2 mb-4">
+                       <FiZap className="w-7 h-7 text-blue-600" />
+                       <h3 className="font-semibold text-blue-900 text-xl text-center">II. 기술개발</h3>
                      </div>
-                     <div className="space-y-2 text-sm text-blue-800">
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                     <div className="space-y-2 text-lg text-blue-800">
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                          <span>기술전략의 실행</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                          <span>R&D 과제 기획/수행</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                          <span>R&D 평가/이전</span>
                        </div>
                      </div>
@@ -319,23 +321,24 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                    {/* III. 기술사업화 */}
                    <div 
                      className={`bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200 cursor-pointer transition-all duration-200 hover:scale-105 ${selectedArea === 'commercialization' ? 'ring-2 ring-purple-400 shadow-lg' : ''}`}
+                     style={{ width: '27%' }}
                      onClick={() => handleAreaClick('commercialization')}
                    >
-                     <div className="flex items-center gap-2 mb-3">
-                       <FiDollarSign className="w-5 h-5 text-purple-600" />
-                       <h3 className="font-semibold text-purple-900">III. 기술사업화</h3>
+                     <div className="flex flex-col items-center gap-2 mb-4">
+                       <FiDollarSign className="w-7 h-7 text-purple-600" />
+                       <h3 className="font-semibold text-purple-900 text-xl text-center">III. 기술사업화</h3>
                      </div>
-                     <div className="space-y-2 text-sm text-purple-800">
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                     <div className="space-y-2 text-lg text-purple-800">
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-purple-600 rounded-full flex-shrink-0"></div>
                          <span>기술사업화 전략</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-purple-600 rounded-full flex-shrink-0"></div>
                          <span>기술거래 및 협상</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-purple-600 rounded-full flex-shrink-0"></div>
                          <span>지적자산 전략</span>
                        </div>
                      </div>
@@ -344,23 +347,24 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                    {/* IV. 기술인프라 */}
                    <div 
                      className={`bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200 cursor-pointer transition-all duration-200 hover:scale-105 ${selectedArea === 'infrastructure' ? 'ring-2 ring-orange-400 shadow-lg' : ''}`}
+                     style={{ width: '27%' }}
                      onClick={() => handleAreaClick('infrastructure')}
                    >
-                     <div className="flex items-center gap-2 mb-3">
-                       <FiDatabase className="w-5 h-5 text-orange-600" />
-                       <h3 className="font-semibold text-orange-900">IV. 기술인프라</h3>
+                     <div className="flex flex-col items-center gap-2 mb-4">
+                       <FiDatabase className="w-7 h-7 text-orange-600" />
+                       <h3 className="font-semibold text-orange-900 text-xl text-center">IV. 기술인프라</h3>
                      </div>
-                     <div className="space-y-2 text-sm text-orange-800">
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+                     <div className="space-y-2 text-lg text-orange-800">
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-orange-600 rounded-full flex-shrink-0"></div>
                          <span>R&D 예산 및 회계처리</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-orange-600 rounded-full flex-shrink-0"></div>
                          <span>기술정보 관리</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+                       <div className="flex items-center gap-2 pl-8">
+                         <div className="w-2 h-2 bg-orange-600 rounded-full flex-shrink-0"></div>
                          <span>R&D 관리 시스템</span>
                        </div>
                      </div>
@@ -368,86 +372,54 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                  </div>
 
                                                                     {/* 중앙 프로세스 흐름도 */}
-                   <div className="bg-gray-50 rounded-xl p-4 mb-4 mx-auto" style={{ width: '80%' }}>
-                     <h3 className="text-base font-semibold text-gray-900 mb-3 text-center">MOT 핵심 프로세스 흐름</h3>
-                     <div className="flex items-center justify-between">
-                       <div className="flex-1 text-center">
-                         <div className="bg-emerald-100 rounded-lg p-2 mb-1">
-                           <h4 className="font-medium text-emerald-900 text-sm">기술전략</h4>
-                         </div>
-                         <div className="text-xs text-gray-600 space-y-0.5">
-                           <div>• 신사업/신제품 구상</div>
-                           <div>• 사업전략과 R&D 전략 연계</div>
-                           <div>• MOT 환경분석</div>
-                         </div>
-                       </div>
-                       <FiArrowRight className="w-5 h-5 text-gray-400 mx-3" />
-                       <div className="flex-1 text-center">
-                         <div className="bg-blue-100 rounded-lg p-2 mb-1">
-                           <h4 className="font-medium text-blue-900 text-sm">기술개발</h4>
-                         </div>
-                         <div className="text-xs text-gray-600 space-y-0.5">
-                           <div>• 기술전략의 실행</div>
-                           <div>• R&D 과제 기획/수행</div>
-                           <div>• R&D 평가/이전</div>
-                         </div>
-                       </div>
-                       <FiArrowRight className="w-5 h-5 text-gray-400 mx-3" />
-                       <div className="flex-1 text-center">
-                         <div className="bg-purple-100 rounded-lg p-2 mb-1">
-                           <h4 className="font-medium text-purple-900 text-sm">기술사업화</h4>
-                         </div>
-                         <div className="text-xs text-gray-600 space-y-0.5">
-                           <div>• 기술사업화 전략</div>
-                           <div>• 기술거래 및 협상</div>
-                           <div>• 지적자산 전략</div>
-                         </div>
-                       </div>
-                     </div>
-                     <div className="mt-4 text-center">
-                       <div className="bg-orange-100 rounded-lg p-2 inline-block">
-                         <h4 className="font-medium text-orange-900 text-sm">
-                           <span className="font-bold">기술인프라</span> <span className="text-xs font-normal">(R&D 예산 및 회계관리, 기술정보관리, R&D 관리시스템)</span>
+                   <div className="bg-gray-50 rounded-xl p-5 mb-6" style={{ width: '100%', paddingLeft: '4%', paddingRight: '4%' }}>
+                     <div className="mt-4" style={{ paddingLeft: '0', paddingRight: '0' }}>
+                       <div className="bg-orange-100 rounded-lg p-4" style={{ width: '100%', marginLeft: '0', marginRight: '0' }}>
+                         <h4 className="font-medium text-orange-900 text-2xl text-center">
+                           <span className="font-bold">기술인프라</span> <span className="text-lg font-normal">(R&D 예산 및 회계관리, 기술정보관리, R&D 관리시스템)</span>
                          </h4>
                        </div>
                      </div>
                    </div>
 
                  {/* 하단 도구/시스템 예시 */}
-                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                   <div className="bg-white border border-gray-200 rounded-xl p-3">
-                     <h4 className="font-semibold text-gray-900 mb-2 text-sm">기술기획 (Roadmap & Tree)</h4>
+                 <div className="relative mb-4" style={{ paddingLeft: '0', paddingRight: '0' }}>
+                   {/* 기술기획 박스 - 시작 위치 10%, Width 20% */}
+                   <div className="bg-white border border-gray-200 rounded-xl p-4 absolute" style={{ width: '20%', left: '10%' }}>
+                     <h4 className="font-semibold text-gray-900 mb-3 text-xl">기술기획 (Roadmap & Tree)</h4>
                      <div className="flex items-center gap-3">
-                       <div className="w-12 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                         <FiBookOpen className="w-5 h-5 text-emerald-600" />
+                       <div className="w-14 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                         <FiBookOpen className="w-6 h-6 text-emerald-600" />
                        </div>
-                       <div className="text-xs text-gray-600">
+                       <div className="text-lg text-gray-600">
                          <div>• 프로젝트 로드맵</div>
                          <div>• 계층적 구조 트리</div>
                        </div>
                      </div>
                    </div>
 
-                   <div className="bg-white border border-gray-200 rounded-xl p-3">
-                     <h4 className="font-semibold text-gray-900 mb-2 text-sm">R&D 과제기획/수행</h4>
+                   {/* R&D 과제기획/수행 박스 - 시작 위치 40%, Width 20% */}
+                   <div className="bg-white border border-gray-200 rounded-xl p-4 absolute" style={{ width: '20%', left: '40%' }}>
+                     <h4 className="font-semibold text-gray-900 mb-3 text-xl">R&D 과제기획/수행</h4>
                      <div className="flex items-center gap-3">
-                       <div className="w-12 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                         <FiZap className="w-5 h-5 text-blue-600" />
+                       <div className="w-14 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                         <FiZap className="w-6 h-6 text-blue-600" />
                        </div>
-                       <div className="text-xs text-gray-600">
+                       <div className="text-lg text-gray-600">
                          <div>• Stage-Gate Process</div>
                          <div>• 프로젝트 진행 단계별 관리</div>
                        </div>
                      </div>
                    </div>
 
-                   <div className="bg-white border border-gray-200 rounded-xl p-3">
-                     <h4 className="font-semibold text-gray-900 mb-2 text-sm">R&D 관리 시스템</h4>
+                   {/* R&D 관리 시스템 박스 - 시작 위치 70%, Width 20% */}
+                   <div className="bg-white border border-gray-200 rounded-xl p-4 absolute" style={{ width: '20%', left: '70%' }}>
+                     <h4 className="font-semibold text-gray-900 mb-3 text-xl">R&D 관리 시스템</h4>
                      <div className="flex items-center gap-3">
-                       <div className="w-12 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                         <FiDatabase className="w-5 h-5 text-orange-600" />
+                       <div className="w-14 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                         <FiDatabase className="w-6 h-6 text-orange-600" />
                        </div>
-                       <div className="text-xs text-gray-600">
+                       <div className="text-lg text-gray-600">
                          <div>• Project KMS</div>
                          <div>• 일정, 인력, 비용 관리</div>
                        </div>
