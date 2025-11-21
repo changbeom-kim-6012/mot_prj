@@ -27,15 +27,16 @@ export default function ReactPdfViewer({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // API URL 생성
+  // API URL 생성 (쿼리 파라미터 방식으로 변경)
   const getFileUrl = () => {
     const baseUrl = getApiUrl('');
     const endpoint = type === 'course-material' 
       ? '/api/course-materials/view' 
       : '/api/library/view';
     
-    const encodedFileName = encodeURIComponent(filePath);
-    return `${baseUrl}${endpoint}/${encodedFileName}`;
+    // 쿼리 파라미터 방식으로 파일 경로 처리 (긴 경로나 특수문자 처리에 유리)
+    const encodedPath = encodeURIComponent(filePath.trim());
+    return `${baseUrl}${endpoint}?path=${encodedPath}`;
   };
 
   const fileUrl = getFileUrl();

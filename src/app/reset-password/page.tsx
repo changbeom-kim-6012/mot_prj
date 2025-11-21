@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from '@/components/Navigation';
 import { getApiUrl } from '@/config/api';
 
-const ResetPasswordPage = () => {
+function ResetPasswordPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,7 +42,7 @@ const ResetPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch("getApiUrl('/api/users/reset-password')", {
+      const res = await fetch(getApiUrl('/api/users/reset-password'), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, newPassword: password })
@@ -114,6 +114,26 @@ const ResetPasswordPage = () => {
         </div>
       </div>
     </main>
+  );
+}
+
+const ResetPasswordPage = () => {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">로딩 중...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <ResetPasswordPageContent />
+    </Suspense>
   );
 };
 

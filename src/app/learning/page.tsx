@@ -12,6 +12,7 @@ import ProgramDetailModal from '@/components/learning/ProgramDetailModal';
 import { useAuth } from '@/context/AuthContext';
 import { fetchLearningPrograms } from '@/utils/learningProgramApi';
 import { LearningProgram } from '@/types/learningProgram';
+import { getApiUrl } from '@/config/api';
 
 interface RelatedMaterial {
   id: number;
@@ -47,6 +48,26 @@ interface Subject {
   updatedAt: string;
 }
 
+// 변환된 Program 데이터 타입
+interface TransformedProgram {
+  id: number;
+  programCode: string;
+  programName: string;
+  programType?: string;
+  programGoal: string;
+  mainContent: string;
+  curriculumPdf: string;
+  curriculumFileName?: string;
+  curriculumFilePath?: string;
+  subjects?: Array<{
+    id: number;
+    subjectCode: string;
+    subjectDescription: string;
+    curriculumFileName?: string;
+    curriculumFilePath?: string;
+  }>;
+}
+
 export default function LearningPage() {
   const { user, isAuthenticated } = useAuth();
   const [relatedMaterials, setRelatedMaterials] = useState<RelatedMaterial[]>([]);
@@ -72,7 +93,7 @@ export default function LearningPage() {
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   
   // Learning Program 관련 상태
-  const [programs, setPrograms] = useState<LearningProgram[]>([]);
+  const [programs, setPrograms] = useState<TransformedProgram[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
 
   // Learning 카테고리 데이터 로딩
@@ -288,21 +309,17 @@ export default function LearningPage() {
   };
 
   const handleViewFile = (fileName: string, filePath: string) => {
-    // Library와 동일한 방식으로 파일보기 처리
-    const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
-      return '%' + c.charCodeAt(0).toString(16);
-    });
-    const fileUrl = `/api/library/view/${encodedPath}`;
-    
-    console.log('=== Learning 파일 보기 디버깅 ===');
-    console.log('원본 fileName:', fileName);
-    console.log('원본 filePath:', filePath);
-    console.log('인코딩된 filePath:', encodedPath);
-    console.log('생성된 fileUrl:', fileUrl);
-    console.log('========================');
-    
-    setViewingFile({ fileName, fileUrl });
-    setViewModalOpen(true);
+    // 쿼리 파라미터 방식으로 파일 경로 처리 (긴 경로나 특수문자 처리에 유리)
+    try {
+      const encodedPath = encodeURIComponent(filePath.trim());
+      const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
+      
+      setViewingFile({ fileName, fileUrl });
+      setViewModalOpen(true);
+    } catch (error) {
+      console.error('파일 경로 처리 중 오류:', error);
+      alert('파일 경로 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const handleCloseViewModal = () => {
@@ -365,11 +382,6 @@ export default function LearningPage() {
 
   // Subject Description 클릭 시 수정 모달 열기
   const handleSubjectDescriptionClick = (subject: any) => {
-    console.log('=== Subject 클릭됨 ===');
-    console.log('subject:', subject);
-    console.log('subjectEditModalOpen 상태:', subjectEditModalOpen);
-    console.log('========================');
-    
     setSelectedSubject(subject);
     setSubjectEditModalOpen(true);
     
@@ -406,7 +418,7 @@ export default function LearningPage() {
     try {
       // 쿼리 파라미터로 전달 (더 안전한 방식)
       const encodedPath = encodeURIComponent(filePath.trim());
-      const fileUrl = `/api/library/view?path=${encodedPath}`;
+      const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
       
       console.log('=== Curriculum 파일 보기 디버깅 ===');
       console.log('원본 fileName:', fileName);
@@ -430,6 +442,21 @@ export default function LearningPage() {
     const filteredSubjects = subjects.filter(subject => subject.categoryId === activeTab);
     // subjectCode 순서로 정렬
     return filteredSubjects.sort((a, b) => a.subjectCode.localeCompare(b.subjectCode));
+  };
+
+  // PROGRAM_PHASE 탭용 프로그램 필터링
+  const getPhasePrograms = () => {
+    return programs.filter((p: any) => 
+      p.programType === 'Level-based' || 
+      p.programType === 'Phase-based' || 
+      p.programType === 'Phase' ||
+      !p.programType // programType이 없는 경우도 포함
+    );
+  };
+
+  // PROGRAM_ROLE_LEVEL 탭용 프로그램 필터링
+  const getRoleLevelPrograms = () => {
+    return programs.filter((p: any) => p.programType === 'Topic-based');
   };
 
   // Program 데이터 가져오기
@@ -460,6 +487,11 @@ export default function LearningPage() {
           curriculumFilePath: subject.curriculumFilePath
         })) || []
       }));
+      
+      console.log('변환된 Program 데이터:', transformedPrograms);
+      console.log('Level-based 프로그램 수:', transformedPrograms.filter((p: any) => p.programType === 'Level-based').length);
+      console.log('Topic-based 프로그램 수:', transformedPrograms.filter((p: any) => p.programType === 'Topic-based').length);
+      console.log('모든 programType 값:', transformedPrograms.map((p: any) => ({ id: p.id, programType: p.programType })));
       
       setPrograms(transformedPrograms);
     } catch (error) {
@@ -558,7 +590,7 @@ export default function LearningPage() {
             </div>
           </div>
           <p className="text-lg text-emerald-50 max-w-[1150px] text-right">
-            MOT 관련된 모든 교과목을 체계적으로 관리하고<br/>
+            MOT 관련된 모든 교과목을 체계적으로 관리하고<br />
             교육과정(Program)과 교과목을 연계하여 교육에 대해 정보를 제공합니다.
           </p>
         </div>
@@ -744,15 +776,28 @@ export default function LearningPage() {
           <section className="mb-12">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-8">
-                {/* PROGRAM(Level-based) 리스트 */}
+                {/* PROGRAM(Phase) 리스트 */}
                 <div className="space-y-4">
                   {isLoadingPrograms ? (
                     <div className="text-center py-12">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
                       <p className="mt-4 text-gray-600">Program 목록을 불러오는 중...</p>
                     </div>
-                  ) : programs.filter((p: any) => p.programType === 'Level-based').length > 0 ? (
-                    programs.filter((p: any) => p.programType === 'Level-based').map((program) => (
+                  ) : (() => {
+                    const phasePrograms = getPhasePrograms();
+                    console.log('PROGRAM_PHASE 필터링 결과:', {
+                      전체: programs.length,
+                      필터링됨: phasePrograms.length,
+                      programTypes: programs.map((p: any) => p.programType)
+                    });
+                    if (phasePrograms.length === 0) {
+                      return (
+                        <div className="text-center py-12">
+                          <p className="text-gray-500">등록된 Program이 없습니다.</p>
+                        </div>
+                      );
+                    }
+                    return phasePrograms.map((program: TransformedProgram) => (
                     <div
                       key={program.id}
                       className="p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
@@ -805,7 +850,7 @@ export default function LearningPage() {
                                     if (isAuthenticated && (program.curriculumFilePath || program.curriculumFileName)) {
                                       handleViewCurriculumFile(
                                         program.curriculumFileName || program.curriculumPdf || '',
-                                        program.curriculumFilePath
+                                        program.curriculumFilePath || null
                                       );
                                     }
                                   }}
@@ -847,7 +892,7 @@ export default function LearningPage() {
                               <span className="text-sm font-semibold text-gray-700">관련 Subject</span>
                             </div>
                             <div className="flex flex-wrap items-center text-sm text-gray-700 pl-6">
-                              {program.subjects.map((subject, index) => (
+                              {program.subjects.map((subject: any, index: number) => (
                                 <span 
                                   key={subject.id} 
                                   className={`flex items-center ${
@@ -863,7 +908,7 @@ export default function LearningPage() {
                                       return;
                                     }
                                     if (subject.curriculumFileName && subject.curriculumFilePath) {
-                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath);
+                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath || null);
                                     } else {
                                       alert('해당 Subject에 등록된 커리큘럼 파일이 없습니다.');
                                     }
@@ -883,7 +928,7 @@ export default function LearningPage() {
                                   {subject.curriculumFileName && subject.curriculumFilePath && (
                                     <FiFileText className="w-3 h-3 ml-1 text-emerald-600" />
                                   )}
-                                  {index < program.subjects.length - 1 && (
+                                  {program.subjects && index < program.subjects.length - 1 && (
                                     <>
                                       <span className="text-gray-400">,</span>
                                       <span className="ml-3"></span>
@@ -896,12 +941,8 @@ export default function LearningPage() {
                         )}
                       </div>
                     </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <p className="text-gray-500">등록된 Program이 없습니다.</p>
-                    </div>
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
@@ -974,7 +1015,7 @@ export default function LearningPage() {
                                     if (isAuthenticated && (program.curriculumFilePath || program.curriculumFileName)) {
                                       handleViewCurriculumFile(
                                         program.curriculumFileName || program.curriculumPdf || '',
-                                        program.curriculumFilePath
+                                        program.curriculumFilePath || null
                                       );
                                     }
                                   }}
@@ -1032,7 +1073,7 @@ export default function LearningPage() {
                                       return;
                                     }
                                     if (subject.curriculumFileName && subject.curriculumFilePath) {
-                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath);
+                                      handleViewCurriculumFile(subject.curriculumFileName, subject.curriculumFilePath || null);
                                     } else {
                                       alert('해당 Subject에 등록된 커리큘럼 파일이 없습니다.');
                                     }
@@ -1052,7 +1093,7 @@ export default function LearningPage() {
                                   {subject.curriculumFileName && subject.curriculumFilePath && (
                                     <FiFileText className="w-3 h-3 ml-1 text-emerald-600" />
                                   )}
-                                  {index < program.subjects.length - 1 && (
+                                  {program.subjects && index < program.subjects.length - 1 && (
                                     <>
                                       <span className="text-gray-400">,</span>
                                       <span className="ml-3"></span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiUsers, FiUserPlus, FiUserCheck, FiSearch, FiX, FiMail } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
@@ -22,7 +22,7 @@ interface Expert {
   field?: string;
 }
 
-export default function CreateDialoguePage() {
+function CreateDialoguePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuth();
@@ -842,5 +842,25 @@ export default function CreateDialoguePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CreateDialoguePage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">로딩 중...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <CreateDialoguePageContent />
+    </Suspense>
   );
 }

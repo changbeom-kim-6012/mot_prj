@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2, FiFileText } from 'react-icons/fi';
@@ -37,7 +37,7 @@ interface DialogueParticipant {
   joinedAt: string;
 }
 
-export default function DialoguePage() {
+function DialoguePageContent() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const [rooms, setRooms] = useState<DialogueRoom[]>([]);
@@ -1794,5 +1794,25 @@ export default function DialoguePage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function DialoguePage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">로딩 중...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <DialoguePageContent />
+    </Suspense>
   );
 }

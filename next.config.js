@@ -3,7 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: 'standalone',
-  distDir: 'dist',
+  // 개발 환경에서는 기본 .next 폴더 사용, 프로덕션에서만 dist 사용
+  distDir: process.env.NODE_ENV === 'production' ? 'dist' : '.next',
   trailingSlash: false,
   // Workspace root 경고 해결: Frontend/mot 폴더를 루트로 명시
   outputFileTracingRoot: require('path').join(__dirname),
@@ -11,6 +12,22 @@ const nextConfig = {
     // 빌드 시 TypeScript 에러가 있어도 빌드를 계속 진행
     ignoreBuildErrors: true,
   },
+  // 워커 에러 방지를 위한 설정
+  experimental: {
+    // 워커 스레드 비활성화 (단일 프로세스로 빌드)
+    workerThreads: false,
+    // CPU 코어 수 제한
+    cpus: 1,
+  },
+  // Turbopack 설정 (Next.js 16에서 webpack과 함께 사용 시 필요)
+  turbopack: {},
+  // 빌드 최적화 설정
+  swcMinify: true,
+  // 컴파일러 캐시 비활성화 (에러 발생 시)
+  // onDemandEntries: {
+  //   maxInactiveAge: 25 * 1000,
+  //   pagesBufferLength: 2,
+  // },
   // Next.js 16에서는 eslint 설정이 next.config.js에서 제거됨
   // eslint 설정은 eslint.config.mjs 파일에서 관리
   

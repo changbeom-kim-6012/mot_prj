@@ -422,10 +422,8 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
-                                  return '%' + c.charCodeAt(0).toString(16);
-                                });
-                                const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
+                                const encodedPath = encodeURIComponent(filePath.trim());
+                                const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
@@ -497,10 +495,8 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
-                                  return '%' + c.charCodeAt(0).toString(16);
-                                });
-                                const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
+                                const encodedPath = encodeURIComponent(filePath.trim());
+                                const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
                                 window.open(fileUrl, '_blank');
                               }}
                               className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"

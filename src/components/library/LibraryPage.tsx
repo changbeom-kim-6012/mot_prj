@@ -171,21 +171,17 @@ export default function LibraryPage() {
   };
 
   const handleViewFile = (fileName: string, filePath: string) => {
-    // PDF 뷰어 모달로 표시
-    const encodedPath = encodeURIComponent(filePath).replace(/[!'()*]/g, function(c) {
-      return '%' + c.charCodeAt(0).toString(16);
-    });
-    const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
-    
-    console.log('=== 파일 보기 디버깅 ===');
-    console.log('원본 fileName:', fileName);
-    console.log('원본 filePath:', filePath);
-    console.log('인코딩된 filePath:', encodedPath);
-    console.log('생성된 fileUrl:', fileUrl);
-    console.log('========================');
-    
-    setViewingFile({ fileName, fileUrl });
-    setViewModalOpen(true);
+    // 쿼리 파라미터 방식으로 파일 경로 처리 (긴 경로나 특수문자 처리에 유리)
+    try {
+      const encodedPath = encodeURIComponent(filePath.trim());
+      const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
+      
+      setViewingFile({ fileName, fileUrl });
+      setViewModalOpen(true);
+    } catch (error) {
+      console.error('파일 경로 처리 중 오류:', error);
+      alert('파일 경로 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const handleCloseViewModal = () => {
@@ -597,10 +593,8 @@ export default function LibraryPage() {
                                <div className="flex space-x-2">
                                  <button
                                    onClick={isAuthenticated && user ? () => {
-                                     const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
-                                       return '%' + c.charCodeAt(0).toString(16);
-                                     });
-                                     const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
+                                     const encodedPath = encodeURIComponent(filePath.trim());
+                                     const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
                                      setViewingFile({ fileName: fileName.trim(), fileUrl });
                                      setViewModalOpen(true);
                                    } : undefined}

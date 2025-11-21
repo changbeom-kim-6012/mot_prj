@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { FiUpload, FiFile, FiX, FiArrowLeft, FiBookOpen, FiDownload, FiEye, FiTrash2 } from 'react-icons/fi';
@@ -28,7 +28,7 @@ interface Category {
   name: string;
 }
 
-export default function OpinionRegisterPage() {
+function OpinionRegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -824,5 +824,25 @@ export default function OpinionRegisterPage() {
         </motion.form>
       </div>
     </main>
+  );
+}
+
+export default function OpinionRegisterPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">로딩 중...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <OpinionRegisterPageContent />
+    </Suspense>
   );
 } 

@@ -349,11 +349,9 @@ export default function SubjectEditModal({
     }
     
     try {
-      const encodedPath = encodeURIComponent(filePath.trim()).replace(/[!'()*]/g, function(c) {
-        return '%' + c.charCodeAt(0).toString(16);
-      });
-      
-      const fileUrl = getApiUrl(`/api/library/view/${encodedPath}`);
+      // 쿼리 파라미터 방식으로 파일 경로 처리 (긴 경로나 특수문자 처리에 유리)
+      const encodedPath = encodeURIComponent(filePath.trim());
+      const fileUrl = getApiUrl(`/api/library/view?path=${encodedPath}`);
       
       setViewingFile({ fileName, fileUrl });
       setViewModalOpen(true);
@@ -377,19 +375,9 @@ export default function SubjectEditModal({
     }
   };
 
-
-  console.log('=== SubjectEditModal 렌더링 ===');
-  console.log('isOpen:', isOpen);
-  console.log('subject:', subject);
-  console.log('subjectEditModalOpen 상태:', isOpen);
-  console.log('========================');
-  
   if (!isOpen) {
-    console.log('SubjectEditModal이 닫혀있음 - 렌더링하지 않음');
     return null;
   }
-  
-  console.log('SubjectEditModal이 열림 - 렌더링 시작');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
