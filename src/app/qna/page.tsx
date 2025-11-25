@@ -612,6 +612,19 @@ export default function QnaPage() {
     setSelectedFile(null);
   };
 
+  // UUID를 제거하고 원본 파일명만 추출하는 함수
+  const getOriginalFileName = (filePath: string): string => {
+    if (!filePath) return filePath;
+    // UUID_원본파일명 형식에서 원본 파일명만 추출
+    // UUID는 보통 36자 (8-4-4-4-12 형식)이지만, 언더스코어 이후의 부분을 가져옴
+    const lastUnderscoreIndex = filePath.lastIndexOf('_');
+    if (lastUnderscoreIndex !== -1 && lastUnderscoreIndex < filePath.length - 1) {
+      // 언더스코어가 있고 그 이후에 문자가 있으면 원본 파일명으로 간주
+      return filePath.substring(lastUnderscoreIndex + 1);
+    }
+    return filePath;
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <Navigation />
@@ -932,27 +945,27 @@ export default function QnaPage() {
                         <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-500 break-all overflow-wrap-break-word">
-                            {selectedQuestion.filePath}
+                            {getOriginalFileName(selectedQuestion.filePath)}
                           </span>
                           {/* 관리자나 전문가는 공개/비공개 관계없이 파일보기 가능 */}
                           {(user?.role === 'ADMIN' || user?.role === 'EXPERT') ? (
                             <button
-                              onClick={() => handleFileDownload(selectedQuestion.filePath!)}
+                              onClick={() => handleFileView(selectedQuestion.filePath!)}
                               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
-                              <FiDownload className="w-4 h-4 mr-2" />
-                              파일다운로드
+                              <FiEye className="w-4 h-4 mr-2" />
+                              파일보기
                             </button>
                           ) : (
                             /* 일반 사용자는 공개 질문만 파일보기 가능 */
                             selectedQuestion.isPublic ? (
                               isAuthenticated ? (
                                 <button
-                                  onClick={() => handleFileDownload(selectedQuestion.filePath!)}
+                                  onClick={() => handleFileView(selectedQuestion.filePath!)}
                                   className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                 >
-                                  <FiDownload className="w-4 h-4 mr-2" />
-                                  파일다운로드
+                                  <FiEye className="w-4 h-4 mr-2" />
+                                  파일보기
                                 </button>
                               ) : (
                                 <div className="relative group">
@@ -960,8 +973,8 @@ export default function QnaPage() {
                                     disabled
                                     className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                                   >
-                                    <FiDownload className="w-4 h-4 mr-2" />
-                                    파일다운로드
+                                    <FiEye className="w-4 h-4 mr-2" />
+                                    파일보기
                                   </button>
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
                                     로그인이 필요합니다
@@ -974,8 +987,8 @@ export default function QnaPage() {
                                 disabled
                                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                               >
-                                <FiDownload className="w-4 h-4 mr-2" />
-                                파일다운로드
+                                <FiEye className="w-4 h-4 mr-2" />
+                                파일보기
                               </button>
                             )
                           )}
