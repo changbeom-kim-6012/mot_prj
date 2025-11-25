@@ -8,6 +8,12 @@ const nextConfig = {
   trailingSlash: false,
   // Workspace root 경고 해결: Frontend/mot 폴더를 루트로 명시
   outputFileTracingRoot: require('path').join(__dirname),
+  // standalone 모드에서 public 폴더 포함
+  outputFileTracingIncludes: {
+    '/**': [
+      'public/**/*',
+    ],
+  },
   typescript: {
     // 빌드 시 TypeScript 에러가 있어도 빌드를 계속 진행
     ignoreBuildErrors: true,

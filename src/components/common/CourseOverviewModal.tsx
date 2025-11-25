@@ -119,13 +119,18 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
                   onError={(e) => {
                     // 이미지가 없을 경우 대체 텍스트 표시
                     const target = e.target as HTMLImageElement;
+                    const imgSrc = target.src;
+                    console.error('이미지 로딩 실패:', imgSrc);
                     target.style.display = 'none';
                     const parent = target.parentElement;
                     if (parent) {
                       parent.innerHTML = `
                         <div class="text-center p-8">
                           <p class="text-gray-500 text-lg mb-4">MOT Overview 이미지 파일을 찾을 수 없습니다.</p>
-                          <p class="text-gray-400 text-sm">/public/MOT_Overview.png 파일을 추가해주세요.</p>
+                          <p class="text-gray-400 text-sm mb-2">요청한 경로: ${imgSrc}</p>
+                          <p class="text-gray-400 text-sm mb-2">프로덕션 환경에서는 /public/MOT_Overview.png 파일이 서버에 배포되어야 합니다.</p>
+                          <p class="text-gray-400 text-sm">빌드 시 public 폴더의 파일이 제대로 복사되었는지 확인해주세요.</p>
+                          <p class="text-gray-400 text-xs mt-4">브라우저 개발자 도구의 Network 탭에서 실제 요청 URL을 확인하세요.</p>
                         </div>
                       `;
                     }
