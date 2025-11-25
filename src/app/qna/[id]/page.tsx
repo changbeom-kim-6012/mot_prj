@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiDownload, FiTrash2, FiLock } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiTrash2, FiLock } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
@@ -204,21 +204,35 @@ export default function QnaDetailPage() {
     }
   };
 
-  const handleFileDownload = (filePath: string) => {
-    const link = document.createElement('a');
-    // Q&A 전용 파일 다운로드 API 사용
-    link.href = getApiUrl(`/api/library/qna/download/${filePath}`);
-    link.download = filePath;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // UUID를 제거하고 원본 파일명만 추출하는 함수 (관리자 편집모드와 동일)
+  const getOriginalFileName = (filePath: string): string => {
+    if (!filePath) return filePath;
+    
+    // UUID 패턴: 8-4-4-4-12 형식 (예: c1aa3ce2-5b63-4f22-a9e7-9d02396dc8f0)
+    // UUID_원본파일명 형식에서 원본 파일명만 추출
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i;
+    
+    if (uuidPattern.test(filePath)) {
+      // UUID 패턴이 매칭되면 (36자 + 하이픈 4개 + 언더스코어 1개 = 41자) 이후 부분을 반환
+      return filePath.substring(41);
+    }
+    
+    // UUID 패턴이 없으면 lastIndexOf로 처리 (하위 호환성)
+    const lastUnderscoreIndex = filePath.lastIndexOf('_');
+    if (lastUnderscoreIndex !== -1 && lastUnderscoreIndex < filePath.length - 1) {
+      return filePath.substring(lastUnderscoreIndex + 1);
+    }
+    
+    return filePath;
   };
 
   const handleFileView = (filePath: string) => {
     // Q&A 파일 보기 URL 생성
     const encodedFilePath = encodeURIComponent(filePath);
     const fileUrl = getApiUrl(`/api/library/qna/view/${encodedFilePath}`);
-    setSelectedFile({ url: fileUrl, name: filePath });
+    // 원본 파일명만 표시
+    const originalFileName = getOriginalFileName(filePath);
+    setSelectedFile({ url: fileUrl, name: originalFileName });
   };
 
   const handleCloseFileViewer = () => {
@@ -351,20 +365,22 @@ export default function QnaDetailPage() {
             </div>
 
             {/* 첨부파일 */}
-            {question.filePath && (
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-700 break-all overflow-wrap-break-word flex-1">
-                    {question.filePath}
+            {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 break-all overflow-wrap-break-word">
+                    {getOriginalFileName(question.filePath)}
                   </span>
-                  <button
-                    onClick={() => handleFileView(question.filePath!)}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <FiEye className="w-4 h-4 mr-2" />
-                    파일보기
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleFileView(question.filePath!)}
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <FiEye className="w-4 h-4 mr-2" />
+                      파일보기
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

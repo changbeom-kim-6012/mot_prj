@@ -407,9 +407,7 @@ export default function QnaPage() {
       // 일반 사용자는 기존 조회 모달 열기
       // 로그인 확인
       if (!isAuthenticated) {
-        setQuestionError('질문 상세 조회는 로그인이 필요합니다.');
-        setDetailModalOpen(true);
-        setQuestionLoading(false);
+        // 로그인하지 않은 경우 모달을 열지 않음 (툴팁으로 안내)
         return;
       }
       
@@ -762,14 +760,28 @@ export default function QnaPage() {
                         </span>
                       </div>
                       
-                      <button 
-                        onClick={() => handleViewDetail(question)}
-                        className="block w-full text-left"
+                      <div 
+                        className="block w-full text-left relative group"
+                        onClick={() => {
+                          if (isAuthenticated) {
+                            handleViewDetail(question);
+                          }
+                        }}
                       >
-                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2 break-all overflow-wrap-break-word">
+                        <h3 className={`text-lg font-semibold mb-2 break-all overflow-wrap-break-word ${
+                          isAuthenticated 
+                            ? 'text-gray-900 hover:text-blue-600 transition-colors cursor-pointer' 
+                            : 'text-gray-500 cursor-not-allowed'
+                        }`}>
                           {question.title}
                         </h3>
-                      </button>
+                        {!isAuthenticated && (
+                          <div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                            로그인이 필요합니다
+                            <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* 비공개 질문은 내용 숨김 */}
                       {question.isPublic ? (
@@ -1157,7 +1169,24 @@ export default function QnaPage() {
         onClose={handleCloseAdminEditModal}
         question={selectedQuestion}
         answers={questionAnswers}
-        onQuestionUpdate={fetchQuestions}
+        onQuestionUpdate={async () => {
+          // 질문 목록 새로고침
+          await fetchQuestions();
+          // 선택된 질문이 있으면 상세 정보도 다시 가져오기
+          if (selectedQuestion) {
+            try {
+              const response = await fetch(`/api/questions/${selectedQuestion.id}`);
+              if (response.ok) {
+                const data = await response.json();
+                setSelectedQuestion(data);
+                // 답변 목록도 함께 불러오기
+                fetchAnswers(selectedQuestion.id);
+              }
+            } catch (error) {
+              console.error('질문 상세 정보 새로고침 오류:', error);
+            }
+          }
+        }}
         onAnswerUpdate={() => selectedQuestion && fetchAnswers(selectedQuestion.id)}
         onQuestionDelete={() => {
           handleCloseAdminEditModal();

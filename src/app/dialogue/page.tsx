@@ -197,22 +197,21 @@ function DialoguePageContent() {
         return;
       }
 
-      // 사용자 정보 검증
-      if (!user?.email) {
-        console.warn('사용자 이메일이 없습니다.');
-        setRooms([]);
-        setFilteredRooms([]);
-        setLoading(false);
-        return;
+      // 로그인하지 않은 경우에도 API 호출 (헤더 없이 또는 빈 헤더로)
+      console.log('대화방 목록 요청:', { 
+        userEmail: user?.email || '없음', 
+        userRole: user?.role || '없음',
+        isAuthenticated 
+      });
+
+      const headers: Record<string, string> = {};
+      if (user?.email) {
+        headers['User-Email'] = user.email;
+        headers['User-Role'] = user.role || '';
       }
 
-      console.log('대화방 목록 요청:', { userEmail: user.email, userRole: user.role });
-
       const response = await fetch(getApiUrl('/api/dialogue/rooms'), {
-        headers: {
-          'User-Email': user.email,
-          'User-Role': user.role || '',
-        },
+        headers,
       });
 
       if (response.ok) {
@@ -254,11 +253,14 @@ function DialoguePageContent() {
       }
     } catch (error) {
       console.error('대화방 목록 불러오기 실패:', error);
-      // 에러 발생 시 빈 배열로 설정
+      // 에러 발생 시 빈 배열로 설정 (로그인하지 않은 경우 조용히 처리)
       setRooms([]);
       setFilteredRooms([]);
-      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      alert(`대화방 목록을 불러오는데 실패했습니다: ${errorMessage}`);
+      // 로그인한 경우에만 alert 표시
+      if (isAuthenticated) {
+        const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+        alert(`대화방 목록을 불러오는데 실패했습니다: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -642,33 +644,7 @@ function DialoguePageContent() {
     );
   }
 
-  // 로그인 체크
-  if (!isAuthenticated) {
-    return (
-      <main className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="pt-28">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiMessageSquare className="w-8 h-8 text-red-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
-              <p className="text-gray-600 mb-6">대화방을 조회하려면 로그인해주세요.</p>
-              <div className="flex justify-center">
-                <button
-                  onClick={() => window.location.href = '/login'}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  로그인
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  // 로그인 체크 제거 - 리스트는 보여주고, 조회 시에만 로그인 필요
 
   // 검색 및 필터링은 검색 버튼 클릭 시에만 실행됨
 
@@ -712,7 +688,7 @@ function DialoguePageContent() {
   // 대화방 팝업 열기
   const handleOpenDialogue = async (room: DialogueRoom) => {
     if (!isAuthenticated) {
-      alert('대화내용 조회 및 대화방 참여는 로그인이 필요합니다.');
+      // 로그인하지 않은 경우 아무 동작도 하지 않음 (툴팁으로 안내)
       return;
     }
     
@@ -1445,17 +1421,31 @@ function DialoguePageContent() {
                           </span>
                         </div>
                         
-                        <button
-                          onClick={() => handleOpenDialogue(room)}
-                          className="block w-full text-left"
+                        <div 
+                          className="block w-full text-left relative group"
+                          onClick={() => {
+                            if (isAuthenticated) {
+                              handleOpenDialogue(room);
+                            }
+                          }}
                         >
                           <h3 
-                            className="text-lg font-semibold transition-colors mb-2 text-gray-900 hover:text-blue-600"
-                            title={!room.isPublic ? '비공개 대화방은 관리자와 참여자만 볼 수 있습니다.' : ''}
+                            className={`text-lg font-semibold transition-colors mb-2 ${
+                              isAuthenticated 
+                                ? 'text-gray-900 hover:text-blue-600 cursor-pointer' 
+                                : 'text-gray-500 cursor-not-allowed'
+                            }`}
+                            title={!isAuthenticated ? '로그인이 필요합니다' : (!room.isPublic ? '비공개 대화방은 관리자와 참여자만 볼 수 있습니다.' : '')}
                           >
                             {room.title}
                           </h3>
-                        </button>
+                          {!isAuthenticated && (
+                            <div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                              로그인이 필요합니다
+                              <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                            </div>
+                          )}
+                        </div>
                         
                         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                           {room.question}
