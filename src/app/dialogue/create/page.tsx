@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiUsers, FiUserPlus, FiUserCheck, FiSearch, FiX, FiMail } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiUsers, FiUserPlus, FiUserCheck, FiSearch, FiX, FiMail, FiTrash2 } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getApiUrl } from '@/config/api';
@@ -222,6 +222,59 @@ function CreateDialoguePageContent() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // 대화방 삭제 핸들러
+  const handleDelete = async () => {
+    if (!roomId) {
+      return;
+    }
+
+    // 삭제 확인
+    const confirmMessage = `정말로 이 대화방을 삭제하시겠습니까?\n삭제된 대화방은 복구할 수 없습니다.`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(getApiUrl(`/api/dialogue/rooms/${roomId}`), {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Email': user?.email || '',
+          'User-Role': user?.role || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('대화방 삭제 성공:', data);
+        alert('대화방이 성공적으로 삭제되었습니다.');
+        router.push('/dialogue');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('서버 오류 응답:', errorData);
+        
+        let displayMessage = errorData.error || `서버 오류 (${response.status})`;
+        if (response.status === 403) {
+          displayMessage = '대화방 삭제는 관리자만 가능합니다.';
+        }
+        throw new Error(displayMessage);
+      }
+    } catch (error) {
+      console.error('대화방 삭제 실패:', error);
+      let errorMessage = '알 수 없는 오류';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      alert(`대화방 삭제에 실패했습니다: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -236,7 +289,34 @@ function CreateDialoguePageContent() {
       const allParticipantEmails = [
         user?.email || '', // 작성자 이메일 추가
         ...selectedExpertDetails.map(expert => expert.email) // 선택된 전문가 이메일 추가
-      ].filter((email, index, array) => array.indexOf(email) === index); // 중복 제거
+      ].filter((email, index, array) => array.indexOf(email) === index) // 중복 제거
+       .filter(email => email && email.trim() !== ''); // 빈 이메일 제거
+      
+      // 참여자 이메일 사전 검증 (존재하지 않는 사용자 확인)
+      const invalidEmails: string[] = [];
+      for (const email of allParticipantEmails) {
+        if (email && email !== user?.email) { // 작성자는 제외
+          try {
+            const verifyResponse = await fetch(getApiUrl(`/api/users/email/${email}`), {
+              headers: {
+                'User-Email': user?.email || '',
+                'User-Role': user?.role || '',
+              },
+            });
+            
+            if (!verifyResponse.ok) {
+              invalidEmails.push(email);
+            }
+          } catch (error) {
+            console.error(`사용자 검증 실패: ${email}`, error);
+            invalidEmails.push(email);
+          }
+        }
+      }
+      
+      if (invalidEmails.length > 0) {
+        throw new Error(`다음 사용자를 찾을 수 없습니다: ${invalidEmails.join(', ')}`);
+      }
       
       const requestData = {
         title: formData.title.trim(),
@@ -281,14 +361,32 @@ function CreateDialoguePageContent() {
         // 대화방 목록 페이지로 이동하면서 새로고침 파라미터 추가
         router.push('/dialogue?refresh=true');
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('서버 오류 응답:', errorData);
-        throw new Error(errorData.message || `서버 오류 (${response.status}): 대화방 ${isEditMode ? '수정' : '생성'}에 실패했습니다.`);
+        
+        // 에러 메시지 추출 (error 필드 또는 message 필드 사용)
+        const errorMessage = errorData.error || errorData.message || `서버 오류 (${response.status})`;
+        
+        // 중복 메시지 방지: 이미 "대화방 생성에 실패했습니다"가 포함되어 있으면 그대로 사용
+        if (errorMessage.includes('대화방') && errorMessage.includes('실패')) {
+          alert(errorMessage);
+        } else {
+          alert(`대화방 ${isEditMode ? '수정' : '생성'}에 실패했습니다: ${errorMessage}`);
+        }
+        return;
       }
     } catch (error) {
       console.error(`대화방 ${isEditMode ? '수정' : '생성'} 실패:`, error);
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-      alert(`대화방 ${isEditMode ? '수정' : '생성'}에 실패했습니다: ${errorMessage}`);
+      
+      // 네트워크 오류 등 기타 오류의 경우
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Network')) {
+        alert('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } else if (!errorMessage.includes('대화방') || !errorMessage.includes('실패')) {
+        alert(`대화방 ${isEditMode ? '수정' : '생성'}에 실패했습니다: ${errorMessage}`);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -812,28 +910,42 @@ function CreateDialoguePageContent() {
                 </div>
 
                 {/* 버튼 그룹 */}
-                <div className="flex justify-end space-x-4 pt-6">
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {isEditMode ? '수정 중...' : '생성 중...'}
-                      </div>
-                    ) : (
-                      isEditMode ? '대화방 수정' : '대화방 생성'
-                    )}
-                  </button>
+                <div className="flex justify-between items-center pt-6">
+                  {/* 관리자 권한이고 수정 모드일 때 삭제 버튼 표시 */}
+                  {isEditMode && user?.role === 'ADMIN' && (
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={loading}
+                      className="px-6 py-2 border border-red-300 rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                      <span>대화방 삭제</span>
+                    </button>
+                  )}
+                  <div className="flex justify-end space-x-4 ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => router.back()}
+                      className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          {isEditMode ? '수정 중...' : '생성 중...'}
+                        </div>
+                      ) : (
+                        isEditMode ? '대화방 수정' : '대화방 생성'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiMessageSquare, FiCalendar, FiUser, FiUsers, FiX, FiSend, FiLock, FiChevronDown, FiSettings, FiTrash2, FiFileText, FiUpload, FiDownload, FiEye } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
 import { getApiUrl } from '@/config/api';
+import FileViewer from '@/components/common/FileViewer';
 
 interface DialogueRoom {
   id: number;
@@ -28,6 +29,8 @@ interface DialogueMessage {
   authorName: string;
   createdAt: string;
   isExpert: boolean;
+  fileName?: string;
+  filePath?: string;
 }
 
 interface DialogueParticipant {
@@ -52,7 +55,9 @@ function DialoguePageContent() {
   const [messages, setMessages] = useState<DialogueMessage[]>([]);
   const [participants, setParticipants] = useState<DialogueParticipant[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isPublicDropdownOpen, setIsPublicDropdownOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
@@ -381,31 +386,163 @@ function DialoguePageContent() {
     };
   }, [isStatusDropdownOpen, isPublicDropdownOpen, isParticipantDropdownOpen]);
 
-  // 모달 열릴 때 중앙 위치로 초기화
+  // 모달 열릴 때 위치 초기화 및 뷰포트 내 확인
   useEffect(() => {
     if (isPopupOpen) {
-      const centerX = (window.innerWidth - modalSize.width) / 2;
-      const centerY = (window.innerHeight - modalSize.height) / 2;
-      setModalPosition({ x: Math.max(0, centerX), y: Math.max(0, centerY) });
+      // localStorage에서 저장된 위치 불러오기
+      const savedPosition = localStorage.getItem('dialogueModalPosition');
+      const savedSize = localStorage.getItem('dialogueModalSize');
+      
+      let initialX = 0;
+      let initialY = 0;
+      let initialWidth = modalSize.width;
+      let initialHeight = modalSize.height;
+      
+      if (savedPosition) {
+        try {
+          const pos = JSON.parse(savedPosition);
+          initialX = pos.x;
+          initialY = pos.y;
+        } catch (e) {
+          console.error('저장된 위치 파싱 실패:', e);
+        }
+      }
+      
+      if (savedSize) {
+        try {
+          const size = JSON.parse(savedSize);
+          initialWidth = size.width;
+          initialHeight = size.height;
+          setModalSize({ width: initialWidth, height: initialHeight });
+        } catch (e) {
+          console.error('저장된 크기 파싱 실패:', e);
+        }
+      }
+      
+      // 모달이 현재 뷰포트 내에 있는지 확인
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const isVisible = (
+        initialX >= -initialWidth + 100 && // 최소 100px는 보이도록
+        initialX < viewportWidth &&
+        initialY >= -initialHeight + 50 && // 최소 50px는 보이도록
+        initialY < viewportHeight
+      );
+      
+      if (!isVisible) {
+        // 뷰포트 밖에 있으면 현재 화면 중앙으로 이동
+        const centerX = (viewportWidth - initialWidth) / 2;
+        const centerY = (viewportHeight - initialHeight) / 2;
+        setModalPosition({ 
+          x: Math.max(0, centerX), 
+          y: Math.max(0, centerY) 
+        });
+      } else {
+        setModalPosition({ x: initialX, y: initialY });
+      }
     }
-  }, [isPopupOpen, modalSize.width, modalSize.height]);
+  }, [isPopupOpen]);
+  
+  // 모달 위치 및 크기 변경 시 localStorage에 저장
+  useEffect(() => {
+    if (isPopupOpen) {
+      localStorage.setItem('dialogueModalPosition', JSON.stringify(modalPosition));
+      localStorage.setItem('dialogueModalSize', JSON.stringify(modalSize));
+    }
+  }, [modalPosition, modalSize, isPopupOpen]);
+  
+  // 화면 크기 변경 시 모달이 뷰포트 내에 있는지 확인
+  useEffect(() => {
+    if (!isPopupOpen) return;
+    
+    const checkModalVisibility = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // 모달이 뷰포트 밖에 있는지 확인
+      const isOutOfView = (
+        modalPosition.x < -modalSize.width + 100 ||
+        modalPosition.x > viewportWidth ||
+        modalPosition.y < -modalSize.height + 50 ||
+        modalPosition.y > viewportHeight
+      );
+      
+      if (isOutOfView) {
+        // 현재 화면 중앙으로 이동
+        const centerX = (viewportWidth - modalSize.width) / 2;
+        const centerY = (viewportHeight - modalSize.height) / 2;
+        setModalPosition({ 
+          x: Math.max(0, centerX), 
+          y: Math.max(0, centerY) 
+        });
+      }
+    };
+    
+    window.addEventListener('resize', checkModalVisibility);
+    return () => window.removeEventListener('resize', checkModalVisibility);
+  }, [isPopupOpen, modalPosition, modalSize]);
 
   // 드래그 및 리사이즈 이벤트 리스너
   useEffect(() => {
     if (!isDragging) return;
     
     const handleDragMove = (e: MouseEvent) => {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      // screenX, screenY를 사용하여 다중 모니터 환경 지원
+      const screenX = e.screenX;
+      const screenY = e.screenY;
       
-      // 화면 경계 체크
-      const maxX = window.innerWidth - modalSize.width;
-      const maxY = window.innerHeight - modalSize.height;
+      // 현재 뷰포트의 화면 좌표 오프셋 계산
+      const viewportScreenX = window.screenX || 0;
+      const viewportScreenY = window.screenY || 0;
       
-      setModalPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      });
+      // 뷰포트 크기
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // 마우스가 현재 뷰포트 내에 있는지 확인
+      const mouseViewportX = screenX - viewportScreenX;
+      const mouseViewportY = screenY - viewportScreenY;
+      const isMouseInViewport = (
+        mouseViewportX >= 0 && mouseViewportX < viewportWidth &&
+        mouseViewportY >= 0 && mouseViewportY < viewportHeight
+      );
+      
+      if (isMouseInViewport) {
+        // 마우스가 현재 뷰포트 내에 있으면 모달을 마우스 위치로 이동
+        const viewportX = mouseViewportX;
+        const viewportY = mouseViewportY;
+        
+        // 드래그 시작 시점의 오프셋을 고려하여 모달 위치 계산
+        const newX = viewportX - dragStart.x;
+        const newY = viewportY - dragStart.y;
+        
+        // 최소한의 가시성 유지
+        const minVisibleWidth = 100;
+        const minVisibleHeight = 50;
+        
+        // 뷰포트 내에 있도록 제한하되, 약간의 여유 공간 허용
+        const constrainedX = Math.max(
+          -modalSize.width + minVisibleWidth,
+          Math.min(newX, viewportWidth - minVisibleWidth)
+        );
+        const constrainedY = Math.max(
+          -modalSize.height + minVisibleHeight,
+          Math.min(newY, viewportHeight - minVisibleHeight)
+        );
+        
+        setModalPosition({
+          x: constrainedX,
+          y: constrainedY
+        });
+      } else {
+        // 마우스가 다른 모니터에 있으면 모달을 현재 뷰포트 중앙으로 이동
+        const centerX = (viewportWidth - modalSize.width) / 2;
+        const centerY = (viewportHeight - modalSize.height) / 2;
+        setModalPosition({
+          x: Math.max(0, centerX),
+          y: Math.max(0, centerY)
+        });
+      }
     };
 
     const handleDragStop = () => {
@@ -775,7 +912,7 @@ function DialoguePageContent() {
 
   // 메시지 전송
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedRoom) return;
+    if ((!newMessage.trim() && !selectedFile) || !selectedRoom) return;
     
     console.log('메시지 전송 시도 - 참여자 체크:', {
       userEmail: user?.email,
@@ -806,16 +943,21 @@ function DialoguePageContent() {
         messageContent: newMessage
       });
       
+      // FormData 생성 (파일 포함)
+      const formData = new FormData();
+      formData.append('content', newMessage);
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
       const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          // FormData 사용 시 Content-Type은 브라우저가 자동으로 설정
           'User-Email': user?.email || '',
           'User-Role': user?.role || '',
         },
-        body: JSON.stringify({
-        content: newMessage,
-        }),
+        body: formData,
       });
 
       console.log('메시지 전송 응답:', {
@@ -859,6 +1001,7 @@ function DialoguePageContent() {
           return updatedMessages;
         });
       setNewMessage('');
+      setSelectedFile(null);
       } else {
         // 403 오류인 경우 특별 처리
         if (response.status === 403) {
@@ -1016,9 +1159,24 @@ function DialoguePageContent() {
       return; // 버튼이나 입력 필드 클릭 시 드래그 방지
     }
     setIsDragging(true);
+    
+    // screenX, screenY를 사용하여 다중 모니터 환경 지원
+    // 전체 화면 좌표계에서 뷰포트 기준 좌표로 변환
+    const screenX = e.screenX;
+    const screenY = e.screenY;
+    
+    // 현재 뷰포트의 화면 좌표 오프셋 계산
+    const viewportScreenX = window.screenX || 0;
+    const viewportScreenY = window.screenY || 0;
+    
+    // 뷰포트 기준 좌표로 변환
+    const viewportX = screenX - viewportScreenX;
+    const viewportY = screenY - viewportScreenY;
+    
+    // 드래그 시작 시점의 마우스 위치와 모달 위치의 차이 저장
     setDragStart({
-      x: e.clientX - modalPosition.x,
-      y: e.clientY - modalPosition.y
+      x: viewportX - modalPosition.x,
+      y: viewportY - modalPosition.y
     });
   };
 
@@ -1096,6 +1254,47 @@ function DialoguePageContent() {
     } finally {
       setIsGeneratingSummary(false);
     }
+  };
+
+  // 요약 텍스트를 렌더링하는 함수 (첫 번째 줄을 볼드체로)
+  const renderSummary = (summaryText: string) => {
+    if (!summaryText) return null;
+
+    const lines = summaryText.split('\n');
+    const result: JSX.Element[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      // 첫 번째 줄 패턴: 숫자. YYYY-MM-DD HH:MM 형식
+      const firstLinePattern = /^(\d+)\.\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})$/;
+      const match = line.match(firstLinePattern);
+      
+      if (match) {
+        // 첫 번째 줄: 볼드체로 렌더링
+        result.push(
+          <span key={i} className="font-bold text-gray-900">
+            {line}
+          </span>
+        );
+      } else if (line.trim() === '') {
+        // 빈 줄
+        result.push(<br key={i} />);
+      } else {
+        // 일반 줄 (들여쓰기 포함)
+        result.push(
+          <span key={i} className="text-gray-700">
+            {line}
+          </span>
+        );
+      }
+      
+      // 마지막 줄이 아니면 줄바꿈 추가
+      if (i < lines.length - 1) {
+        result.push(<br key={`br-${i}`} />);
+      }
+    }
+    
+    return <>{result}</>;
   };
 
   const getStatusColor = (status: string) => {
@@ -1300,16 +1499,26 @@ function DialoguePageContent() {
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-50" 
           onClick={handleModalBackdropClick}
+          style={{
+            // 다중 모니터 지원을 위해 전체 화면을 커버
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+          }}
         >
           <div
             ref={modalRef}
-            className="bg-white rounded-lg shadow-xl flex flex-col absolute"
+            className="bg-white rounded-lg shadow-xl flex flex-col"
             style={{
+              position: 'fixed',
               left: `${modalPosition.x}px`,
               top: `${modalPosition.y}px`,
               width: `${modalSize.width}px`,
               height: `${modalSize.height}px`,
-              cursor: isDragging ? 'move' : 'default'
+              cursor: isDragging ? 'move' : 'default',
+              zIndex: 50
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1411,7 +1620,7 @@ function DialoguePageContent() {
                         title={selectedParticipantForSummary ? "선택된 참여자의 대화 요약" : "참여자를 선택해주세요"}
                       >
                         <FiFileText className="w-4 h-4" />
-                        {isGeneratingSummary ? '요약 중...' : '요약 보기'}
+                        {isGeneratingSummary ? '요약 중...' : '대화내용 모아보기'}
                       </button>
                     </div>
                   </div>
@@ -1456,6 +1665,31 @@ function DialoguePageContent() {
                             </div>
                           </div>
                           <p className="text-sm">{message.content}</p>
+                          {/* 파일 표시 */}
+                          {message.filePath && message.fileName && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <FiFileText className={`w-4 h-4 ${
+                                message.authorEmail === user?.email
+                                  ? 'text-white opacity-90'
+                                  : 'text-gray-600'
+                              }`} />
+                              <button
+                                onClick={() => {
+                                  const encodedFileName = encodeURIComponent(message.filePath!);
+                                  const fileUrl = getApiUrl(`/api/dialogue/messages/files/${encodedFileName}`);
+                                  setViewingFile({ url: fileUrl, name: message.fileName! });
+                                }}
+                                className={`text-sm flex items-center gap-1 ${
+                                  message.authorEmail === user?.email
+                                    ? 'text-white hover:text-blue-100 underline'
+                                    : 'text-blue-600 hover:text-blue-700'
+                                }`}
+                              >
+                                <FiEye className="w-4 h-4" />
+                                {message.fileName}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1468,18 +1702,50 @@ function DialoguePageContent() {
                 {isParticipant() && (
                   <div className="p-6 border-t border-gray-200">
                     <div className="flex space-x-3">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="메시지를 입력하세요..."
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        disabled={sendingMessage}
-                      />
+                      <div className="flex-1 flex flex-col space-y-2">
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                          placeholder="메시지를 입력하세요..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={sendingMessage}
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors text-sm text-gray-700 bg-white">
+                            <FiUpload className="w-4 h-4" />
+                            <span>파일 선택</span>
+                            <input
+                              type="file"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setSelectedFile(e.target.files[0]);
+                                }
+                              }}
+                              className="hidden"
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif"
+                            />
+                          </label>
+                          {/* 선택된 파일명 표시 - 같은 라인에서 버튼 오른쪽 */}
+                          {selectedFile && (
+                            <div className="flex items-center gap-2 flex-1 min-w-0 px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200">
+                              <FiFileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                              <span className="text-sm text-gray-700 truncate flex-1">{selectedFile.name}</span>
+                              <button
+                                onClick={() => setSelectedFile(null)}
+                                className="text-red-600 hover:text-red-700 flex-shrink-0"
+                                title="파일 제거"
+                              >
+                                <FiX className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <button
                         onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || sendingMessage}
+                        disabled={(!newMessage.trim() && !selectedFile) || sendingMessage}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {sendingMessage ? (
@@ -1781,7 +2047,9 @@ function DialoguePageContent() {
             <div className="flex-1 overflow-y-auto p-6">
               {summary ? (
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{summary}</p>
+                  <div className="text-gray-700 whitespace-pre-wrap leading-relaxed font-sans text-sm font-mono">
+                    {renderSummary(summary)}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center text-gray-500">
@@ -1792,6 +2060,15 @@ function DialoguePageContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 파일 뷰어 */}
+      {viewingFile && (
+        <FileViewer
+          fileUrl={viewingFile.url}
+          fileName={viewingFile.name}
+          onClose={() => setViewingFile(null)}
+        />
       )}
     </main>
   );

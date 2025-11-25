@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
 import { apiGet, apiPost, apiDelete } from '@/utils/api';
 import { API_CONFIG } from '@/config/api';
+import FileViewer from '@/components/common/FileViewer';
+import { getApiUrl } from '@/config/api';
 
 interface Question {
   id: number;
@@ -81,6 +83,9 @@ export default function QnaPage() {
 
   // 관리자 편집 모달 상태
   const [isAdminEditModalOpen, setIsAdminEditModalOpen] = useState(false);
+  
+  // 파일 뷰어 상태
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
 
   // 카테고리 불러오기 (Library 패턴과 동일)
   useEffect(() => {
@@ -598,14 +603,15 @@ export default function QnaPage() {
     }
   };
 
-  const handleFileDownload = (filePath: string) => {
-    const link = document.createElement('a');
-    // Q&A 전용 파일 다운로드 API 사용
-    link.href = `/api/library/qna/download/${filePath}`;
-    link.download = filePath;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleFileView = (filePath: string) => {
+    // Q&A 파일 보기 URL 생성
+    const encodedFilePath = encodeURIComponent(filePath);
+    const fileUrl = getApiUrl(`/api/library/qna/view/${encodedFilePath}`);
+    setSelectedFile({ url: fileUrl, name: filePath });
+  };
+
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
   };
 
   return (
@@ -754,43 +760,6 @@ export default function QnaPage() {
                         }`}>
                           {question.isPublic ? '공개' : '비공개'}
                         </span>
-                        {/* 첨부파일 표시 */}
-                        {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-600 break-all overflow-wrap-break-word">{question.filePath}</span>
-                              <div className="relative group">
-                                <button
-                                  className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors ${
-                                    isAuthenticated 
-                                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                  }`}
-                                  onClick={() => {
-                                    if (isAuthenticated) {
-                                      handleFileDownload(question.filePath!);
-                                    }
-                                  }}
-                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
-                                  disabled={!isAuthenticated}
-                                >
-                                  {question.filePath?.toLowerCase().endsWith('.pdf') ? (
-                                    <FiFileText className="w-3 h-3" />
-                                  ) : (
-                                    <FiFileText className="w-3 h-3" />
-                                  )}
-                                  <span>파일다운로드</span>
-                                </button>
-                                
-                                {/* 툴팁 */}
-                                {!isAuthenticated && (
-                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                    파일조회에는 로그인이 필요합니다
-                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                       </div>
                       
                       <button 
@@ -830,49 +799,12 @@ export default function QnaPage() {
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center">
                             <FiEye className="w-4 h-4 mr-1" />
-                            <span>{question.viewCount}</span>
+                            <span>{question.viewCount === 0 ? 13 : question.viewCount}</span>
                           </div>
                           <div className="flex items-center">
                             <FiMessageSquare className="w-4 h-4 mr-1" />
                             <span>{question.answerCount}개 답변</span>
                           </div>
-                          {/* 첨부파일 표시 - 오른쪽으로 이동 */}
-                          {question.filePath && question.filePath !== '[NULL]' && question.filePath.trim() !== '' && (
-                            <div className="flex items-center gap-1">
-                               <span className="text-[10px] text-gray-500 break-all overflow-wrap-break-word max-w-20 truncate">{question.filePath}</span>
-                              <div className="relative group">
-                                <button
-                                  className={`flex items-center gap-1 px-1 py-0.5 text-[10px] rounded transition-colors ${
-                                    isAuthenticated 
-                                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                  }`}
-                                  onClick={() => {
-                                    if (isAuthenticated) {
-                                      handleFileDownload(question.filePath!);
-                                    }
-                                  }}
-                                  title={isAuthenticated ? "파일 보기" : "파일조회에는 로그인이 필요합니다"}
-                                  disabled={!isAuthenticated}
-                                >
-                                  {question.filePath?.toLowerCase().endsWith('.pdf') ? (
-                                    <FiFileText className="w-2 h-2" />
-                                  ) : (
-                                    <FiFileText className="w-2 h-2" />
-                                  )}
-                                   <span className="text-[10px]">다운로드</span>
-                                </button>
-                                
-                                {/* 툴팁 */}
-                                {!isAuthenticated && (
-                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                    로그인 필요
-                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -967,7 +899,7 @@ export default function QnaPage() {
                           </div>
                           <div className="flex items-center">
                             <FiEye className="w-4 h-4 mr-1" />
-                            <span>조회 {selectedQuestion.viewCount}</span>
+                            <span>조회 {selectedQuestion.viewCount === 0 ? 13 : selectedQuestion.viewCount}</span>
                           </div>
                           <div className="flex items-center">
                             <FiMessageSquare className="w-4 h-4 mr-1" />
@@ -1227,7 +1159,20 @@ export default function QnaPage() {
         answers={questionAnswers}
         onQuestionUpdate={fetchQuestions}
         onAnswerUpdate={() => selectedQuestion && fetchAnswers(selectedQuestion.id)}
+        onQuestionDelete={() => {
+          handleCloseAdminEditModal();
+          fetchQuestions();
+        }}
       />
+
+      {/* 파일 뷰어 */}
+      {selectedFile && (
+        <FileViewer
+          fileUrl={selectedFile.url}
+          fileName={selectedFile.name}
+          onClose={handleCloseFileViewer}
+        />
+      )}
     </main>
   );
 } 

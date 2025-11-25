@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiX, FiSave, FiEdit2, FiTarget, FiFileText, FiList, FiTrash2, FiUpload, FiDownload } from 'react-icons/fi';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
 import { getApiUrl } from '@/config/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Subject {
   id: number;
@@ -41,6 +42,9 @@ export default function ProgramDetailModal({
   onSave,
   onDelete
 }: ProgramDetailModalProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  
   const [formData, setFormData] = useState({
     programCode: '',
     programName: '',
@@ -174,11 +178,28 @@ export default function ProgramDetailModal({
 
   const handleSubjectClick = (subject: Subject) => {
     if (subject.curriculumFileName && subject.curriculumFilePath) {
-      setViewingPdf({
-        fileName: subject.curriculumFileName,
-        filePath: subject.curriculumFilePath
-      });
-      setPdfViewerOpen(true);
+      // 파일 경로를 URL로 변환 (리스트 박스와 동일한 방식)
+      try {
+        const encodedPath = encodeURIComponent(subject.curriculumFilePath.trim());
+        // getApiUrl 사용하지 않고 상대 경로 사용 (리스트 박스와 동일)
+        const fileUrl = `/api/library/view?path=${encodedPath}`;
+        
+        console.log('=== Subject 파일 보기 디버깅 ===');
+        console.log('원본 fileName:', subject.curriculumFileName);
+        console.log('원본 filePath:', subject.curriculumFilePath);
+        console.log('인코딩된 filePath:', encodedPath);
+        console.log('생성된 fileUrl:', fileUrl);
+        console.log('========================');
+        
+        setViewingPdf({
+          fileName: subject.curriculumFileName,
+          filePath: fileUrl // URL로 변환된 경로 사용
+        });
+        setPdfViewerOpen(true);
+      } catch (error) {
+        console.error('파일 경로 처리 중 오류:', error);
+        alert('파일 경로 처리 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -218,13 +239,38 @@ export default function ProgramDetailModal({
     setErrors({ ...errors, curriculumFile: '' });
   };
 
+  // 기존 파일 삭제 핸들러
+  const handleDeleteExistingFile = () => {
+    if (confirm('기존 파일을 삭제하시겠습니까? 새 파일을 선택하지 않으면 파일이 제거됩니다.')) {
+      setExistingFilePath('');
+      setExistingFileName('');
+    }
+  };
+
   const handleViewFile = () => {
     if (existingFilePath) {
-      setViewingPdf({
-        fileName: existingFileName || '프로그램 파일',
-        filePath: existingFilePath
-      });
-      setPdfViewerOpen(true);
+      // 파일 경로를 URL로 변환 (리스트 박스와 동일한 방식)
+      try {
+        const encodedPath = encodeURIComponent(existingFilePath.trim());
+        // getApiUrl 사용하지 않고 상대 경로 사용 (리스트 박스와 동일)
+        const fileUrl = `/api/library/view?path=${encodedPath}`;
+        
+        console.log('=== 프로그램 파일 보기 디버깅 ===');
+        console.log('원본 fileName:', existingFileName);
+        console.log('원본 filePath:', existingFilePath);
+        console.log('인코딩된 filePath:', encodedPath);
+        console.log('생성된 fileUrl:', fileUrl);
+        console.log('========================');
+        
+        setViewingPdf({
+          fileName: existingFileName || '프로그램 파일',
+          filePath: fileUrl // URL로 변환된 경로 사용
+        });
+        setPdfViewerOpen(true);
+      } catch (error) {
+        console.error('파일 경로 처리 중 오류:', error);
+        alert('파일 경로 처리 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -358,27 +404,46 @@ export default function ProgramDetailModal({
               ) : (
                 <div className="space-y-3">
                   {/* 기존 파일 표시 */}
-                  {existingFilePath && !curriculumFile && (
-                    <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FiFileText className="w-5 h-5 text-emerald-600" />
-                        <span className="text-gray-700">{existingFileName || '프로그램 파일'}</span>
+                  {existingFilePath && (
+                    <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <FiFileText className="w-5 h-5 text-emerald-600" />
+                          <span className="text-gray-700 font-medium">기존 파일</span>
+                        </div>
+                        <button
+                          onClick={handleDeleteExistingFile}
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          title="기존 파일 삭제"
+                        >
+                          <FiTrash2 className="w-3 h-3" />
+                          삭제
+                        </button>
                       </div>
-                      <button
-                        onClick={handleViewFile}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm rounded-md hover:bg-emerald-200 transition-colors"
-                      >
-                        <FiDownload className="w-4 h-4" />
-                        파일보기
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">{existingFileName || '프로그램 파일'}</span>
+                        <button
+                          onClick={handleViewFile}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm rounded-md hover:bg-emerald-200 transition-colors"
+                        >
+                          <FiDownload className="w-4 h-4" />
+                          파일보기
+                        </button>
+                      </div>
                     </div>
                   )}
                   
                   {/* 새 파일 선택 */}
                   <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                      <FiUpload className="w-5 h-5 text-gray-500" />
-                      <span className="text-gray-700">파일 선택</span>
+                    <label className={`flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors ${
+                      curriculumFile 
+                        ? 'border-emerald-300 bg-emerald-50' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}>
+                      <FiUpload className={`w-5 h-5 ${curriculumFile ? 'text-emerald-600' : 'text-gray-500'}`} />
+                      <span className={curriculumFile ? 'text-emerald-700 font-medium' : 'text-gray-700'}>
+                        {curriculumFile ? '파일 변경' : existingFilePath ? '파일 재등록' : '파일 선택'}
+                      </span>
                       <input
                         type="file"
                         onChange={handleFileChange}
@@ -391,7 +456,7 @@ export default function ProgramDetailModal({
                         <span className="text-sm text-gray-600">새 파일: {curriculumFile.name}</span>
                         <button
                           onClick={handleDeleteFile}
-                          className="text-red-600 hover:text-red-700 text-sm"
+                          className="text-red-600 hover:text-red-700 text-sm font-medium"
                         >
                           취소
                         </button>
@@ -542,7 +607,7 @@ export default function ProgramDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
           <div>
-            {isViewMode && onDelete && (
+            {isViewMode && onDelete && isAdmin && (
               <button
                 onClick={onDelete}
                 className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -555,13 +620,15 @@ export default function ProgramDetailModal({
           <div className="flex items-center gap-3">
             {isViewMode ? (
               <>
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-                >
-                  <FiEdit2 className="w-4 h-4" />
-                  수정
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    <FiEdit2 className="w-4 h-4" />
+                    수정
+                  </button>
+                )}
                 <button
                   onClick={onClose}
                   className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
@@ -593,7 +660,6 @@ export default function ProgramDetailModal({
       {/* PDF Viewer Modal */}
       {pdfViewerOpen && viewingPdf && (
         <LocalPDFViewer
-          isOpen={pdfViewerOpen}
           onClose={() => {
             setPdfViewerOpen(false);
             setViewingPdf(null);

@@ -212,14 +212,14 @@ export default function LibraryPage() {
   };
 
   const handleDeleteItem = async (item: LibraryItem) => {
-    // 권한 확인
+    // 권한 확인 - 관리자만 삭제 가능
     if (!isAuthenticated || !user) {
       alert('로그인이 필요합니다.');
       return;
     }
     
-    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.name === item.author)) {
-      alert('자료를 삭제할 권한이 없습니다.');
+    if (user.role !== 'ADMIN') {
+      alert('자료를 삭제할 권한이 없습니다. 관리자만 삭제할 수 있습니다.');
       return;
     }
     
@@ -247,14 +247,18 @@ export default function LibraryPage() {
   };
 
   const handleEditItem = (item: LibraryItem) => {
-    // 권한 확인
+    // 권한 확인 - 관리자 또는 자료 등록자만 수정 가능
     if (!isAuthenticated || !user) {
       alert('로그인이 필요합니다.');
       return;
     }
     
-    if (user.role !== 'ADMIN' && !(user.role === 'EXPERT' && user.name === item.author)) {
-      alert('자료를 수정할 권한이 없습니다.');
+    // 관리자이거나 자료를 등록한 사람(작성자)만 수정 가능
+    const isAdmin = user.role === 'ADMIN';
+    const isAuthor = item.author === user.name;
+    
+    if (!isAdmin && !isAuthor) {
+      alert('자료를 수정할 권한이 없습니다. 관리자 또는 자료를 등록한 사람만 수정할 수 있습니다.');
       return;
     }
     
@@ -646,24 +650,27 @@ export default function LibraryPage() {
               {/* 모달 푸터 */}
               <div className="flex justify-between mt-6">
                 {isAuthenticated && user && (
-                  (user.role === 'ADMIN' || 
-                   (user.role === 'EXPERT' && selectedItem && selectedItem.author === user.name)
-                  )) && (
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEditItem(selectedItem)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <FiEdit className="mr-2 h-4 w-4" />
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(selectedItem)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    >
-                      <FiTrash2 className="mr-2 h-4 w-4" />
-                      삭제
-                    </button>
+                    {/* 수정 버튼: 관리자 또는 자료 등록자만 표시 */}
+                    {(user.role === 'ADMIN' || (selectedItem && selectedItem.author === user.name)) && (
+                      <button
+                        onClick={() => handleEditItem(selectedItem)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <FiEdit className="mr-2 h-4 w-4" />
+                        수정
+                      </button>
+                    )}
+                    {/* 삭제 버튼: 관리자만 표시 */}
+                    {user.role === 'ADMIN' && (
+                      <button
+                        onClick={() => handleDeleteItem(selectedItem)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <FiTrash2 className="mr-2 h-4 w-4" />
+                        삭제
+                      </button>
+                    )}
                   </div>
                 )}
                 <button

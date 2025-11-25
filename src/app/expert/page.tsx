@@ -16,14 +16,48 @@ export default function ExpertPage() {
   const [selectedField, setSelectedField] = useState<string>('all');
   const [isSearching, setIsSearching] = useState(false);
 
+  // 우선순위 전문가 이름 목록 (항상 먼저 표시)
+  const priorityNames = ['김창범', '이동기', '남태영'];
+
+  // 전문가 리스트 정렬 함수 (우선순위 이름 먼저, 나머지는 이름 오름차순)
+  const sortExperts = (expertsList: Expert[]): Expert[] => {
+    const priorityExperts: Expert[] = [];
+    const otherExperts: Expert[] = [];
+
+    // 우선순위 전문가와 나머지 분리
+    expertsList.forEach(expert => {
+      if (priorityNames.includes(expert.name)) {
+        priorityExperts.push(expert);
+      } else {
+        otherExperts.push(expert);
+      }
+    });
+
+    // 우선순위 전문가를 지정된 순서로 정렬
+    const sortedPriorityExperts = priorityExperts.sort((a, b) => {
+      const indexA = priorityNames.indexOf(a.name);
+      const indexB = priorityNames.indexOf(b.name);
+      return indexA - indexB;
+    });
+
+    // 나머지 전문가를 이름 오름차순으로 정렬
+    const sortedOtherExperts = otherExperts.sort((a, b) => {
+      return a.name.localeCompare(b.name, 'ko');
+    });
+
+    // 우선순위 전문가 + 나머지 전문가 순서로 합치기
+    return [...sortedPriorityExperts, ...sortedOtherExperts];
+  };
+
   // 활성 전문가 데이터 가져오기
   const fetchActiveExperts = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await axios.get('/api/experts/active');
-      setExperts(response.data);
-      setFilteredExperts(response.data);
+      const sortedData = sortExperts(response.data);
+      setExperts(sortedData);
+      setFilteredExperts(sortedData);
     } catch (error: any) {
       console.error('전문가 데이터 가져오기 실패:', error);
       setError('전문가 데이터를 불러오는데 실패했습니다.');
@@ -43,7 +77,8 @@ export default function ExpertPage() {
       setIsSearching(true);
       setError(null);
       const response = await axios.get(`/api/experts/search/name?name=${encodeURIComponent(searchTerm)}`);
-      setFilteredExperts(response.data);
+      const sortedData = sortExperts(response.data);
+      setFilteredExperts(sortedData);
     } catch (error: any) {
       console.error('검색 실패:', error);
       setError('검색에 실패했습니다.');
@@ -64,7 +99,8 @@ export default function ExpertPage() {
     const filtered = experts.filter(expert => 
       expert.field && expert.field.toLowerCase().includes(field.toLowerCase())
     );
-    setFilteredExperts(filtered);
+    const sortedData = sortExperts(filtered);
+    setFilteredExperts(sortedData);
   };
 
   // 엔터키 검색

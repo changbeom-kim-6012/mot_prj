@@ -809,22 +809,22 @@ export default function LearningPage() {
                             {program.programCode}
                           </span>
                           <div className="relative group">
-                            <h4 
+                          <h4 
                               className={`text-lg font-semibold transition-colors ${
                                 isAuthenticated 
                                   ? 'text-gray-900 cursor-pointer hover:text-emerald-600' 
                                   : 'text-gray-400 cursor-not-allowed'
                               }`}
-                              onClick={() => {
+                            onClick={() => {
                                 if (isAuthenticated) {
-                                  setSelectedProgram(program);
-                                  setProgramDetailModalOpen(true);
+                              setSelectedProgram(program);
+                              setProgramDetailModalOpen(true);
                                 }
-                              }}
+                            }}
                               title={isAuthenticated ? "클릭하여 상세보기" : "로그인이 필요합니다"}
-                            >
-                              {program.programName}
-                            </h4>
+                          >
+                            {program.programName}
+                          </h4>
                             
                             {/* 로그인 필요 툴팁 */}
                             {!isAuthenticated && (
@@ -957,10 +957,10 @@ export default function LearningPage() {
                 {/* PROGRAM(Topic-based) 리스트 */}
                 <div className="space-y-4">
                   {isLoadingPrograms ? (
-                    <div className="text-center py-12">
+                <div className="text-center py-12">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
                       <p className="mt-4 text-gray-600">Program 목록을 불러오는 중...</p>
-                    </div>
+                </div>
                   ) : programs.filter((p: any) => p.programType === 'Topic-based').length > 0 ? (
                     programs.filter((p: any) => p.programType === 'Topic-based').map((program) => (
                     <div
@@ -1161,16 +1161,16 @@ export default function LearningPage() {
          categories={categories}
        />
 
-      {/* Subject 수정 모달 */}
-      <SubjectEditModal
-        isOpen={subjectEditModalOpen}
-        onClose={() => setSubjectEditModalOpen(false)}
-        onSuccess={handleSubjectEditSuccess}
-        onDelete={handleSubjectDeleteSuccess}
+       {/* Subject 수정 모달 */}
+       <SubjectEditModal
+         isOpen={subjectEditModalOpen}
+         onClose={() => setSubjectEditModalOpen(false)}
+         onSuccess={handleSubjectEditSuccess}
+         onDelete={handleSubjectDeleteSuccess}
         onSubjectUpdate={handleSubjectUpdate}
-        subject={selectedSubject}
-        categories={categories}
-      />
+         subject={selectedSubject}
+         categories={categories}
+       />
 
        {/* Program 상세 모달 */}
        <ProgramDetailModal
@@ -1200,12 +1200,12 @@ export default function LearningPage() {
              }
              setProgramDetailModalOpen(false);
              setSelectedProgram(null);
-          } catch (error: any) {
-            console.error('Program 저장 실패:', error);
+           } catch (error: any) {
+             console.error('Program 저장 실패:', error);
             console.error('에러 상세:', error?.response, error?.stack);
-            const errorMessage = error?.message || 'Program 저장에 실패했습니다.';
+             const errorMessage = error?.message || 'Program 저장에 실패했습니다.';
             alert(`Program 저장에 실패했습니다.\n\n에러 메시지: ${errorMessage}\n\n자세한 내용은 브라우저 콘솔(F12)을 확인하세요.`);
-          }
+           }
          }}
          onDelete={async () => {
            if (selectedProgram?.id && confirm('정말 삭제하시겠습니까?')) {

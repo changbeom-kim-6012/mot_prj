@@ -233,6 +233,10 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
         // 수정(UPDATE)
         response = await fetch(getApiUrl(`/api/library/${editItem.id}`), {
           method: 'PUT',
+          headers: {
+            'User-Email': user?.email || '',
+            'User-Role': user?.role || '',
+          },
           body: formData,
         });
       } else {

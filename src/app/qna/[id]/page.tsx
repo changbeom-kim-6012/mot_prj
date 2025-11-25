@@ -8,6 +8,8 @@ import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
+import FileViewer from '@/components/common/FileViewer';
+import { getApiUrl } from '@/config/api';
 
 interface Question {
   id: number;
@@ -46,6 +48,7 @@ export default function QnaDetailPage() {
   const [newAnswer, setNewAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
 
   const questionId = params.id as string;
 
@@ -204,11 +207,22 @@ export default function QnaDetailPage() {
   const handleFileDownload = (filePath: string) => {
     const link = document.createElement('a');
     // Q&A 전용 파일 다운로드 API 사용
-    link.href = `/api/library/qna/download/${filePath}`;
+    link.href = getApiUrl(`/api/library/qna/download/${filePath}`);
     link.download = filePath;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleFileView = (filePath: string) => {
+    // Q&A 파일 보기 URL 생성
+    const encodedFilePath = encodeURIComponent(filePath);
+    const fileUrl = getApiUrl(`/api/library/qna/view/${encodedFilePath}`);
+    setSelectedFile({ url: fileUrl, name: filePath });
+  };
+
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
   };
 
   if (loading) {
@@ -340,13 +354,18 @@ export default function QnaDetailPage() {
             {question.filePath && (
               <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">첨부파일</h3>
-                <button
-                  onClick={() => handleFileDownload(question.filePath!)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <FiDownload className="w-4 h-4 mr-2" />
-                  {question.filePath}
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-700 break-all overflow-wrap-break-word flex-1">
+                    {question.filePath}
+                  </span>
+                  <button
+                    onClick={() => handleFileView(question.filePath!)}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <FiEye className="w-4 h-4 mr-2" />
+                    파일보기
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -449,6 +468,15 @@ export default function QnaDetailPage() {
           )}
         </div>
       </div>
+
+      {/* 파일 뷰어 */}
+      {selectedFile && (
+        <FileViewer
+          fileUrl={selectedFile.url}
+          fileName={selectedFile.name}
+          onClose={handleCloseFileViewer}
+        />
+      )}
     </main>
   );
 } 

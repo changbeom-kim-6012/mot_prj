@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getApiUrl } from '@/config/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Opinion {
   id: number;
@@ -19,6 +20,7 @@ interface Opinion {
 }
 
 export default function OpinionManagement() {
+  const { user } = useAuth();
   const [opinions, setOpinions] = useState<Opinion[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOpinion, setSelectedOpinion] = useState<Opinion | null>(null);
@@ -50,7 +52,7 @@ export default function OpinionManagement() {
       // 방법 1: JSON 방식 (기존)
       let response;
       try {
-        response = await axios.patch(`getApiUrl('/api/opinions')/${id}/status`, {
+        response = await axios.patch(getApiUrl(`/api/opinions/${id}/status`), {
           status: newStatus
         }, {
           headers: { 'Content-Type': 'application/json' }
@@ -58,7 +60,7 @@ export default function OpinionManagement() {
       } catch (error: any) {
         console.log('JSON 방식 실패, 간단한 방식으로 재시도...');
         // 방법 2: 간단한 방식 (대안)
-        response = await axios.put(`getApiUrl('/api/opinions')/${id}/status-simple?status=${newStatus}`);
+        response = await axios.put(getApiUrl(`/api/opinions/${id}/status-simple?status=${newStatus}`));
       }
       
       console.log('Status update response:', response);
@@ -93,7 +95,11 @@ export default function OpinionManagement() {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     
     try {
-      await axios.delete(`getApiUrl('/api/opinions')/${id}`);
+      await axios.delete(getApiUrl(`/api/opinions/${id}`), {
+        headers: {
+          'User-Role': user?.role || '',
+        },
+      });
       fetchOpinions(); // 목록 새로고침
       alert('삭제되었습니다.');
     } catch (error) {
@@ -122,7 +128,7 @@ export default function OpinionManagement() {
 
   const openAttachment = () => {
     if (selectedOpinion?.attachmentPath) {
-      window.open(`getApiUrl('/uploads/opinions/')${selectedOpinion.attachmentPath}`, '_blank');
+      window.open(getApiUrl(`/uploads/opinions/${selectedOpinion.attachmentPath}`), '_blank');
     } else {
       alert('첨부파일이 없습니다.');
     }

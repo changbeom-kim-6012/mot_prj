@@ -254,6 +254,10 @@ function OpinionRegisterPageContent() {
           fullText: formData.fullText,
           status: '등록대기',
           category: formData.category,
+        }, {
+          headers: {
+            'User-Role': user?.role || '',
+          },
         });
         opinionId = editId;
       } else {
@@ -271,6 +275,10 @@ function OpinionRegisterPageContent() {
           fullText: formData.fullText,
           status: '등록대기',
           category: formData.category,
+        }, {
+          headers: {
+            'User-Role': user?.role || '',
+          },
         });
         opinionId = res.data.id;
       }
@@ -324,6 +332,10 @@ function OpinionRegisterPageContent() {
           fullText: formData.fullText,
           status: '임시저장',
           category: formData.category,
+        }, {
+          headers: {
+            'User-Role': user?.role || '',
+          },
         });
         opinionId = editId;
       } else {
@@ -341,6 +353,10 @@ function OpinionRegisterPageContent() {
           fullText: formData.fullText,
           status: '임시저장',
           category: formData.category,
+        }, {
+          headers: {
+            'User-Role': user?.role || '',
+          },
         });
         opinionId = res.data.id;
       }
@@ -393,7 +409,11 @@ function OpinionRegisterPageContent() {
         ? getRelativeApiUrl(`/api/opinions/${editId}`)
         : getApiUrl(`/api/opinions/${editId}`);
       
-      await axios.delete(deleteApiUrl);
+      await axios.delete(deleteApiUrl, {
+        headers: {
+          'User-Role': user?.role || '',
+        },
+      });
       
       // 첨부파일도 함께 삭제 (서버에서 cascade로 처리되거나 별도 삭제)
       if (existingAttachments.length > 0) {

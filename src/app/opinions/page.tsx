@@ -1,7 +1,7 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip, FiCalendar, FiTag } from 'react-icons/fi';
+import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip, FiCalendar, FiTag, FiUpload, FiTrash2, FiDownload } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -52,6 +52,9 @@ export default function OpinionsPage() {
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [attachments, setAttachments] = useState<{ [key: number]: Attachment[] }>({});
   const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
+  const [detailAttachments, setDetailAttachments] = useState<Attachment[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
   
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
@@ -287,6 +290,20 @@ export default function OpinionsPage() {
       
       setSelectedArticleDetail(response.data);
       setShowDetailModal(true);
+      
+      // 전문파일 목록 불러오기
+      try {
+        const attachmentRes = await axios.get(getApiUrl('/api/attachments'), {
+          params: {
+            refTable: 'opinions',
+            refId: article.id
+          }
+        });
+        setDetailAttachments(attachmentRes.data);
+      } catch (error) {
+        console.error('전문파일 목록 불러오기 실패:', error);
+        setDetailAttachments([]);
+      }
     } catch (error) {
       console.error('상세 정보 로드 실패:', error);
       alert('상세 정보를 불러오는데 실패했습니다.');
@@ -322,10 +339,181 @@ export default function OpinionsPage() {
     setSelectedFile(null);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFileForUpload(e.target.files[0]);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFileForUpload || !selectedArticleDetail) {
+      alert('파일을 선택해주세요.');
+      return;
+    }
+
+    if (!user || user.role !== 'ADMIN') {
+      alert('관리자만 파일을 업로드할 수 있습니다.');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('refTable', 'opinions');
+      formData.append('refId', selectedArticleDetail.id.toString());
+      formData.append('file', selectedFileForUpload);
+      formData.append('uploadedBy', user.email || '');
+      formData.append('note', 'Opinion 전문파일');
+
+      await axios.post(getApiUrl('/api/attachments'), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // 파일 목록 새로고침
+      const attachmentRes = await axios.get(getApiUrl('/api/attachments'), {
+        params: {
+          refTable: 'opinions',
+          refId: selectedArticleDetail.id
+        }
+      });
+      setDetailAttachments(attachmentRes.data);
+      setSelectedFileForUpload(null);
+      alert('파일이 성공적으로 업로드되었습니다.');
+    } catch (error) {
+      console.error('파일 업로드 실패:', error);
+      alert('파일 업로드에 실패했습니다.');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleFileDelete = async (attachmentId: number) => {
+    if (!user || user.role !== 'ADMIN') {
+      alert('관리자만 파일을 삭제할 수 있습니다.');
+      return;
+    }
+
+    if (!window.confirm('정말로 이 파일을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(getApiUrl(`/api/attachments/${attachmentId}`));
+      
+      // 파일 목록 새로고침
+      if (selectedArticleDetail) {
+        const attachmentRes = await axios.get(getApiUrl('/api/attachments'), {
+          params: {
+            refTable: 'opinions',
+            refId: selectedArticleDetail.id
+          }
+        });
+        setDetailAttachments(attachmentRes.data);
+      }
+      alert('파일이 성공적으로 삭제되었습니다.');
+    } catch (error) {
+      console.error('파일 삭제 실패:', error);
+      alert('파일 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleDetailFileView = (filePath: string, fileName: string) => {
+    const pathParts = filePath.split(/[\\\/]/);
+    const storedFileName = pathParts[pathParts.length - 1];
+    const encodedFileName = encodeURIComponent(storedFileName);
+    const fileUrl = getApiUrl(`/api/attachments/view/${encodedFileName}`);
+    setSelectedFile({ url: fileUrl, name: fileName });
+  };
+
+  // 초록/내용 보기 모달용 파일 업로드 함수
+  const handleAbstractFileUpload = async () => {
+    if (!selectedFileForUpload || !selectedArticle) {
+      alert('파일을 선택해주세요.');
+      return;
+    }
+
+    if (!user || user.role !== 'ADMIN') {
+      alert('관리자만 파일을 업로드할 수 있습니다.');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('refTable', 'opinions');
+      formData.append('refId', selectedArticle.id.toString());
+      formData.append('file', selectedFileForUpload);
+      formData.append('uploadedBy', user.email || '');
+      formData.append('note', 'Opinion 전문파일');
+
+      await axios.post(getApiUrl('/api/attachments'), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // 파일 목록 새로고침
+      const attachmentRes = await axios.get(getApiUrl('/api/attachments'), {
+        params: {
+          refTable: 'opinions',
+          refId: selectedArticle.id
+        }
+      });
+      setAttachments(prev => ({
+        ...prev,
+        [selectedArticle.id]: attachmentRes.data
+      }));
+      setSelectedFileForUpload(null);
+      alert('파일이 성공적으로 업로드되었습니다.');
+    } catch (error) {
+      console.error('파일 업로드 실패:', error);
+      alert('파일 업로드에 실패했습니다.');
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  // 초록/내용 보기 모달용 파일 삭제 함수
+  const handleAbstractFileDelete = async (attachmentId: number) => {
+    if (!user || user.role !== 'ADMIN') {
+      alert('관리자만 파일을 삭제할 수 있습니다.');
+      return;
+    }
+
+    if (!window.confirm('정말로 이 파일을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(getApiUrl(`/api/attachments/${attachmentId}`));
+      
+      // 파일 목록 새로고침
+      if (selectedArticle) {
+        const attachmentRes = await axios.get(getApiUrl('/api/attachments'), {
+          params: {
+            refTable: 'opinions',
+            refId: selectedArticle.id
+          }
+        });
+        setAttachments(prev => ({
+          ...prev,
+          [selectedArticle.id]: attachmentRes.data
+        }));
+      }
+      alert('파일이 성공적으로 삭제되었습니다.');
+    } catch (error) {
+      console.error('파일 삭제 실패:', error);
+      alert('파일 삭제에 실패했습니다.');
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedArticle(null);
     setModalType('abstract');
+    setSelectedFileForUpload(null);
   };
 
   return (
@@ -558,32 +746,6 @@ export default function OpinionsPage() {
                         </div>
                       )
                     )}
-                    {/* 첨부파일이 있는 경우 전문파일보기 버튼 표시 */}
-                    {attachments[article.id] && attachments[article.id].length > 0 && (
-                      isAuthenticated && user ? (
-                        <button 
-                          onClick={() => handleFileView(attachments[article.id][0].filePath, attachments[article.id][0].fileName)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-500 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
-                        >
-                          <FiPaperclip className="mr-2 h-4 w-4" />
-                          전문파일보기
-                        </button>
-                      ) : (
-                        <div className="relative group">
-                          <button 
-                            disabled
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
-                          >
-                            <FiPaperclip className="mr-2 h-4 w-4" />
-                            전문파일보기
-                          </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
-                            로그인 후 확인할 수 있습니다
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                          </div>
-                        </div>
-                      )
-                    )}
                   </div>
               </div>
             </motion.div>
@@ -711,13 +873,180 @@ export default function OpinionsPage() {
                         {selectedArticle.references}
                       </p>
                     </div>
+                    
+                    {/* 전문파일 리스트 (전문이 없는 경우에만 표시) */}
+                    {!selectedArticle.fullText && selectedArticle && (
+                      <div className="mt-4 border-t border-gray-200 pt-4">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <FiPaperclip className="h-4 w-4 text-indigo-600" />
+                          전문파일 ({attachments[selectedArticle.id]?.length || 0}개)
+                        </h4>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          {/* 파일 목록 */}
+                          {attachments[selectedArticle.id] && attachments[selectedArticle.id].length > 0 ? (
+                            <div className="space-y-2 mb-4">
+                              {attachments[selectedArticle.id].map((attachment) => (
+                                <div key={attachment.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <FiFileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                                    <span className="text-sm text-gray-700 truncate">{attachment.fileName}</span>
+                                    <span className="text-xs text-gray-500 flex-shrink-0">
+                                      ({(attachment.fileSize / 1024).toFixed(1)} KB)
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {isAuthenticated && user ? (
+                                      <button
+                                        onClick={() => handleFileView(attachment.filePath, attachment.fileName)}
+                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                      >
+                                        <FiDownload className="h-4 w-4 mr-1" />
+                                        파일보기
+                                      </button>
+                                    ) : (
+                                      <div className="relative group">
+                                        <button
+                                          disabled
+                                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed"
+                                        >
+                                          <FiDownload className="h-4 w-4 mr-1" />
+                                          파일보기
+                                        </button>
+                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
+                                          로그인 후 확인할 수 있습니다
+                                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {user && user.role === 'ADMIN' && (
+                                      <button
+                                        onClick={() => handleAbstractFileDelete(attachment.id)}
+                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                                      >
+                                        <FiTrash2 className="h-4 w-4 mr-1" />
+                                        삭제
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-sm mb-4">등록된 전문파일이 없습니다.</p>
+                          )}
+
+                          {/* 관리자만 파일 업로드 가능 */}
+                          {user && user.role === 'ADMIN' && (
+                            <div className="border-t border-gray-200 pt-4 mt-4">
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                  <FiUpload className="h-4 w-4 text-gray-500" />
+                                  <span className="text-sm text-gray-700">파일 선택</span>
+                                  <input
+                                    type="file"
+                                    onChange={(e) => {
+                                      if (e.target.files && e.target.files[0]) {
+                                        setSelectedFileForUpload(e.target.files[0]);
+                                      }
+                                    }}
+                                    className="hidden"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                  />
+                                </label>
+                                {selectedFileForUpload && (
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <span className="text-sm text-gray-600 truncate">{selectedFileForUpload.name}</span>
+                                    <button
+                                      onClick={() => setSelectedFileForUpload(null)}
+                                      className="text-red-600 hover:text-red-700 text-sm"
+                                    >
+                                      취소
+                                    </button>
+                                  </div>
+                                )}
+                                {selectedFileForUpload && (
+                                  <button
+                                    onClick={handleAbstractFileUpload}
+                                    disabled={uploadingFile}
+                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {uploadingFile ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        업로드 중...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiUpload className="h-4 w-4 mr-2" />
+                                        업로드
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-2">
+                                PDF, Word, Excel, PowerPoint 파일을 업로드할 수 있습니다.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {selectedArticle.fullText}
-                    </p>
-                  </div>
+                  <>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                        {selectedArticle.fullText}
+                      </p>
+                    </div>
+                    
+                    {/* 첨부파일 리스트 (전문보기 모달일 때만 표시) */}
+                    {modalType === 'fulltext' && selectedArticle && attachments[selectedArticle.id] && attachments[selectedArticle.id].length > 0 && (
+                      <div className="mt-4 border-t border-gray-200 pt-4">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <FiPaperclip className="h-4 w-4 text-indigo-600" />
+                          첨부파일 ({attachments[selectedArticle.id].length}개)
+                        </h4>
+                        <div className="space-y-2">
+                          {attachments[selectedArticle.id].map((attachment) => (
+                            <div key={attachment.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <FiFileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                                <span className="text-sm text-gray-700 truncate">{attachment.fileName}</span>
+                                <span className="text-xs text-gray-500 flex-shrink-0">
+                                  ({(attachment.fileSize / 1024).toFixed(1)} KB)
+                                </span>
+                              </div>
+                              {isAuthenticated && user ? (
+                                <button
+                                  onClick={() => handleFileView(attachment.filePath, attachment.fileName)}
+                                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors flex-shrink-0"
+                                >
+                                  <FiDownload className="h-4 w-4 mr-1" />
+                                  파일보기
+                                </button>
+                              ) : (
+                                <div className="relative group">
+                                  <button
+                                    disabled
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-400 bg-gray-100 rounded-md cursor-not-allowed flex-shrink-0"
+                                  >
+                                    <FiDownload className="h-4 w-4 mr-1" />
+                                    파일보기
+                                  </button>
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
+                                    로그인 후 확인할 수 있습니다
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -806,21 +1135,14 @@ export default function OpinionsPage() {
                       <FiCalendar className="h-4 w-4" />
                       {new Date(selectedArticleDetail.createdAt).toLocaleDateString()}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      selectedArticleDetail.status === '등록승인' 
-                        ? 'bg-green-100 text-green-800' 
-                        : selectedArticleDetail.status === '등록대기'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedArticleDetail.status}
-                    </span>
                   </div>
                 </div>
                 <button
                   onClick={() => {
                     setShowDetailModal(false);
                     setSelectedArticleDetail(null);
+                    setDetailAttachments([]);
+                    setSelectedFileForUpload(null);
                   }}
                   className="text-white hover:text-gray-200 transition-colors duration-200"
                 >
@@ -895,6 +1217,103 @@ export default function OpinionsPage() {
                   </div>
                 </div>
               )}
+
+              {/* 전문파일 (관리자만 관리 가능) */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <FiPaperclip className="h-5 w-5 text-indigo-600" />
+                  전문파일
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  {/* 파일 목록 */}
+                  {detailAttachments.length > 0 ? (
+                    <div className="space-y-2 mb-4">
+                      {detailAttachments.map((attachment) => (
+                        <div key={attachment.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <FiFileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                            <span className="text-gray-700 truncate">{attachment.fileName}</span>
+                            <span className="text-xs text-gray-500 flex-shrink-0">
+                              ({(attachment.fileSize / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleDetailFileView(attachment.filePath, attachment.fileName)}
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                            >
+                              <FiDownload className="h-4 w-4 mr-1" />
+                              보기
+                            </button>
+                            {user && user.role === 'ADMIN' && (
+                              <button
+                                onClick={() => handleFileDelete(attachment.id)}
+                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                              >
+                                <FiTrash2 className="h-4 w-4 mr-1" />
+                                삭제
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm mb-4">등록된 전문파일이 없습니다.</p>
+                  )}
+
+                  {/* 관리자만 파일 업로드 가능 */}
+                  {user && user.role === 'ADMIN' && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                          <FiUpload className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-gray-700">파일 선택</span>
+                          <input
+                            type="file"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                          />
+                        </label>
+                        {selectedFileForUpload && (
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-sm text-gray-600 truncate">{selectedFileForUpload.name}</span>
+                            <button
+                              onClick={() => setSelectedFileForUpload(null)}
+                              className="text-red-600 hover:text-red-700 text-sm"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        )}
+                        {selectedFileForUpload && (
+                          <button
+                            onClick={handleFileUpload}
+                            disabled={uploadingFile}
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {uploadingFile ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                업로드 중...
+                              </>
+                            ) : (
+                              <>
+                                <FiUpload className="h-4 w-4 mr-2" />
+                                업로드
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        PDF, Word, Excel, PowerPoint 파일을 업로드할 수 있습니다.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* 모달 푸터 */}
@@ -903,6 +1322,8 @@ export default function OpinionsPage() {
                 onClick={() => {
                   setShowDetailModal(false);
                   setSelectedArticleDetail(null);
+                  setDetailAttachments([]);
+                  setSelectedFileForUpload(null);
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
               >
