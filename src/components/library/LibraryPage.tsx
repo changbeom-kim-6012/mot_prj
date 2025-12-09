@@ -356,14 +356,14 @@ export default function LibraryPage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-blue-700 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-blue-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiBookOpen className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">자료실</h1>
+            <h1 className="text-[24px] font-bold text-white">자료실</h1>
           </div>
-          <p className="text-lg text-blue-50 max-w-[1150px] text-right">
+          <p className="text-base text-blue-50 max-w-[1150px] text-right">
             MOT Club 자료 공유방은 교육 교재, 웹진 등 기술경영 관련 지식자산 플랫폼으로<br/>
             회원이라면 누구나 자유롭게 접근하고 활용할 수 있는 열린공간입니다.
           </p>
@@ -371,10 +371,10 @@ export default function LibraryPage() {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
         
         {/* 검색 및 필터 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
           <div className="flex items-center gap-4">
             {/* 카테고리 선택 (width 50% 줄임) */}
             <div className="w-1/6">
@@ -446,39 +446,39 @@ export default function LibraryPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">카테고리</th>
-                <th scope="col" className="flex-1 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">제목</th>
-                <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">저자/강사</th>
-                <th scope="col" className="w-32 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">등록일</th>
-                <th scope="col" className="w-48 px-6 py-3 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">파일</th>
+                <th scope="col" className="w-[110px] px-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">카테고리</th>
+                <th scope="col" className="flex-1 px-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">제목</th>
+                <th scope="col" className="w-[110px] pl-[74px] pr-[4px] py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">저자/강사</th>
+                <th scope="col" className="w-[110px] pl-[4px] pr-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">등록일</th>
+                <th scope="col" className="w-[110px] pl-[44px] pr-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">파일</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="w-32 px-6 py-4 whitespace-nowrap">
+                                        <td className="w-[110px] px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {item.category.startsWith('기타') ? item.category : item.category}
                         </span>
                       </td>
                   <td className="flex-1 px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => handleViewDetail(item)}>
+                    <div className="text-[16px] font-medium text-gray-900 cursor-pointer hover:text-blue-600" onClick={() => handleViewDetail(item)}>
                       {item.title}
                     </div>
                   </td>
-                  <td className="w-32 px-6 py-4 whitespace-nowrap">
+                  <td className="w-[110px] pl-[74px] pr-[4px] py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <FiUser className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{item.author}</span>
+                      <span className="text-[16px] text-gray-900">{item.author}</span>
                     </div>
                   </td>
-                  <td className="w-32 px-6 py-4 whitespace-nowrap">
+                  <td className="w-[110px] pl-[4px] pr-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">{formatDate(item.createdAt)}</span>
+                      <span className="text-[16px] text-gray-900">{formatDate(item.createdAt)}</span>
                     </div>
                   </td>
-                  <td className="w-48 px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="w-[110px] pl-[44px] pr-6 py-4 whitespace-nowrap text-[16px] text-gray-900">
                     {item.fileNames ? `${item.fileNames.split(',').length}개 파일` : '0개 파일'}
                   </td>
                 </tr>

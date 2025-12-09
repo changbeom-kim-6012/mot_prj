@@ -536,7 +536,7 @@ export default function OpinionsPage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="relative max-w-7xl mx-auto py-[19px] px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiBookOpen className="w-6 h-6 text-white" />
@@ -551,7 +551,7 @@ export default function OpinionsPage() {
       </div>
 
       {/* Search Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

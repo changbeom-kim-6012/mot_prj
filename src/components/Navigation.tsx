@@ -92,7 +92,7 @@ export default function Navigation() {
           {/* 로고 영역 */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-gray-900">MOT Club</span>
+              <span className="text-[30px] font-bold text-gray-900">MOT Club</span>
             </Link>
           </div>
 
@@ -105,7 +105,7 @@ export default function Navigation() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`px-4 py-2 text-lg font-medium transition-colors duration-200 relative ${
+                    className={`px-4 py-2 text-[22px] font-medium transition-colors duration-200 relative ${
                       isActive(item.href) 
                         ? 'text-blue-600 bg-blue-50 rounded-md' 
                         : 'text-gray-900 hover:text-blue-600'
@@ -118,7 +118,7 @@ export default function Navigation() {
                   </Link>
                 ) : (
                   <div key={item.name} className="relative group">
-                    <span className="text-gray-400 px-4 py-2 text-lg font-medium cursor-not-allowed relative">
+                    <span className="text-gray-400 px-4 py-2 text-[22px] font-medium cursor-not-allowed relative">
                       {item.name}
                       {index < navigation.length - 1 && (
                         <span className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-gray-300">·</span>
@@ -136,7 +136,7 @@ export default function Navigation() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`px-4 py-2 text-lg font-medium transition-colors duration-200 relative ${
+                  className={`px-4 py-2 text-[22px] font-medium transition-colors duration-200 relative ${
                     isActive(item.href) 
                       ? 'text-blue-600 bg-blue-50 rounded-md' 
                       : 'text-gray-900 hover:text-blue-600'

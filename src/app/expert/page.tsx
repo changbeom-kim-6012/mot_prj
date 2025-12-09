@@ -161,7 +161,7 @@ export default function ExpertPage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-blue-900 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="relative max-w-7xl mx-auto py-[19px] px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
@@ -177,7 +177,7 @@ export default function ExpertPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
         {/* 검색 및 필터 영역 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex flex-col sm:flex-row gap-4">

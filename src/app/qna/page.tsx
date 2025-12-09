@@ -645,25 +645,25 @@ export default function QnaPage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiMessageSquare className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white">질문방</h1>
+            <h1 className="text-[24px] font-bold text-white">질문방</h1>
           </div>
-          <p className="text-lg text-purple-50 max-w-[1150px] text-right">
+          <p className="text-base text-purple-50 max-w-[1150px] text-right">
             R&D 기획 및 관리 업무 관련하여 기업내 이슈 및 타사 사례등 궁금한 사항을 문의하고<br/>
             다양한 분야의 실무 경험과 지식을 갖춘 MOT 전문가의 답변을 받을 수 있는 Q&A 광장입니다.
           </p>
         </div>
       </div>
 
-      <div className="py-12">
+      <div className="pt-6 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* 검색 및 필터 */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
             <div className="flex items-center gap-4">
               {/* 카테고리 선택 (width 50% 줄임) */}
               <div className="w-1/6">

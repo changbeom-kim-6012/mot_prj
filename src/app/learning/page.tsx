@@ -546,21 +546,21 @@ export default function LearningPage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-700 to-transparent"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiUsers className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white">MOT 교육 광장</h1>
+              <h1 className="text-[24px] font-bold text-white">MOT 교육 광장</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 -ml-[30px] mr-[64px]">
               {isAuthenticated && user && user.role === 'ADMIN' && (
                 <>
                   {activeMainTab === 'SUBJECT' && (
                     <button
                       onClick={() => setSubjectCreateModalOpen(true)}
-                      className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+                      className="flex items-center gap-2 px-3 py-1 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
                     >
                       <FiPlus className="w-5 h-5" />
                       Subject 추가
@@ -572,7 +572,7 @@ export default function LearningPage() {
                         setSelectedProgram(null);
                         setProgramDetailModalOpen(true);
                       }}
-                      className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
+                      className="flex items-center gap-2 px-6 py-[7px] bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md border border-emerald-400 rounded-xl text-white font-semibold transition-all duration-200 hover:scale-105"
                     >
                       <FiPlus className="w-5 h-5" />
                       Program 추가
@@ -582,14 +582,14 @@ export default function LearningPage() {
               )}
               <button
                 onClick={() => setOverviewModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
+                className="flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white font-semibold hover:bg-white/30 transition-all duration-200 hover:scale-105"
               >
                 <FiInfo className="w-5 h-5" />
                 MOT Overview
               </button>
             </div>
           </div>
-          <p className="text-lg text-emerald-50 max-w-[1150px] text-right">
+          <p className="text-base text-emerald-50 max-w-[1150px] text-right">
             MOT 관련된 모든 교과목을 체계적으로 관리하고<br />
             교육과정(Program)과 교과목을 연계하여 교육에 대해 정보를 제공합니다.
           </p>
@@ -601,7 +601,7 @@ export default function LearningPage() {
         <div className="flex gap-2 border-b-2 border-gray-200">
           <button
             onClick={() => setActiveMainTab('SUBJECT')}
-            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+            className={`px-6 py-3 text-[18px] font-bold transition-all duration-200 ${
               activeMainTab === 'SUBJECT'
                 ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
                 : 'text-gray-600 hover:text-gray-900'
@@ -611,7 +611,7 @@ export default function LearningPage() {
           </button>
           <button
             onClick={() => setActiveMainTab('PROGRAM_PHASE')}
-            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+            className={`px-6 py-3 text-[18px] font-bold transition-all duration-200 ${
               activeMainTab === 'PROGRAM_PHASE'
                 ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
                 : 'text-gray-600 hover:text-gray-900'
@@ -621,7 +621,7 @@ export default function LearningPage() {
           </button>
           <button
             onClick={() => setActiveMainTab('PROGRAM_ROLE_LEVEL')}
-            className={`px-6 py-3 text-xl font-bold transition-all duration-200 ${
+            className={`px-6 py-3 text-[18px] font-bold transition-all duration-200 ${
               activeMainTab === 'PROGRAM_ROLE_LEVEL'
                 ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
                 : 'text-gray-600 hover:text-gray-900'
@@ -633,7 +633,7 @@ export default function LearningPage() {
       </div>
 
       {/* Content Sections */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-6 pb-12">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-[2px] pb-12">
         {/* SUBJECT 탭 내용 */}
         {activeMainTab === 'SUBJECT' && (
           <section className="mb-12">
@@ -653,7 +653,7 @@ export default function LearningPage() {
                     {categories.map((category, index) => (
                       <button
                         key={category.id}
-                        className={`flex items-center gap-2 px-8 py-6 text-base font-medium whitespace-nowrap transition-all duration-200 ${
+                        className={`flex items-center gap-2 px-8 py-[10px] text-base font-medium whitespace-nowrap transition-all duration-200 ${
                           activeTab === category.id
                             ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50 font-semibold'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -693,10 +693,10 @@ export default function LearningPage() {
                   getCurrentTabSubjects().map((subject) => (
                     <div
                       key={subject.id}
-                      className="p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                      className="px-6 py-3 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                     >
                       {/* 첫 번째 줄: Subject 코드, Description, Curriculum 파일 */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-[6px]">
                         <div className="flex items-center gap-4">
                           <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full">
                             {subject.subjectCode}
@@ -754,7 +754,7 @@ export default function LearningPage() {
                       
                       {/* 두 번째 줄: 주요내용 */}
                       <div className="pl-4">
-                        <p className="text-gray-700 leading-relaxed">
+                        <p className="text-[18px] text-gray-700 leading-relaxed">
                           {subject.subjectContent}
                         </p>
                       </div>

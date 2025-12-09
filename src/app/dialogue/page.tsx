@@ -68,7 +68,7 @@ function DialoguePageContent() {
   
   // 모달 위치 및 크기 상태
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
-  const [modalSize, setModalSize] = useState({ width: 1152, height: 640 }); // max-w-6xl = 1152px, h-[80vh] ≈ 640px
+  const [modalSize, setModalSize] = useState({ width: 979, height: 640 }); // 원래 1152px에서 15% 감소 (979px), h-[80vh] ≈ 640px
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState<'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
@@ -1324,25 +1324,25 @@ function DialoguePageContent() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-rose-500 to-transparent"></div>
           </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center gap-4 mb-6">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiMessageSquare className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-white">대화/토론방</h1>
+              <h1 className="text-[24px] font-bold text-white">대화/토론방</h1>
             </div>
-            <p className="text-lg text-blue-50 max-w-[1150px] text-right">
+            <p className="text-base text-blue-50 max-w-[1150px] text-right">
               기술경영, 연구 기획 및 관리와 관련된 다양한 주제에 대해<br/>
               해당 분야의 경험과 지식을 갖춘 MOT 전문가와 대화할 수 있는 열린 대화방입니다.
             </p>
           </div>
         </div>
 
-        <div className="py-12">
+        <div className="pt-6 pb-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {/* 검색 및 필터 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8">
               <div className="flex items-center gap-4">
                 {/* 상태 선택 (width 30% 줄임) */}
                 <div className="w-1/5">
@@ -1430,7 +1430,7 @@ function DialoguePageContent() {
                           }}
                         >
                           <h3 
-                            className={`text-lg font-semibold transition-colors mb-2 ${
+                            className={`text-[20px] font-semibold transition-colors mb-2 ${
                               isAuthenticated 
                                 ? 'text-gray-900 hover:text-blue-600 cursor-pointer' 
                                 : 'text-gray-500 cursor-not-allowed'
@@ -1447,7 +1447,7 @@ function DialoguePageContent() {
                           )}
                         </div>
                         
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        <p className="text-gray-600 text-[18px] mb-4 line-clamp-2">
                           {room.question}
                         </p>
                         
@@ -1614,7 +1614,7 @@ function DialoguePageContent() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-gray-900">{selectedRoom.question}</p>
+                  <p className="text-gray-900 text-[18px]">{selectedRoom.question}</p>
                   <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
                     <span>작성자: {selectedRoom.authorEmail}</span>
                     <span>생성일: {formatDate(selectedRoom.createdAt)}</span>
@@ -1654,7 +1654,7 @@ function DialoguePageContent() {
                               )}
                             </div>
                           </div>
-                          <p className="text-sm">{message.content}</p>
+                          <p className="text-[18px]">{message.content}</p>
                           {/* 파일 표시 */}
                           {message.filePath && message.fileName && (
                             <div className="mt-2 flex items-center gap-2">
@@ -1783,7 +1783,7 @@ function DialoguePageContent() {
                         {participant.role === 'ADMIN' ? '관리자' : participant.role === 'EXPERT' ? '전문가' : '회원'}
                       </div>
                       <div className="flex-1">
-                        <p className={`text-sm font-medium ${
+                        <p className={`text-[16px] font-medium ${
                           participant.role === 'ADMIN' 
                             ? 'text-red-700'
                             : participant.role === 'EXPERT'
@@ -1823,7 +1823,7 @@ function DialoguePageContent() {
                         <div className="relative status-dropdown flex-1">
                           <button
                             onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md border transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 text-[16px] rounded-md border transition-colors ${
                               selectedRoom.status === 'OPEN' 
                                 ? 'bg-green-50 text-green-700 border-green-200' 
                                 : 'bg-gray-50 text-gray-700 border-gray-200'
@@ -1845,7 +1845,7 @@ function DialoguePageContent() {
                               <div className="py-1">
                                 <button
                                   onClick={() => handleStatusChange('OPEN')}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                                  className={`w-full text-left px-3 py-2 text-[16px] hover:bg-gray-50 flex items-center ${
                                     selectedRoom.status === 'OPEN' ? 'bg-green-50 text-green-700' : 'text-gray-700'
                                   }`}
                                 >
@@ -1859,7 +1859,7 @@ function DialoguePageContent() {
                                 </button>
                                 <button
                                   onClick={() => handleStatusChange('CLOSED')}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                                  className={`w-full text-left px-3 py-2 text-[16px] hover:bg-gray-50 flex items-center ${
                                     selectedRoom.status === 'CLOSED' ? 'bg-gray-50 text-gray-700' : 'text-gray-700'
                                   }`}
                                 >
@@ -1883,7 +1883,7 @@ function DialoguePageContent() {
                         <div className="relative public-dropdown flex-1">
                           <button
                             onClick={() => setIsPublicDropdownOpen(!isPublicDropdownOpen)}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md border transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 text-[16px] rounded-md border transition-colors ${
                               selectedRoom.isPublic 
                                 ? 'bg-green-50 text-green-700 border-green-200' 
                                 : 'bg-gray-50 text-gray-700 border-gray-200'
@@ -1905,7 +1905,7 @@ function DialoguePageContent() {
                               <div className="py-1">
                                 <button
                                   onClick={() => handlePublicChange(true)}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                                  className={`w-full text-left px-3 py-2 text-[16px] hover:bg-gray-50 flex items-center ${
                                     selectedRoom.isPublic ? 'bg-green-50 text-green-700' : 'text-gray-700'
                                   }`}
                                 >
@@ -1919,7 +1919,7 @@ function DialoguePageContent() {
                                 </button>
                                 <button
                                   onClick={() => handlePublicChange(false)}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                                  className={`w-full text-left px-3 py-2 text-[16px] hover:bg-gray-50 flex items-center ${
                                     !selectedRoom.isPublic ? 'bg-gray-50 text-gray-700' : 'text-gray-700'
                                   }`}
                                 >
