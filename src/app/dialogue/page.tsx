@@ -86,7 +86,7 @@ function DialoguePageContent() {
     }
 
     try {
-      const response = await fetch(getApiUrl(`/api/dialogue/messages/${messageId}`), {
+      const response = await fetch(getApiUrl(`/api/dialogue/messages/${messageId}?authorEmail=${encodeURIComponent(user?.email || '')}`), {
         method: 'DELETE',
         headers: {
           'User-Email': user?.email || '',
@@ -99,11 +99,14 @@ function DialoguePageContent() {
         setMessages(prev => prev.filter(msg => msg.id !== messageId));
         alert('메시지가 성공적으로 삭제되었습니다.');
       } else {
-        throw new Error('메시지 삭제에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('메시지 삭제 실패:', errorData);
+        throw new Error(errorData.error || '메시지 삭제에 실패했습니다.');
       }
     } catch (error) {
       console.error('메시지 삭제 실패:', error);
-      alert('메시지 삭제에 실패했습니다.');
+      const errorMessage = error instanceof Error ? error.message : '메시지 삭제에 실패했습니다.';
+      alert(errorMessage);
     }
   };
 

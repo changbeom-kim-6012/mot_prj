@@ -2,6 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/config/api';
 
 interface User {
   id: number;
@@ -50,8 +51,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/'); // 로그인 후 홈으로 이동
   };
 
-  const logout = () => {
+  const logout = async () => {
     setIsLoggingOut(true);
+    
+    // 로그아웃 로그 기록 (사용자 정보가 있는 경우에만)
+    if (user) {
+      try {
+        await fetch(getApiUrl('/api/users/logout'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            name: user.name
+          })
+        });
+      } catch (error) {
+        console.error('로그아웃 로그 기록 실패:', error);
+        // 로그 기록 실패해도 로그아웃은 진행
+      }
+    }
+    
     setUser(null);
     sessionStorage.removeItem('user');
     router.push('/login'); // 로그아웃 후 로그인 화면으로 이동

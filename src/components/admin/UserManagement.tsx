@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getApiUrl } from '@/config/api';
+import * as XLSX from 'xlsx';
 
 // 날짜 포맷팅 함수 (yy.mm.dd 형식)
 const formatDate = (dateString: string | null | undefined): string => {
@@ -19,6 +20,15 @@ const formatDate = (dateString: string | null | undefined): string => {
   } catch (error) {
     return '-';
   }
+};
+
+// 오늘 날짜를 yy.mm.dd 형식으로 반환하는 함수
+const getTodayDate = (): string => {
+  const today = new Date();
+  const year = today.getFullYear().toString().slice(-2);
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const day = today.getDate().toString().padStart(2, '0');
+  return `${year}.${month}.${day}`;
 };
 
 // 실제 User 모델에 activityLevel 추가
@@ -181,8 +191,15 @@ export default function UserManagement() {
   };
   const handleBulkSave = async () => {
     if (!window.confirm('정말 저장하시겠습니까?')) return;
-    // 비밀번호는 항상 '12345'로 자동 설정
-    const usersToAdd = bulkUsers.map(u => ({ ...u, password: '12345' }));
+    // 비밀번호가 없는 경우 이메일의 @ 앞부분을 비밀번호로 설정
+    const usersToAdd = bulkUsers.map(u => {
+      let password = u.password;
+      if (!password && u.email) {
+        const atIdx = u.email.indexOf('@');
+        password = atIdx > 0 ? u.email.slice(0, atIdx) : '12345';
+      }
+      return { ...u, password: password || '12345' };
+    });
     try {
       const response = await fetch(getApiUrl('/api/users/bulk'), {
         method: 'POST',
@@ -202,6 +219,94 @@ export default function UserManagement() {
     if (window.confirm('정말 취소하시겠습니까?')) {
       setBulkUsers([]);
       setShowBulkModal(false);
+    }
+  };
+
+  // 엑셀 템플릿 다운로드 핸들러
+  const handleExcelTemplateDownload = () => {
+    // 엑셀 템플릿 데이터 생성
+    const templateData = [
+      {
+        '이름': '홍길동',
+        '이메일': 'hong@example.com',
+        '회사명': '삼성전자',
+        '직위': '과장'
+      },
+      {
+        '이름': '김철수',
+        '이메일': 'kim@example.com',
+        '회사명': 'LG전자',
+        '직위': '차장'
+      }
+    ];
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 15 }, // 이름
+      { wch: 30 }, // 이메일
+      { wch: 20 }, // 회사명
+      { wch: 15 }  // 직위
+    ];
+
+    // 워크시트를 워크북에 추가
+    XLSX.utils.book_append_sheet(wb, ws, '회원목록');
+
+    // 파일 다운로드
+    const fileName = `회원_일괄등록_템플릿_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  // 엑셀 파일 업로드 핸들러
+  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      // 엑셀 데이터를 BulkUser 형식으로 변환
+      const convertedUsers: BulkUser[] = jsonData.map((row: any) => {
+        const email = row['이메일'] || row['email'] || row['Email'] || '';
+        const emailPrefix = email.split('@')[0] || '';
+        
+        // 회사명과 직위를 비고 필드에 조합
+        const companyName = row['회사명'] || row['companyName'] || row['CompanyName'] || '';
+        const position = row['직위'] || row['position'] || row['Position'] || '';
+        const remarks = companyName && position 
+          ? `${companyName} / ${position}` 
+          : companyName || position || '';
+
+        return {
+          name: row['이름'] || row['name'] || row['Name'] || '',
+          email: email,
+          role: 'USER' as 'USER' | 'ADMIN' | 'EXPERT',
+          activityLevel: 1,
+          remarks: remarks,
+          password: emailPrefix, // 이메일의 @ 앞부분을 초기 비밀번호로 설정
+        };
+      }).filter((user) => user.name && user.email); // 이름과 이메일이 있는 경우만 필터링
+
+      if (convertedUsers.length === 0) {
+        alert('엑셀 파일에서 유효한 데이터를 찾을 수 없습니다. 이름과 이메일 컬럼이 있는지 확인해주세요.');
+        return;
+      }
+
+      setBulkUsers(convertedUsers);
+      alert(`${convertedUsers.length}개의 회원 데이터가 로드되었습니다.`);
+      
+      // 파일 입력 초기화
+      event.target.value = '';
+    } catch (error) {
+      console.error('엑셀 파일 읽기 오류:', error);
+      alert('엑셀 파일을 읽는 중 오류가 발생했습니다. 파일 형식을 확인해주세요.');
     }
   };
 
@@ -358,10 +463,11 @@ export default function UserManagement() {
       </div>
       {/* 일괄등록 팝업 */}
       {showBulkModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[960px]">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-[95vw] max-h-[90vh] flex flex-col">
             <h2 className="text-xl font-bold mb-4">회원 일괄등록</h2>
-            <table className="min-w-full mb-4">
+            <div className="flex-1 overflow-y-auto mb-4">
+              <table className="min-w-full">
               <thead>
                 <tr>
                   <th className="px-2 py-1" style={{width: '216px'}}>이름</th>
@@ -386,15 +492,28 @@ export default function UserManagement() {
                       </select>
                     </td>
                     <td><input type="text" name="remarks" value={user.remarks} onChange={e => handleBulkInputChange(idx, e)} className="border p-1 rounded w-80" /></td>
-                    <td className="px-2 py-1 text-sm text-gray-500">-</td>
-                    <td className="px-2 py-1 text-sm text-gray-500">-</td>
+                    <td className="px-2 py-1 text-sm text-gray-500">{getTodayDate()}</td>
+                    <td className="px-2 py-1 text-sm text-gray-500">{getTodayDate()}</td>
                     <td><button onClick={() => handleBulkRemoveRow(idx)} className="text-red-500">삭제</button></td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-            <div className="flex gap-2 mb-4">
+              </table>
+            </div>
+            <div className="flex gap-2 mb-4 flex-shrink-0">
               <button onClick={handleBulkAddRow} className="px-3 py-1 bg-gray-200 rounded">행 추가</button>
+              <button onClick={handleExcelTemplateDownload} className="px-3 py-1 bg-blue-200 rounded hover:bg-blue-300">
+                엑셀 템플릿 다운로드
+              </button>
+              <label className="px-3 py-1 bg-green-200 rounded cursor-pointer hover:bg-green-300">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelUpload}
+                  className="hidden"
+                />
+                엑셀 파일 업로드
+              </label>
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={handleBulkSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">저장</button>
