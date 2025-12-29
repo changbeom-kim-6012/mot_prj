@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FiMenu, FiX, FiUser, FiLogOut, FiKey, FiSearch } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
+import UnifiedSearchModal from '@/components/search/UnifiedSearchModal';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const [showPwModal, setShowPwModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
   
   // 현재 경로가 메뉴와 일치하는지 확인하는 함수
@@ -28,8 +31,8 @@ export default function Navigation() {
     { name: 'Library', href: '/library' },
     { name: 'Learning', href: '/learning' },
     { name: 'Q&A', href: '/qna' },
-    { name: 'Dialogue', href: '/dialogue' },
-    { name: 'Agora', href: '/opinions' },
+    // { name: 'Dialogue', href: '/dialogue' }, // Dialogue 메뉴 숨김
+    { name: 'Research', href: '/opinions' },
     // { name: 'Community', href: '/news' }, // Community 메뉴 숨김
     { name: 'Expert', href: '/expert' },
   ];
@@ -97,7 +100,7 @@ export default function Navigation() {
           </div>
 
           {/* 데스크톱 메인 메뉴 */}
-          <div className="hidden md:flex items-center space-x-12">
+          <div className="hidden md:flex items-center space-x-14">
             {navigation.map((item, index) => {
               // Expert 메뉴는 로그인된 상태에서만 접근 가능
               if (item.name === 'Expert') {
@@ -153,7 +156,16 @@ export default function Navigation() {
 
           {/* 우측 아이콘 영역 */}
           <div className="flex items-center space-x-4">
-            <button className="md:hidden">
+            {/* 통합검색 버튼 */}
+            <button
+              onClick={() => {
+                setShowSearchModal(true);
+                setSearchQuery('');
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
+              title="통합검색"
+            >
+              <span className="hidden md:inline text-sm font-medium">통합검색</span>
               <FiSearch className="w-5 h-5" />
             </button>
             
@@ -286,6 +298,18 @@ export default function Navigation() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 통합검색 모달 */}
+      {showSearchModal && (
+        <UnifiedSearchModal
+          isOpen={showSearchModal}
+          onClose={() => {
+            setShowSearchModal(false);
+            setSearchQuery('');
+          }}
+          searchQuery={searchQuery}
+        />
       )}
     </nav>
   );

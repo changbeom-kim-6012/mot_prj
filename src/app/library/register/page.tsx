@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiSave, FiArrowLeft, FiUpload, FiPaperclip, FiX, FiEye, FiDownload } from 'react-icons/fi';
+import { FiSave, FiArrowLeft, FiUpload, FiPaperclip, FiX, FiEye, FiDownload, FiSearch } from 'react-icons/fi';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
 import { getApiUrl } from '@/config/api';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface LibraryItem {
   id: number;
@@ -40,6 +41,7 @@ export default function RegisterLibraryItemPage() {
   const [deletedFileNames, setDeletedFileNames] = useState<string[]>([]);
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -345,16 +347,24 @@ export default function RegisterLibraryItemPage() {
               <label htmlFor="keywords" className="block text-sm font-medium text-gray-700">
                 키워드
               </label>
-              <div className="mt-1">
+              <div className="mt-1 flex gap-2">
                 <input
                   type="text"
                   name="keywords"
                   id="keywords"
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
-                  className="block w-full p-3 border-gray-300 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block flex-1 p-3 border-gray-300 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowKeywordModal(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiSearch className="w-4 h-4 mr-2" />
+                  키워드 조회
+                </button>
               </div>
             </div>
 
@@ -625,6 +635,15 @@ export default function RegisterLibraryItemPage() {
             </div>
           </div>
         )}
+
+        {/* 키워드 선택 모달 */}
+        <KeywordSelectorModal
+          isOpen={showKeywordModal}
+          onClose={() => setShowKeywordModal(false)}
+          menuType="Library"
+          currentKeywords={keywords}
+          onSelectKeywords={(selectedKeywords) => setKeywords(selectedKeywords)}
+        />
       </div>
   );
 } 

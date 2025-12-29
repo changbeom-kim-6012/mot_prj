@@ -3,13 +3,14 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
-import { FiUpload, FiFile, FiX, FiArrowLeft, FiBookOpen, FiDownload, FiEye, FiTrash2 } from 'react-icons/fi';
+import { FiUpload, FiFile, FiX, FiArrowLeft, FiBookOpen, FiDownload, FiEye, FiTrash2, FiSearch } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
 import QuillEditor from '@/components/common/QuillEditor';
 import { getApiUrl, getRelativeApiUrl } from '@/config/api';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface FileWithType {
   file: File;
@@ -45,14 +46,21 @@ function OpinionRegisterPageContent() {
     fullText: '',
     status: '임시저장',
     category: '',
+    websiteLink: '',
   });
   const [categoryEtc, setCategoryEtc] = useState('');
+  const [motStudyCategory, setMotStudyCategory] = useState<string>('');
+  const [researchCategory, setResearchCategory] = useState<string>('');
+  const [motStudyLevel3Categories, setMotStudyLevel3Categories] = useState<Category[]>([]);
+  const [researchLevel3Categories, setResearchLevel3Categories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [files, setFiles] = useState<FileWithType[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<ExistingAttachment[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [showFullTextModal, setShowFullTextModal] = useState(false);
   const [fullTextContent, setFullTextContent] = useState('');
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
@@ -65,6 +73,126 @@ function OpinionRegisterPageContent() {
       }));
     }
   }, [user]);
+
+  // MOT Study와 Research분야의 3단계 카테고리 불러오기
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await fetch(getApiUrl('/api/codes?menuName=Research'));
+        if (response.ok) {
+          const allCodes = await response.json();
+          console.log('=== Research 공통코드 전체 데이터 ===');
+          console.log('전체 데이터 개수:', allCodes.length);
+          console.log('데이터 구조:', allCodes);
+          
+          // Research 메뉴의 1단계 코드 찾기 (백엔드에서 이미 Research만 필터링되어 있음)
+          const researchMaster = allCodes.find((code: any) => 
+            code.menuName === 'Research' && !code.parentId
+          );
+          
+          if (researchMaster) {
+            console.log('=== Research 1단계 마스터 코드 ===');
+            console.log('Research 마스터:', researchMaster);
+            console.log('Research 마스터 children:', researchMaster.children);
+            
+            // 계층 구조에서 MOT Study 2단계 코드 찾기
+            const motStudyLevel2 = researchMaster.children?.find((code: any) => 
+              code.codeName === 'MOT Study'
+            );
+            
+            // 계층 구조에서 Research분야 2단계 코드 찾기
+            const researchLevel2 = researchMaster.children?.find((code: any) => 
+              code.codeName === 'Research분야'
+            );
+            
+            console.log('=== 2단계 카테고리 ===');
+            console.log('MOT Study:', motStudyLevel2);
+            console.log('Research분야:', researchLevel2);
+            
+            // MOT Study의 3단계 카테고리 불러오기
+            // 조건: menu_name = 'Research' AND parent_id = MOT Study 2단계 코드의 ID
+            if (motStudyLevel2 && motStudyLevel2.children) {
+              const motStudyLevel3 = motStudyLevel2.children
+                .filter((code: any) => code.menuName === 'Research')
+                .sort((a: any, b: any) => {
+                  const sortA = a.sortOrder != null ? a.sortOrder : 999;
+                  const sortB = b.sortOrder != null ? b.sortOrder : 999;
+                  return sortA - sortB;
+                });
+              console.log('=== MOT Study 3단계 카테고리 ===');
+              console.log('필터 조건: menuName=Research, parentId=' + motStudyLevel2.id);
+              console.log('개수:', motStudyLevel3.length);
+              console.log('목록:', motStudyLevel3.map((c: any) => ({ name: c.codeName, sortOrder: c.sortOrder })));
+              setMotStudyLevel3Categories(motStudyLevel3.map((c: any) => ({ id: c.id, name: c.codeName })));
+            } else {
+              console.warn('MOT Study 2단계 코드 또는 children을 찾을 수 없습니다.');
+              setMotStudyLevel3Categories([]);
+            }
+            
+            // Research분야의 3단계 카테고리 불러오기
+            // 조건: menu_name = 'Research' AND parent_id = Research분야 2단계 코드의 ID
+            if (researchLevel2 && researchLevel2.children) {
+              const researchLevel3 = researchLevel2.children
+                .filter((code: any) => code.menuName === 'Research')
+                .sort((a: any, b: any) => {
+                  const sortA = a.sortOrder != null ? a.sortOrder : 999;
+                  const sortB = b.sortOrder != null ? b.sortOrder : 999;
+                  return sortA - sortB;
+                });
+              console.log('=== Research분야 3단계 카테고리 ===');
+              console.log('필터 조건: menuName=Research, parentId=' + researchLevel2.id);
+              console.log('개수:', researchLevel3.length);
+              console.log('목록:', researchLevel3.map((c: any) => ({ name: c.codeName, sortOrder: c.sortOrder })));
+              setResearchLevel3Categories(researchLevel3.map((c: any) => ({ id: c.id, name: c.codeName })));
+            } else {
+              console.warn('Research분야 2단계 코드 또는 children을 찾을 수 없습니다.');
+              setResearchLevel3Categories([]);
+            }
+          } else {
+            console.warn('Research 1단계 마스터 코드를 찾을 수 없습니다.');
+            setMotStudyLevel3Categories([]);
+            setResearchLevel3Categories([]);
+          }
+        } else {
+          console.error('API 응답 실패:', response.status, response.statusText);
+          setMotStudyLevel3Categories([]);
+          setResearchLevel3Categories([]);
+        }
+      } catch (error) {
+        console.error('카테고리 조회 실패:', error);
+        setMotStudyLevel3Categories([]);
+        setResearchLevel3Categories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // 선택한 카테고리에 따라 formData.category 업데이트 (두 카테고리를 조합)
+  useEffect(() => {
+    let finalCategory = '';
+    
+    // MOT Study와 Research분야를 모두 선택할 수 있음
+    if (motStudyCategory && researchCategory) {
+      // 둘 다 선택된 경우: "MOT Study 카테고리 / Research분야 카테고리" 형식
+      finalCategory = `${motStudyCategory} / ${researchCategory === '기타' && categoryEtc ? `기타 > ${categoryEtc}` : researchCategory}`;
+    } else if (motStudyCategory) {
+      // MOT Study만 선택된 경우
+      finalCategory = motStudyCategory;
+    } else if (researchCategory) {
+      // Research분야만 선택된 경우
+      finalCategory = researchCategory === '기타' && categoryEtc ? `기타 > ${categoryEtc}` : researchCategory;
+    }
+    
+    setFormData(prev => ({ ...prev, category: finalCategory }));
+    
+    // Research분야에서 기타가 아닌 경우 기타 내용 초기화
+    if (researchCategory !== '기타') {
+      setCategoryEtc('');
+    }
+  }, [motStudyCategory, researchCategory, categoryEtc]);
 
   // 삭제 권한 업데이트
   useEffect(() => {
@@ -93,6 +221,93 @@ function OpinionRegisterPageContent() {
           console.log('API 응답:', response.data);
           const article = response.data;
           
+          // 새로운 필드가 있으면 사용, 없으면 기존 category 필드 파싱
+          if (article.motStudyCategory) {
+            setMotStudyCategory(article.motStudyCategory);
+          }
+          
+          if (article.researchCategory) {
+            // Research분야 카테고리 파싱 (기타 처리 포함)
+            let researchCat = article.researchCategory;
+            let etcValue = '';
+            
+            if (researchCat.includes(' > ')) {
+              const parts = researchCat.split(' > ');
+              researchCat = parts[0]; // "기타"
+              etcValue = parts[1] || ''; // "기타내용"
+            }
+            
+            setResearchCategory(researchCat);
+            setCategoryEtc(etcValue);
+          } else {
+            // 기존 category 필드에서 파싱 (하위 호환성)
+            const savedCategory = article.category || '';
+            if (savedCategory) {
+              // "MOT Study 카테고리 / Research분야 카테고리" 형식 파싱
+              if (savedCategory.includes(' / ')) {
+                const parts = savedCategory.split(' / ');
+                const motPart = parts[0];
+                const researchPart = parts[1];
+                
+                // MOT Study 파싱
+                if (motPart) {
+                  setMotStudyCategory(motPart);
+                }
+                
+                // Research분야 파싱
+                if (researchPart) {
+                  let researchCat = researchPart;
+                  let etcValue = '';
+                  
+                  if (researchPart.includes(' > ')) {
+                    const etcParts = researchPart.split(' > ');
+                    researchCat = etcParts[0];
+                    etcValue = etcParts[1] || '';
+                  }
+                  
+                  setResearchCategory(researchCat);
+                  setCategoryEtc(etcValue);
+                }
+              } else {
+                // 단일 카테고리인 경우 (기존 데이터)
+                // MOT Study인지 Research분야인지 확인
+                const findCategoryType = async () => {
+                  try {
+                    const allCodesResponse = await fetch(getApiUrl('/api/codes?menuName=Research'));
+                    if (allCodesResponse.ok) {
+                      const allCodes = await allCodesResponse.json();
+                      let categoryName = savedCategory;
+                      let etcValue = '';
+                      
+                      if (savedCategory.includes(' > ')) {
+                        const parts = savedCategory.split(' > ');
+                        categoryName = parts[0];
+                        etcValue = parts[1] || '';
+                      }
+                      
+                      const level3Code = allCodes.find((code: any) => code.codeName === categoryName);
+                      if (level3Code && level3Code.parentId) {
+                        const level2Code = allCodes.find((code: any) => code.id === level3Code.parentId);
+                        if (level2Code) {
+                          // 정확한 이름으로 확인
+                          if (level2Code.codeName === 'MOT Study') {
+                            setMotStudyCategory(categoryName);
+                          } else if (level2Code.codeName === 'Research분야') {
+                            setResearchCategory(categoryName);
+                            setCategoryEtc(etcValue);
+                          }
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.error('기존 카테고리 로드 실패:', error);
+                  }
+                };
+                findCategoryType();
+              }
+            }
+          }
+          
           setFormData({
             title: article.title || '',
             authorName: article.authorName || '',
@@ -102,6 +317,7 @@ function OpinionRegisterPageContent() {
             fullText: article.fullText || '',
             status: article.status || '임시저장',
             category: article.category || '',
+            websiteLink: article.websiteLink || '',
           });
 
           // 기존 첨부파일 불러오기
@@ -133,6 +349,7 @@ function OpinionRegisterPageContent() {
       fetchArticle();
     }
   }, [isEditMode, editId, router]);
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -235,6 +452,13 @@ function OpinionRegisterPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 카테고리 필수 선택 검증 (최소 하나는 선택해야 함)
+    if (!motStudyCategory && !researchCategory) {
+      alert('MOT Study 또는 Research분야 중 최소 하나는 선택해주세요.');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       let opinionId;
@@ -245,6 +469,13 @@ function OpinionRegisterPageContent() {
           ? getRelativeApiUrl(`/api/opinions/${editId}`)
           : getApiUrl(`/api/opinions/${editId}`);
         
+        // 카테고리 저장: MOT Study와 Research분야를 별도 필드로 저장
+        // 기존 category 필드는 하위 호환성을 위해 유지 (조합된 값)
+        const categoryToSave = formData.category;
+        const researchCategoryToSave = researchCategory === '기타' && categoryEtc 
+          ? `기타 > ${categoryEtc}` 
+          : researchCategory;
+        
         const res = await axios.put(updateApiUrl, {
           title: formData.title,
           authorName: formData.authorName,
@@ -253,7 +484,10 @@ function OpinionRegisterPageContent() {
           references: formData.references,
           fullText: formData.fullText,
           status: '등록대기',
-          category: formData.category,
+          category: categoryToSave,
+          motStudyCategory: motStudyCategory || null,
+          researchCategory: researchCategoryToSave || null,
+          websiteLink: formData.websiteLink || null,
         }, {
           headers: {
             'User-Role': user?.role || '',
@@ -266,6 +500,13 @@ function OpinionRegisterPageContent() {
           ? getRelativeApiUrl('/api/opinions')
           : getApiUrl('/api/opinions');
         
+        // 카테고리 저장: MOT Study와 Research분야를 별도 필드로 저장
+        // 기존 category 필드는 하위 호환성을 위해 유지 (조합된 값)
+        const categoryToSave = formData.category;
+        const researchCategoryToSave = researchCategory === '기타' && categoryEtc 
+          ? `기타 > ${categoryEtc}` 
+          : researchCategory;
+        
         const res = await axios.post(createApiUrl, {
           title: formData.title,
           authorName: formData.authorName,
@@ -274,7 +515,10 @@ function OpinionRegisterPageContent() {
           references: formData.references,
           fullText: formData.fullText,
           status: '등록대기',
-          category: formData.category,
+          category: categoryToSave,
+          motStudyCategory: motStudyCategory || null,
+          researchCategory: researchCategoryToSave || null,
+          websiteLink: formData.websiteLink || null,
         }, {
           headers: {
             'User-Role': user?.role || '',
@@ -323,6 +567,12 @@ function OpinionRegisterPageContent() {
           ? getRelativeApiUrl(`/api/opinions/${editId}`)
           : getApiUrl(`/api/opinions/${editId}`);
         
+        // 카테고리 저장: MOT Study와 Research분야를 별도 필드로 저장
+        const categoryToSave = formData.category;
+        const researchCategoryToSave = researchCategory === '기타' && categoryEtc 
+          ? `기타 > ${categoryEtc}` 
+          : researchCategory;
+        
         const res = await axios.put(tempSaveApiUrl, {
           title: formData.title,
           authorName: formData.authorName,
@@ -331,7 +581,10 @@ function OpinionRegisterPageContent() {
           references: formData.references,
           fullText: formData.fullText,
           status: '임시저장',
-          category: formData.category,
+          category: categoryToSave,
+          motStudyCategory: motStudyCategory || null,
+          researchCategory: researchCategoryToSave || null,
+          websiteLink: formData.websiteLink || null,
         }, {
           headers: {
             'User-Role': user?.role || '',
@@ -344,6 +597,9 @@ function OpinionRegisterPageContent() {
           ? getRelativeApiUrl('/api/opinions')
           : getApiUrl('/api/opinions');
         
+        // 카테고리 저장: formData.category에 이미 조합된 값이 있음
+        const categoryToSave = formData.category;
+        
         const res = await axios.post(tempCreateApiUrl, {
           title: formData.title,
           authorName: formData.authorName,
@@ -352,7 +608,8 @@ function OpinionRegisterPageContent() {
           references: formData.references,
           fullText: formData.fullText,
           status: '임시저장',
-          category: formData.category,
+          category: categoryToSave,
+          websiteLink: formData.websiteLink || null,
         }, {
           headers: {
             'User-Role': user?.role || '',
@@ -454,17 +711,16 @@ function OpinionRegisterPageContent() {
               <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
                 <FiBookOpen className="w-6 h-6 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">{isEditMode ? 'Opinion 수정' : 'Opinion 등록'}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{isEditMode ? 'Research 자료수정' : 'Research 자료등록'}</h1>
             </div>
             {/* Back Button */}
             <motion.button
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               onClick={handleBack}
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              목록으로 돌아가기
+              <FiX className="w-6 h-6" />
             </motion.button>
           </div>
         </motion.div>
@@ -501,25 +757,50 @@ function OpinionRegisterPageContent() {
                 카테고리 <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-4">
-                <div className="w-1/2">
-                  <CodeSelectWithEtc
-                    menuName="Agora"
-                    value={formData.category}
-                    onChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                    etcValue={categoryEtc}
-                    onEtcChange={setCategoryEtc}
-                    placeholder="선택하세요"
+                {/* MOT Study 3단계 카테고리 선택 */}
+                <div className="flex-1">
+                  <select
+                    value={motStudyCategory}
+                    onChange={(e) => {
+                      setMotStudyCategory(e.target.value);
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    hideEtcInput={true}
-                  />
+                  >
+                    <option value="">자료 유형</option>
+                    {motStudyLevel3Categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
-                {formData.category === '기타' && (
-                  <div className="w-1/2">
+                
+                {/* Research분야 3단계 카테고리 선택 */}
+                <div className={researchCategory === '기타' ? 'flex-1' : 'flex-1'}>
+                  <select
+                    value={researchCategory}
+                    onChange={(e) => {
+                      setResearchCategory(e.target.value);
+                      // 기타가 아닌 경우 기타 내용 초기화
+                      if (e.target.value !== '기타') {
+                        setCategoryEtc('');
+                      }
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="">MOT 카테고리</option>
+                    {researchLevel3Categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* 기타 키인 부분 (Research분야에서 기타 선택 시 표시) */}
+                {researchCategory === '기타' && (
+                  <div className="flex-1">
                     <input
                       type="text"
                       value={categoryEtc}
                       onChange={(e) => setCategoryEtc(e.target.value)}
-                      placeholder="기타 카테고리를 입력하세요"
+                      placeholder="기타 키인 부분"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
@@ -606,14 +887,40 @@ function OpinionRegisterPageContent() {
               <label htmlFor="keywords" className="block text-sm font-medium text-gray-700 mb-2">
                 키워드
               </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="keywords"
+                  name="keywords"
+                  value={formData.keywords}
+                  onChange={handleInputChange}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="키워드를 콤마(,)로 구분해 입력하세요"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeywordModal(true)}
+                  className="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <FiSearch className="w-4 h-4 mr-2" />
+                  키워드 조회
+                </button>
+              </div>
+            </div>
+
+            {/* Website Link */}
+            <div>
+              <label htmlFor="websiteLink" className="block text-sm font-medium text-gray-700 mb-2">
+                웹사이트 링크
+              </label>
               <input
-                type="text"
-                id="keywords"
-                name="keywords"
-                value={formData.keywords}
+                type="url"
+                id="websiteLink"
+                name="websiteLink"
+                value={formData.websiteLink}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="키워드를 콤마(,)로 구분해 입력하세요"
+                placeholder="https://example.com"
               />
             </div>
 
@@ -842,6 +1149,15 @@ function OpinionRegisterPageContent() {
             </div>
           </div>
         </motion.form>
+
+        {/* 키워드 선택 모달 */}
+        <KeywordSelectorModal
+          isOpen={showKeywordModal}
+          onClose={() => setShowKeywordModal(false)}
+          menuType="Research"
+          currentKeywords={formData.keywords}
+          onSelectKeywords={(selectedKeywords) => setFormData(prev => ({ ...prev, keywords: selectedKeywords }))}
+        />
       </div>
     </main>
   );

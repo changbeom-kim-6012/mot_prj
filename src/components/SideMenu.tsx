@@ -8,7 +8,6 @@ import {
   FiUsers, 
   FiMessageSquare, 
   FiAward,
-  FiGlobe,
   FiEdit3
 } from 'react-icons/fi';
 
@@ -37,17 +36,17 @@ const menuItems = [
     gradientFrom: 'from-violet-500',
     gradientTo: 'to-violet-600'
   },
-  { 
-    icon: FiGlobe, 
-    label: 'Dialogue', 
-    href: '/dialogue',
-    color: 'text-rose-500',
-    gradientFrom: 'from-rose-500',
-    gradientTo: 'to-rose-600'
-  },
+  // { 
+  //   icon: FiGlobe, 
+  //   label: 'Dialogue', 
+  //   href: '/dialogue',
+  //   color: 'text-rose-500',
+  //   gradientFrom: 'from-rose-500',
+  //   gradientTo: 'to-rose-600'
+  // },
   { 
     icon: FiEdit3, 
-    label: 'Agora', 
+    label: 'Research', 
     href: '/opinions',
     color: 'text-amber-500',
     gradientFrom: 'from-amber-500',

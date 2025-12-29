@@ -51,7 +51,7 @@ export default function AccessLogManagement() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [size, setSize] = useState(20);
+  const [size, setSize] = useState(10);
 
   // 검색 필터
   const [startDate, setStartDate] = useState('');
@@ -146,17 +146,10 @@ export default function AccessLogManagement() {
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">접속 로그</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">
-          사용자의 로그인/로그아웃 기록을 조회할 수 있습니다.
-        </p>
-      </div>
-
       {/* 검색 영역 */}
       <div className="px-4 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
+        <div className="flex items-end gap-2.5 overflow-x-auto">
+          <div className="flex-shrink-0 w-36">
             <label className="block text-sm font-medium text-gray-700 mb-1">시작 날짜</label>
             <input
               type="date"
@@ -165,7 +158,7 @@ export default function AccessLogManagement() {
               className="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="flex-shrink-0 w-36">
             <label className="block text-sm font-medium text-gray-700 mb-1">종료 날짜</label>
             <input
               type="date"
@@ -174,7 +167,7 @@ export default function AccessLogManagement() {
               className="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="flex-shrink-0 w-44">
             <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
             <input
               type="text"
@@ -184,7 +177,7 @@ export default function AccessLogManagement() {
               className="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="flex-shrink-0 w-36">
             <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
             <input
               type="text"
@@ -194,7 +187,7 @@ export default function AccessLogManagement() {
               className="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="flex-shrink-0 w-44">
             <label className="block text-sm font-medium text-gray-700 mb-1">IP 주소</label>
             <input
               type="text"
@@ -204,7 +197,7 @@ export default function AccessLogManagement() {
               className="block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          <div>
+          <div className="flex-shrink-0 w-36">
             <label className="block text-sm font-medium text-gray-700 mb-1">접속 유형</label>
             <select
               value={searchAccessType}
@@ -217,20 +210,20 @@ export default function AccessLogManagement() {
               <option value="LOGIN_FAILED">로그인 실패</option>
             </select>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            검색
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-          >
-            초기화
-          </button>
+          <div className="flex-shrink-0 flex gap-2 ml-1">
+            <button
+              onClick={handleSearch}
+              className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-[42px] whitespace-nowrap font-medium"
+            >
+              검색
+            </button>
+            <button
+              onClick={handleReset}
+              className="px-5 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 h-[42px] whitespace-nowrap font-medium"
+            >
+              초기화
+            </button>
+          </div>
         </div>
       </div>
 

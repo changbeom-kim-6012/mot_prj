@@ -205,21 +205,22 @@ export default function NewsPage() {
       <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-rose-800 to-slate-900 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#e11d48,#f43f5e,#e11d48)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-600 via-rose-500 to-slate-600 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#e11d48,#f43f5e,#e11d48)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="relative py-8 px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-rose-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
@@ -231,6 +232,7 @@ export default function NewsPage() {
                MOT Club 회원들과 나누고 싶은 소식을 자유롭게 등록할 수 있습니다.<br/>
                등록 내용이 본 사이트의 취지에 맞지 않는 경우에는 사전통지 없이 삭제될 수 있습니다.
              </p>
+          </div>
           </div>
         </div>
       </div>

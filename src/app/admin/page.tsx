@@ -10,6 +10,8 @@ import ExpertManagement from '@/components/admin/ExpertManagement';
 import ExpertFormModal from '@/components/admin/ExpertFormModal';
 import NoticeManagement from '@/components/admin/NoticeManagement';
 import AccessLogManagement from '@/components/admin/AccessLogManagement';
+import InquiryManagement from '@/components/admin/InquiryManagement';
+import KeywordManagement from '@/components/admin/KeywordManagement';
 import { Expert } from '@/types/expert';
 import { useAuth } from '@/context/AuthContext';
 
@@ -147,6 +149,26 @@ export default function AdminPage() {
               >
                 접속 로그
               </button>
+              <button
+                onClick={() => setActiveTab('inquiries')}
+                className={`${
+                  activeTab === 'inquiries'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200`}
+              >
+                문의/요청
+              </button>
+              <button
+                onClick={() => setActiveTab('keywords')}
+                className={`${
+                  activeTab === 'keywords'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200`}
+              >
+                키워드
+              </button>
             </nav>
           </div>
         </div>
@@ -165,6 +187,8 @@ export default function AdminPage() {
           {activeTab === 'codes' && <CodeManagement />}
           {activeTab === 'notices' && <NoticeManagement />}
           {activeTab === 'access-logs' && <AccessLogManagement />}
+          {activeTab === 'inquiries' && <InquiryManagement />}
+          {activeTab === 'keywords' && <KeywordManagement />}
         </div>
       </div>
 

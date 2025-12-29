@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import React from 'react';
 import axios from 'axios';
+import { getApiUrl } from '@/config/api';
 
 // Updated type definitions to support hierarchy
 type CommonCode = {
@@ -17,7 +18,7 @@ type CommonCode = {
   children?: CommonCode[];
 };
 
-const MENU_OPTIONS = ['Library', 'Learning', 'Q&A', 'Dialogue', 'Agora'];
+const MENU_OPTIONS = ['Library', 'Learning', 'Q&A', 'Research'];
 
 export default function CodeManagement() {
   const [codes, setCodes] = useState<CommonCode[]>([]);
@@ -40,12 +41,17 @@ export default function CodeManagement() {
 
   // 공통코드 목록 조회
   const fetchCodes = async () => {
-    const res = await axios.get('/api/codes');
-    const data = Array.isArray(res.data) ? res.data : [];
-    
-    // 백엔드에서 받은 계층 구조 데이터를 그대로 사용
-    // findAllDto()는 이미 계층 구조로 반환됨
-    setCodes(data);
+    try {
+      const res = await axios.get(getApiUrl('/api/codes'));
+      const data = Array.isArray(res.data) ? res.data : [];
+      
+      // 백엔드에서 받은 계층 구조 데이터를 그대로 사용
+      // findAllDto()는 이미 계층 구조로 반환됨
+      setCodes(data);
+    } catch (error) {
+      console.error('공통코드 목록 조회 실패:', error);
+      alert('공통코드 목록을 불러오는데 실패했습니다.');
+    }
   };
 
   useEffect(() => {
@@ -54,10 +60,29 @@ export default function CodeManagement() {
 
   const openModal = (level: 'level1' | 'level2' | 'level3' = 'level1', parentId?: number, parentName?: string) => {
     setModalLevel(level);
-    setModalMenu(MENU_OPTIONS[0]);
+    
+    // 2단계 코드 추가 시 부모 코드의 menuName을 자동으로 설정
+    if (level === 'level2' && parentId) {
+      const parentCode = codes.find(c => c.id === parentId);
+      setModalMenu(parentCode?.menuName || MENU_OPTIONS[0]);
+    } else {
+      setModalMenu(MENU_OPTIONS[0]);
+    }
+    
     setModalCategory('');
     setModalDesc('');
-    setModalSortOrder(1);
+    
+    // 3단계 코드 추가 시 자동으로 최대 순서 + 1 계산
+    if (level === 'level3' && parentId) {
+      const existingChildren = codes.filter(c => c.parentId === parentId);
+      const maxSortOrder = existingChildren.length > 0
+        ? Math.max(...existingChildren.map(c => c.sortOrder || 0))
+        : 0;
+      setModalSortOrder(maxSortOrder + 1);
+    } else {
+      setModalSortOrder(1);
+    }
+    
     setModalParentId(parentId || null);
     setModalParentName(parentName || '');
     setIsModalOpen(true);
@@ -75,6 +100,29 @@ export default function CodeManagement() {
     setIsModalOpen(false);
   };
 
+  // 계층 구조에서 코드를 찾는 헬퍼 함수
+  const findCodeInHierarchy = (id: number | null | undefined, codeList: CommonCode[]): CommonCode | null => {
+    if (!id) return null;
+    for (const code of codeList) {
+      if (code.id === id) return code;
+      if (code.children) {
+        const found = findCodeInHierarchy(id, code.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // 1단계 부모 코드를 찾는 헬퍼 함수
+  const findLevel1Parent = (code: CommonCode | null, codeList: CommonCode[]): CommonCode | null => {
+    if (!code) return null;
+    if (!code.parentId) return code; // 1단계 코드 자체
+    const parent = findCodeInHierarchy(code.parentId, codeList);
+    if (!parent) return null;
+    if (!parent.parentId) return parent; // 1단계 부모
+    return findLevel1Parent(parent, codeList); // 재귀적으로 1단계까지 올라감
+  };
+
   // 3단계 코드 추가
   const handleModalSave = async () => {
     if (!modalCategory.trim()) return;
@@ -85,30 +133,57 @@ export default function CodeManagement() {
     if (modalLevel === 'level2') {
       // 2단계: 1단계 코드의 하위
       parentId = modalParentId;
-      // 부모 코드의 menuName을 사용
-      const parentCode = codes.find(c => c.id === modalParentId);
+      // 부모 코드의 menuName을 사용 (1단계 부모)
+      const parentCode = findCodeInHierarchy(modalParentId, codes);
       menuName = parentCode?.menuName || modalMenu;
     } else if (modalLevel === 'level3') {
       // 3단계: 2단계 코드의 하위
       parentId = modalParentId;
-      // 2단계 부모 코드의 menuName을 사용
-      const level2Parent = codes.find(c => c.id === modalParentId);
+      // 2단계 부모 코드를 찾고, 그 1단계 부모의 menuName을 사용
+      const level2Parent = findCodeInHierarchy(modalParentId, codes);
       if (level2Parent) {
-        const level1Parent = codes.find(c => c.id === level2Parent.parentId);
+        const level1Parent = findLevel1Parent(level2Parent, codes);
         menuName = level1Parent?.menuName || modalMenu;
       }
     }
     
-    await axios.post('/api/codes', {
-      menuName: menuName,
-      codeName: modalCategory,
-      codeValue: modalCategory.toUpperCase(),
-      description: modalDesc,
-      sortOrder: modalLevel === 'level3' ? modalSortOrder : null,
-      parentId: parentId
-    });
-    setIsModalOpen(false);
-    fetchCodes();
+    try {
+      const requestUrl = getApiUrl('/api/codes');
+      const requestData = {
+        menuName: menuName,
+        codeName: modalCategory,
+        codeValue: modalCategory.toUpperCase(),
+        description: modalDesc,
+        // 3단계 코드는 사용자가 입력한 순서 전달 (null이면 백엔드에서 자동 계산)
+        sortOrder: modalLevel === 'level3' ? modalSortOrder : null,
+        parentId: parentId
+      };
+      
+      console.log('=== 공통코드 저장 요청 ===');
+      console.log('URL:', requestUrl);
+      console.log('Data:', requestData);
+      console.log('=======================');
+      
+      const response = await axios.post(requestUrl, requestData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('공통코드 저장 성공:', response.data);
+      setIsModalOpen(false);
+      fetchCodes();
+    } catch (error: any) {
+      console.error('=== 공통코드 저장 실패 ===');
+      console.error('Error:', error);
+      console.error('Response:', error.response);
+      console.error('Request URL:', error.config?.url);
+      console.error('Request Data:', error.config?.data);
+      console.error('========================');
+      
+      const errorMessage = error.response?.data?.message || error.message || '공통코드 저장에 실패했습니다.';
+      alert(`공통코드 저장 실패: ${errorMessage}\n\n상세: ${error.response?.status} ${error.response?.statusText || ''}`);
+    }
   };
 
   // 코드 수정
@@ -180,13 +255,13 @@ export default function CodeManagement() {
     // 수정 시에도 상위 레벨 정보 유지
     if (modalLevel === 'level2') {
       parentId = modalParentId;
-      const parentCode = codes.find(c => c.id === modalParentId);
+      const parentCode = findCodeInHierarchy(modalParentId, codes);
       menuName = parentCode?.menuName || modalMenu;
     } else if (modalLevel === 'level3') {
       parentId = modalParentId;
-      const level2Parent = codes.find(c => c.id === modalParentId);
+      const level2Parent = findCodeInHierarchy(modalParentId, codes);
       if (level2Parent) {
-        const level1Parent = codes.find(c => c.id === level2Parent.parentId);
+        const level1Parent = findLevel1Parent(level2Parent, codes);
         menuName = level1Parent?.menuName || modalMenu;
       }
     }
@@ -209,17 +284,29 @@ export default function CodeManagement() {
       }
     }
     
-    await axios.put(`/api/codes/${editingCode.id}`, updateData);
-    setIsModalOpen(false);
-    setEditingCode(null);
-    fetchCodes();
+    try {
+      await axios.put(getApiUrl(`/api/codes/${editingCode.id}`), updateData);
+      setIsModalOpen(false);
+      setEditingCode(null);
+      fetchCodes();
+    } catch (error: any) {
+      console.error('공통코드 수정 실패:', error);
+      const errorMessage = error.response?.data?.message || error.message || '공통코드 수정에 실패했습니다.';
+      alert(`공통코드 수정 실패: ${errorMessage}`);
+    }
   };
 
   // 코드 삭제
   const handleDelete = async (id: number) => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    await axios.delete(`/api/codes/${id}`);
-    fetchCodes();
+    try {
+      await axios.delete(getApiUrl(`/api/codes/${id}`));
+      fetchCodes();
+    } catch (error: any) {
+      console.error('공통코드 삭제 실패:', error);
+      const errorMessage = error.response?.data?.message || error.message || '공통코드 삭제에 실패했습니다.';
+      alert(`공통코드 삭제 실패: ${errorMessage}`);
+    }
   };
 
 
@@ -410,14 +497,21 @@ export default function CodeManagement() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">메뉴 선택</label>
-                <select 
-                  value={modalMenu} 
-                  onChange={e => setModalMenu(e.target.value)} 
-                  className="w-full px-3 py-2 border rounded-md"
-                  disabled={modalLevel !== 'level1'}
-                >
-                  {MENU_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
+                {modalLevel === 'level2' && modalParentId ? (
+                  // 2단계 코드 추가 시 부모 코드의 menuName을 읽기 전용으로 표시
+                  <div className="w-full px-3 py-2 border rounded-md bg-gray-100">
+                    {modalMenu}
+                  </div>
+                ) : (
+                  <select 
+                    value={modalMenu} 
+                    onChange={e => setModalMenu(e.target.value)} 
+                    className="w-full px-3 py-2 border rounded-md"
+                    disabled={modalLevel !== 'level1'}
+                  >
+                    {MENU_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                )}
               </div>
               
               {modalLevel === 'level2' && (
@@ -450,7 +544,7 @@ export default function CodeManagement() {
                   onChange={e => setModalCategory(e.target.value)} 
                   className="w-full px-3 py-2 border rounded-md"
                   placeholder={
-                    modalLevel === 'level1' ? '예: Library, Q&A, Agora' : 
+                    modalLevel === 'level1' ? '예: Library, Q&A, Research' : 
                     modalLevel === 'level2' ? '예: 자료출처, 질문유형, 기고분야' : 
                     '예: 기술, 경영, 연구, 기타'
                   }

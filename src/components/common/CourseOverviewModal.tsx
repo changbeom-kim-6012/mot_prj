@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight, FiX } from 'react-icons/fi';
 
 interface CourseOverviewModalProps {
   isOpen: boolean;
@@ -96,10 +96,9 @@ export default function CourseOverviewModal({ isOpen, onClose }: CourseOverviewM
               </div>
               <button
                 onClick={onClose}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FiArrowRight className="w-4 h-4" />
-                목록으로 돌아가기
+                <FiX className="w-6 h-6" />
               </button>
             </div>
 

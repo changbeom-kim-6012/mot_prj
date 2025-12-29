@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiTrash2, FiLock } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiMessageSquare, FiCalendar, FiUser, FiTrash2, FiLock, FiX } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import AnswerList from '@/components/qna/AnswerList';
+import InquiryListModal from '@/components/inquiries/InquiryListModal';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
 import FileViewer from '@/components/common/FileViewer';
@@ -49,6 +50,7 @@ export default function QnaDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerModalOpen, setIsAnswerModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
+  const [inquiryListModalOpen, setInquiryListModalOpen] = useState(false);
 
   const questionId = params.id as string;
 
@@ -270,13 +272,12 @@ export default function QnaDetailPage() {
               </p>
             </div>
             <div className="flex justify-center space-x-4">
-              <Link
-                href="/qna"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              <button
+                onClick={() => router.push('/qna')}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <FiArrowLeft className="w-4 h-4 mr-2" />
-                Q&A 목록으로 돌아가기
-              </Link>
+                <FiX className="w-6 h-6" />
+              </button>
               <Link
                 href="/login"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
@@ -295,15 +296,24 @@ export default function QnaDetailPage() {
       <Navigation />
       <div className="py-16">
         <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-10">
-          {/* 뒤로가기 버튼 */}
-          <div className="mb-6">
-            <Link
-              href="/qna"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900"
+          {/* 뒤로가기 버튼 및 관련 문의/요청 버튼 */}
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              onClick={() => router.push('/qna')}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <FiArrowLeft className="w-4 h-4 mr-2" />
-              Q&A 목록으로 돌아가기
-            </Link>
+              <FiX className="w-6 h-6" />
+            </button>
+            {/* 관련 문의/요청 버튼 */}
+            {isAuthenticated && user && question && (
+              <button
+                onClick={() => setInquiryListModalOpen(true)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <FiMessageSquare className="w-4 h-4 mr-2" />
+                관련 문의/요청
+              </button>
+            )}
           </div>
 
           {/* 질문 상세 */}
@@ -384,6 +394,7 @@ export default function QnaDetailPage() {
                 </div>
               </div>
             )}
+
           </div>
 
           {/* 답변 작성 버튼 */}
@@ -491,6 +502,18 @@ export default function QnaDetailPage() {
           fileUrl={selectedFile.url}
           fileName={selectedFile.name}
           onClose={handleCloseFileViewer}
+        />
+      )}
+
+      {/* 문의/요청 이력 모달 */}
+      {inquiryListModalOpen && question && user && (
+        <InquiryListModal
+          isOpen={inquiryListModalOpen}
+          onClose={() => setInquiryListModalOpen(false)}
+          refTable="questions"
+          refId={question.id}
+          refTitle={question.title}
+          userEmail={user.email}
         />
       )}
     </main>

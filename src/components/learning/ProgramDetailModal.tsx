@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX, FiSave, FiEdit2, FiTarget, FiFileText, FiList, FiTrash2, FiUpload, FiDownload } from 'react-icons/fi';
+import { FiX, FiSave, FiEdit2, FiTarget, FiFileText, FiList, FiTrash2, FiUpload, FiDownload, FiMessageSquare, FiSearch } from 'react-icons/fi';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
+import InquiryListModal from '@/components/inquiries/InquiryListModal';
 import { getApiUrl } from '@/config/api';
 import { useAuth } from '@/context/AuthContext';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface Subject {
   id: number;
@@ -51,6 +53,7 @@ export default function ProgramDetailModal({
     programType: 'Level-based',
     programGoal: '',
     mainContent: '',
+    keywords: '',
     curriculumPdf: '',
     selectedSubjects: [] as number[]
   });
@@ -65,6 +68,10 @@ export default function ProgramDetailModal({
   const [existingFileName, setExistingFileName] = useState<string>('');
   const [existingFilePath, setExistingFilePath] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // 문의/요청 이력 모달 상태
+  const [inquiryListModalOpen, setInquiryListModalOpen] = useState(false);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   // Subject 목록 가져오기
   useEffect(() => {
@@ -84,6 +91,7 @@ export default function ProgramDetailModal({
         programType: program.programType || 'Level-based',
         programGoal: program.programGoal || '',
         mainContent: program.mainContent || '',
+        keywords: (program as any).keywords || '',
         curriculumPdf: program.curriculumPdf || '',
         selectedSubjects: program.subjects?.map(s => s.id) || []
       });
@@ -120,6 +128,7 @@ export default function ProgramDetailModal({
         programType: 'Level-based',
         programGoal: '',
         mainContent: '',
+        keywords: '',
         curriculumPdf: '',
         selectedSubjects: []
       });
@@ -163,6 +172,7 @@ export default function ProgramDetailModal({
         programType: formData.programType,
         programGoal: formData.programGoal,
         mainContent: formData.mainContent,
+        keywords: formData.keywords,
         curriculumFileName: existingFileName || (formData.curriculumPdf ? formData.curriculumPdf.split('/').pop() : undefined),
         curriculumFilePath: existingFilePath || formData.curriculumPdf || undefined,
         subjectIds: formData.selectedSubjects,
@@ -312,13 +322,25 @@ export default function ProgramDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-emerald-50">
           <h2 className="text-2xl font-bold text-gray-900">{modalTitle}</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="닫기"
-          >
-            <FiX className="w-6 h-6 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Program 관련 문의/요청 버튼 */}
+            {isViewMode && program?.id && user && (
+              <button
+                onClick={() => setInquiryListModalOpen(true)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <FiMessageSquare className="w-4 h-4 mr-2" />
+                Program 관련 문의/요청
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="닫기"
+            >
+              <FiX className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -520,6 +542,37 @@ export default function ProgramDetailModal({
               )}
             </div>
 
+            {/* 키워드 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <FiFileText className="w-4 h-4 text-emerald-600" />
+                키워드
+              </label>
+              {isViewMode ? (
+                <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  {formData.keywords || '키워드가 없습니다.'}
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.keywords}
+                    onChange={(e) => handleInputChange('keywords', e.target.value)}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKeywordModal(true)}
+                    className="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                  >
+                    <FiSearch className="w-4 h-4 mr-2" />
+                    키워드 조회
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* 관련 Subject List */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
@@ -606,7 +659,7 @@ export default function ProgramDetailModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <div>
+          <div className="flex items-center gap-3">
             {isViewMode && onDelete && isAdmin && (
               <button
                 onClick={onDelete}
@@ -668,6 +721,27 @@ export default function ProgramDetailModal({
           fileUrl={viewingPdf.filePath}
         />
       )}
+
+      {/* 문의/요청 이력 모달 */}
+      {inquiryListModalOpen && program?.id && user && (
+        <InquiryListModal
+          isOpen={inquiryListModalOpen}
+          onClose={() => setInquiryListModalOpen(false)}
+          refTable="learning_programs"
+          refId={program.id}
+          refTitle={program.programName}
+          userEmail={user.email}
+        />
+      )}
+
+      {/* 키워드 선택 모달 */}
+      <KeywordSelectorModal
+        isOpen={showKeywordModal}
+        onClose={() => setShowKeywordModal(false)}
+        menuType="Learning"
+        currentKeywords={formData.keywords}
+        onSelectKeywords={(selectedKeywords) => handleInputChange('keywords', selectedKeywords)}
+      />
     </div>
   );
 }

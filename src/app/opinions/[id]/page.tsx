@@ -226,10 +226,9 @@ export default function OpinionDetailPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 onClick={handleBack}
-                className="inline-flex items-center text-white hover:text-gray-200 transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors"
               >
-                <FiArrowLeft className="mr-2 h-4 w-4" />
-                목록으로 돌아가기
+                <FiX className="w-6 h-6" />
               </motion.button>
             </div>
             <h1 className="text-2xl font-bold leading-relaxed mb-4 break-all overflow-wrap-break-word">

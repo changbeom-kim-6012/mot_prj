@@ -1313,21 +1313,22 @@ function DialoguePageContent() {
       <Navigation />
       <div className="pt-28">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-rose-500 via-rose-800 to-rose-600 text-white">
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6,#1d4ed8)] opacity-30">
-              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)"></rect>
-              </svg>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden bg-gradient-to-br from-rose-300 via-rose-500 to-rose-400 text-white rounded-2xl">
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6,#1d4ed8)] opacity-30">
+                <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                      <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)"></rect>
+                </svg>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-rose-500 to-transparent"></div>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-rose-500 to-transparent"></div>
-          </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+            <div className="relative px-4 sm:px-6 lg:px-8 py-[19px]">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiMessageSquare className="w-6 h-6 text-white" />
@@ -1338,6 +1339,7 @@ function DialoguePageContent() {
               기술경영, 연구 기획 및 관리와 관련된 다양한 주제에 대해<br/>
               해당 분야의 경험과 지식을 갖춘 MOT 전문가와 대화할 수 있는 열린 대화방입니다.
             </p>
+            </div>
           </div>
         </div>
 

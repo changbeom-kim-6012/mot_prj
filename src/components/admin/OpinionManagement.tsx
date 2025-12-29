@@ -157,9 +157,9 @@ export default function OpinionManagement() {
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">Agora 관리</h3>
+        <h3 className="text-lg font-medium text-gray-900">Research 관리</h3>
         <p className="mt-1 text-sm text-gray-500">
-          사용자가 등록한 기고를 관리하고 승인/거부할 수 있습니다.
+          사용자가 등록한 연구를 관리하고 승인/거부할 수 있습니다.
         </p>
       </div>
 

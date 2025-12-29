@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText, FiArrowRight, FiTrash2 } from 'react-icons/fi';
+import { FiX, FiUpload, FiSave, FiAlertCircle, FiEye, FiFileText, FiArrowRight, FiTrash2, FiMessageSquare, FiSearch } from 'react-icons/fi';
 import { useAuth } from '@/context/AuthContext';
 import LocalPDFViewer from '@/components/common/LocalPDFViewer';
+import InquiryListModal from '@/components/inquiries/InquiryListModal';
 import { getApiUrl } from '@/config/api';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface SubjectEditModalProps {
   isOpen: boolean;
@@ -35,6 +37,7 @@ interface SubjectFormData {
   subjectDescription: string;
   subjectContent: string;
   categoryId: number;
+  keywords: string;
   curriculumFile?: File;
 }
 
@@ -62,7 +65,8 @@ export default function SubjectEditModal({
     subjectCode: '',
     subjectDescription: '',
     subjectContent: '',
-    categoryId: 0
+    categoryId: 0,
+    keywords: ''
   });
   
   const [curriculumFile, setCurriculumFile] = useState<File | null>(null);
@@ -72,6 +76,10 @@ export default function SubjectEditModal({
   // 파일보기 관련 상태
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingFile, setViewingFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
+
+  // 문의/요청 이력 모달 상태
+  const [inquiryListModalOpen, setInquiryListModalOpen] = useState(false);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   // subject 데이터가 변경될 때 폼 데이터 초기화
   useEffect(() => {
@@ -97,7 +105,8 @@ export default function SubjectEditModal({
         subjectCode: subject.subjectCode || '',
         subjectDescription: subject.subjectDescription || '',
         subjectContent: subject.subjectContent || '',
-        categoryId: subject.categoryId || 0
+        categoryId: subject.categoryId || 0,
+        keywords: (subject as any).keywords || ''
       });
       
       // curriculumFile 상태 초기화 (새 파일 선택 취소)
@@ -161,7 +170,8 @@ export default function SubjectEditModal({
         subjectCode: formData.subjectCode,
         subjectDescription: formData.subjectDescription,
         subjectContent: formData.subjectContent,
-        categoryId: formData.categoryId
+        categoryId: formData.categoryId,
+        keywords: formData.keywords
       };
       
       formDataToSend.append('subject', JSON.stringify(subjectData));
@@ -386,7 +396,7 @@ export default function SubjectEditModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Subject {isAdmin ? '수정' : '조회'}
+              Subject 상세
             </h2>
             {/* {!isAdmin && (
               <p className="text-sm text-red-500 mt-1">
@@ -394,13 +404,24 @@ export default function SubjectEditModal({
               </p>
             )} */}
           </div>
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <FiArrowRight className="w-4 h-4" />
-            목록으로 돌아가기
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Subject 관련 문의/요청 버튼 */}
+            {isAuthenticated && user && (
+              <button
+                onClick={() => setInquiryListModalOpen(true)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <FiMessageSquare className="w-4 h-4 mr-2" />
+                Subject 관련 문의/요청
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Form */}
@@ -501,6 +522,44 @@ export default function SubjectEditModal({
               <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                 <FiAlertCircle className="w-4 h-4" />
                 {errors.subjectContent}
+              </p>
+            )}
+          </div>
+
+          {/* 키워드 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              키워드
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.keywords}
+                onChange={(e) => handleInputChange('keywords', e.target.value)}
+                disabled={!isAdmin}
+                className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
+                  errors.keywords ? 'border-red-500' : 'border-gray-300'
+                } ${!isAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKeywordModal(true)}
+                disabled={!isAdmin}
+                className={`inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg ${
+                  isAdmin
+                    ? 'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
+                    : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                }`}
+              >
+                <FiSearch className="w-4 h-4 mr-2" />
+                키워드 조회
+              </button>
+            </div>
+            {errors.keywords && (
+              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                <FiAlertCircle className="w-4 h-4" />
+                {errors.keywords}
               </p>
             )}
           </div>
@@ -647,6 +706,18 @@ export default function SubjectEditModal({
         </form>
       </div>
 
+      {/* 문의/요청 이력 모달 */}
+      {inquiryListModalOpen && subject && user && (
+        <InquiryListModal
+          isOpen={inquiryListModalOpen}
+          onClose={() => setInquiryListModalOpen(false)}
+          refTable="learning_subjects"
+          refId={subject.id}
+          refTitle={subject.subjectDescription}
+          userEmail={user.email}
+        />
+      )}
+
       {/* 파일 보기 모달 */}
       {viewModalOpen && viewingFile && (
         viewingFile.fileName.toLowerCase().endsWith('.pdf') ? (
@@ -674,6 +745,15 @@ export default function SubjectEditModal({
           </div>
         )
       )}
+
+      {/* 키워드 선택 모달 */}
+      <KeywordSelectorModal
+        isOpen={showKeywordModal}
+        onClose={() => setShowKeywordModal(false)}
+        menuType="Learning"
+        currentKeywords={formData.keywords}
+        onSelectKeywords={(selectedKeywords) => handleInputChange('keywords', selectedKeywords)}
+      />
     </div>
   );
 }

@@ -147,32 +147,34 @@ export default function ExpertPage() {
       <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-purple-900 to-blue-900 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6,#8b5cf6,#3b82f6)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-blue-600 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f6,#8b5cf6,#3b82f6)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-900 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto py-[19px] px-4 sm:px-6 lg:px-8">
+          <div className="relative py-[19px] px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiUser className="w-6 h-6" />
               </div>
-              <h1 className="text-2xl font-bold text-white">함께하는 전문가</h1>
+              <h1 className="text-2xl font-bold text-white">MOT Insight Group</h1>
             </div>
                          <p className="text-base text-blue-100 max-w-[1150px] text-right">
                국내 기업의 R&D 관리 및 MOT 역량 강화를 목표로<br/>
                함께 연구하고 교육하며, 현장 경험을 공유하는 기술경영 전문가 그룹
              </p>
+          </div>
           </div>
         </div>
       </div>

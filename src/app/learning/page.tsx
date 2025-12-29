@@ -95,6 +95,106 @@ export default function LearningPage() {
   // Learning Program 관련 상태
   const [programs, setPrograms] = useState<TransformedProgram[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
+  
+  // 문의/요청 건수 상태 (itemId -> { inquiryCount: number, responseCount: number })
+  const [subjectInquiryCounts, setSubjectInquiryCounts] = useState<{ [key: number]: { inquiryCount: number; responseCount: number } }>({});
+  const [programInquiryCounts, setProgramInquiryCounts] = useState<{ [key: number]: { inquiryCount: number; responseCount: number } }>({});
+
+  // Subject 문의/요청 건수 조회 함수
+  const fetchSubjectInquiryCounts = async (items: Subject[]) => {
+    const counts: { [key: number]: { inquiryCount: number; responseCount: number } } = {};
+    
+    await Promise.all(
+      items.map(async (item) => {
+        try {
+          const url = getApiUrl(`/api/inquiries?refTable=learning_subjects&refId=${item.id}`);
+          const response = await fetch(url);
+          
+          if (response.ok) {
+            const inquiries: any[] = await response.json();
+            const inquiryCount = inquiries.length;
+            
+            let responseCount = 0;
+            for (const inquiry of inquiries) {
+              if (inquiry.responses && Array.isArray(inquiry.responses) && inquiry.responses.length > 0) {
+                responseCount++;
+              } else {
+                try {
+                  const responseUrl = getApiUrl(`/api/inquiries/${inquiry.id}/responses`);
+                  const responseRes = await fetch(responseUrl);
+                  if (responseRes.ok) {
+                    const responses = await responseRes.json();
+                    if (responses && responses.length > 0) {
+                      responseCount++;
+                    }
+                  }
+                } catch (err) {
+                  console.error(`응답 조회 실패 (inquiry ${inquiry.id}):`, err);
+                }
+              }
+            }
+            
+            counts[item.id] = { inquiryCount, responseCount };
+          } else {
+            counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+          }
+        } catch (error) {
+          console.error(`문의/요청 건수 조회 실패 (subject ${item.id}):`, error);
+          counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+        }
+      })
+    );
+    
+    setSubjectInquiryCounts(counts);
+  };
+
+  // Program 문의/요청 건수 조회 함수
+  const fetchProgramInquiryCounts = async (items: TransformedProgram[]) => {
+    const counts: { [key: number]: { inquiryCount: number; responseCount: number } } = {};
+    
+    await Promise.all(
+      items.map(async (item) => {
+        try {
+          const url = getApiUrl(`/api/inquiries?refTable=learning_programs&refId=${item.id}`);
+          const response = await fetch(url);
+          
+          if (response.ok) {
+            const inquiries: any[] = await response.json();
+            const inquiryCount = inquiries.length;
+            
+            let responseCount = 0;
+            for (const inquiry of inquiries) {
+              if (inquiry.responses && Array.isArray(inquiry.responses) && inquiry.responses.length > 0) {
+                responseCount++;
+              } else {
+                try {
+                  const responseUrl = getApiUrl(`/api/inquiries/${inquiry.id}/responses`);
+                  const responseRes = await fetch(responseUrl);
+                  if (responseRes.ok) {
+                    const responses = await responseRes.json();
+                    if (responses && responses.length > 0) {
+                      responseCount++;
+                    }
+                  }
+                } catch (err) {
+                  console.error(`응답 조회 실패 (inquiry ${inquiry.id}):`, err);
+                }
+              }
+            }
+            
+            counts[item.id] = { inquiryCount, responseCount };
+          } else {
+            counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+          }
+        } catch (error) {
+          console.error(`문의/요청 건수 조회 실패 (program ${item.id}):`, error);
+          counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+        }
+      })
+    );
+    
+    setProgramInquiryCounts(counts);
+  };
 
   // Learning 카테고리 데이터 로딩
   useEffect(() => {
@@ -266,6 +366,8 @@ export default function LearningPage() {
         });
         
         setSubjects(data);
+        // 문의/요청 건수 조회
+        fetchSubjectInquiryCounts(data);
       } else {
         console.error('Subject 조회 실패:', response.status);
         const errorText = await response.text();
@@ -494,6 +596,8 @@ export default function LearningPage() {
       console.log('모든 programType 값:', transformedPrograms.map((p: any) => ({ id: p.id, programType: p.programType })));
       
       setPrograms(transformedPrograms);
+      // 문의/요청 건수 조회
+      fetchProgramInquiryCounts(transformedPrograms);
     } catch (error) {
       console.error('Program 데이터 조회 실패:', error);
       setPrograms([]);
@@ -532,27 +636,28 @@ export default function LearningPage() {
       <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#10b981,#059669)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-500 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#10b981,#059669)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-emerald-700 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-emerald-700 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="relative px-4 sm:px-6 lg:px-8 py-[19px]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-400/20 rounded-xl flex items-center justify-center backdrop-blur-md">
                 <FiUsers className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-[24px] font-bold text-white">MOT 교육 광장</h1>
+              <h1 className="text-[24px] font-bold text-white">MOT Curriculum</h1>
             </div>
             <div className="flex items-center gap-3 -ml-[30px] mr-[64px]">
               {isAuthenticated && user && user.role === 'ADMIN' && (
@@ -593,6 +698,7 @@ export default function LearningPage() {
             MOT 관련된 모든 교과목을 체계적으로 관리하고<br />
             교육과정(Program)과 교과목을 연계하여 교육에 대해 정보를 제공합니다.
           </p>
+          </div>
         </div>
       </div>
 
@@ -747,6 +853,12 @@ export default function LearningPage() {
                                   </div>
                                 )}
                               </div>
+                              {/* 문의/요청 건수 표시 */}
+                              {subjectInquiryCounts[subject.id] && subjectInquiryCounts[subject.id].inquiryCount > 0 && (
+                                <span className="text-sm text-gray-600">
+                                  문의/요청 : {subjectInquiryCounts[subject.id].responseCount}/{subjectInquiryCounts[subject.id].inquiryCount}
+                                </span>
+                              )}
                             </div>
                           ) : null}
                         </div>
@@ -869,6 +981,12 @@ export default function LearningPage() {
                                   </div>
                                 )}
                               </div>
+                              {/* 문의/요청 건수 표시 */}
+                              {programInquiryCounts[program.id] && programInquiryCounts[program.id].inquiryCount > 0 && (
+                                <span className="text-sm text-gray-600">
+                                  문의/요청 : {programInquiryCounts[program.id].responseCount}/{programInquiryCounts[program.id].inquiryCount}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1034,6 +1152,12 @@ export default function LearningPage() {
                                   </div>
                                 )}
                               </div>
+                              {/* 문의/요청 건수 표시 */}
+                              {programInquiryCounts[program.id] && programInquiryCounts[program.id].inquiryCount > 0 && (
+                                <span className="text-sm text-gray-600">
+                                  문의/요청 : {programInquiryCounts[program.id].responseCount}/{programInquiryCounts[program.id].inquiryCount}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

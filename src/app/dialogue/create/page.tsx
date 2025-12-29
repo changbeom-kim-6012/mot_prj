@@ -646,9 +646,9 @@ function CreateDialoguePageContent() {
                </div>
                <button
                  onClick={() => router.back()}
-                 className="text-blue-600 hover:text-blue-700 font-medium"
+                 className="text-gray-400 hover:text-gray-600 transition-colors"
                >
-                 ← 목록으로 돌아가기
+                 <FiX className="w-6 h-6" />
                </button>
              </div>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

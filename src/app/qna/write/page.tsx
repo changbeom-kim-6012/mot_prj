@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiArrowLeft, FiSend, FiPaperclip, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiSend, FiPaperclip, FiX, FiSearch } from 'react-icons/fi';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/context/AuthContext';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
 import { motion } from 'framer-motion';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface User {
   id: number;
@@ -25,31 +26,41 @@ export default function QnaWritePage() {
   const [category1Id, setCategory1Id] = useState<number | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [contactInfo, setContactInfo] = useState('');
+  const [keywords, setKeywords] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   // 카테고리 목록 불러오기
   useEffect(() => {
-    fetch('/api/codes/menu/qna/details')
-      .then(res => res.json())
-      .then(data => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/codes/qna-details');
+        if (!response.ok) {
+          console.error('카테고리 API 응답 실패:', response.status, response.statusText);
+          setCategories([]);
+          return;
+        }
+        const data = await response.json();
         console.log('Category API data:', data);
         if (Array.isArray(data)) {
           const categoryList = data.map((c: any) => ({ id: c.id, name: c.codeName }));
           setCategories(categoryList);
+          console.log('카테고리 목록 로드 완료:', categoryList.length, '개');
           
-          // 기본 카테고리 설정
-          if (categoryList.length > 0 && !category1) {
-            const defaultCategory = categoryList[0];
-            setCategory1(defaultCategory.name);
-            setCategory1Id(defaultCategory.id);
-            console.log('기본 카테고리 설정:', defaultCategory);
-          }
+          // 기본 카테고리 설정 제거 (사용자가 직접 선택하도록)
+        } else {
+          console.warn('카테고리 데이터가 배열이 아닙니다:', data);
+          setCategories([]);
         }
-      })
-      .catch(() => setCategories([]));
+      } catch (error) {
+        console.error('카테고리 조회 실패:', error);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
   }, []);
 
   // 사용자 로그인 시 이메일을 기본값으로 설정
@@ -109,6 +120,7 @@ export default function QnaWritePage() {
       formData.append('authorEmail', user.email);
       formData.append('isPublic', isPublic.toString());
       formData.append('contactInfo', contactInfo);
+      formData.append('keywords', keywords);
       if (selectedFile) {
         formData.append('file', selectedFile);
       }
@@ -177,10 +189,9 @@ export default function QnaWritePage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               onClick={() => router.push('/qna')}
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              목록으로 돌아가기
+              <FiX className="w-6 h-6" />
             </motion.button>
           </div>
           <p className="text-gray-600">
@@ -265,6 +276,30 @@ export default function QnaWritePage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 placeholder="질문의 상세 내용을 입력해주세요. 배경, 궁금한 점, 원하는 답변의 방향 등을 구체적으로 작성해주시면 더 좋은 답변을 받을 수 있습니다."
               />
+            </div>
+
+            <div>
+              <label htmlFor="keywords" className="block text-sm font-medium text-gray-700 mb-2">
+                키워드
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="keywords"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeywordModal(true)}
+                  className="inline-flex items-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <FiSearch className="w-4 h-4 mr-2" />
+                  키워드 조회
+                </button>
+              </div>
             </div>
 
             <div>
@@ -365,6 +400,15 @@ export default function QnaWritePage() {
             </div>
           </div>
         </motion.form>
+
+        {/* 키워드 선택 모달 */}
+        <KeywordSelectorModal
+          isOpen={showKeywordModal}
+          onClose={() => setShowKeywordModal(false)}
+          menuType="Q&A"
+          currentKeywords={keywords}
+          onSelectKeywords={(selectedKeywords) => setKeywords(selectedKeywords)}
+        />
       </div>
     </main>
   );

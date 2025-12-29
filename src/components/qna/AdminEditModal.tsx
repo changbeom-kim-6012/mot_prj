@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/utils/dateUtils';
 import { getApiUrl } from '@/config/api';
 import FileViewer from '@/components/common/FileViewer';
+import InquiryListModal from '@/components/inquiries/InquiryListModal';
 
 interface Question {
   id: number;
@@ -59,7 +60,8 @@ export default function AdminEditModal({
     content: '',
     category1: '',
     isPublic: true,
-    contactInfo: ''
+    contactInfo: '',
+    keywords: ''
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [shouldDeleteFile, setShouldDeleteFile] = useState(false);
@@ -80,6 +82,9 @@ export default function AdminEditModal({
   // 카테고리 목록 상태
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  // 문의/요청 이력 모달 상태
+  const [inquiryListModalOpen, setInquiryListModalOpen] = useState(false);
 
   // 카테고리 목록 가져오기
   const fetchCategories = async () => {
@@ -123,7 +128,8 @@ export default function AdminEditModal({
         content: question.content,
         category1: question.category1,
         isPublic: question.isPublic,
-        contactInfo: question.contactInfo || ''
+        contactInfo: question.contactInfo || '',
+        keywords: (question as any).keywords || ''
       });
       setIsEditingQuestion(false);
       setEditingAnswerId(null);
@@ -157,6 +163,7 @@ export default function AdminEditModal({
       formData.append('category1', questionForm.category1);
       formData.append('isPublic', questionForm.isPublic.toString());
       formData.append('contactInfo', questionForm.contactInfo);
+      formData.append('keywords', questionForm.keywords);
       
       // 파일 삭제 플래그 추가 (백엔드에서 처리할 수 있도록)
       if (shouldDeleteFile) {
@@ -386,12 +393,24 @@ export default function AdminEditModal({
             <FiEdit3 className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-900">관리자 편집 모드</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* 관련 문의/요청 버튼 */}
+            {user && question && (
+              <button
+                onClick={() => setInquiryListModalOpen(true)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <FiMessageSquare className="w-4 h-4 mr-2" />
+                관련 문의/요청
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* 내용 */}
@@ -500,6 +519,20 @@ export default function AdminEditModal({
                     value={questionForm.contactInfo}
                     onChange={(e) => setQuestionForm({ ...questionForm, contactInfo: e.target.value })}
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+
+                {/* 키워드 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    키워드
+                  </label>
+                  <input
+                    type="text"
+                    value={questionForm.keywords}
+                    onChange={(e) => setQuestionForm({ ...questionForm, keywords: e.target.value })}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
                   />
                 </div>
 
@@ -785,6 +818,18 @@ export default function AdminEditModal({
           fileUrl={viewingFile.url}
           fileName={viewingFile.name}
           onClose={handleCloseFileViewer}
+        />
+      )}
+
+      {/* 문의/요청 이력 모달 */}
+      {inquiryListModalOpen && question && user && (
+        <InquiryListModal
+          isOpen={inquiryListModalOpen}
+          onClose={() => setInquiryListModalOpen(false)}
+          refTable="questions"
+          refId={question.id}
+          refTitle={question.title}
+          userEmail={user.email}
         />
       )}
     </div>

@@ -107,10 +107,9 @@ export default function NewsRegisterPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               onClick={handleBack}
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <FiArrowLeft className="mr-2 h-4 w-4" />
-              목록으로 돌아가기
+              <FiX className="w-6 h-6" />
             </motion.button>
           </div>
           <p className="text-gray-600">

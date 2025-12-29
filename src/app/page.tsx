@@ -14,16 +14,57 @@ import {
   FiBell,
   FiEye,
   FiDownload,
-  FiFileText
+  FiFileText,
+  FiArrowRight,
+  FiClock
 } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import FileViewer from '@/components/common/FileViewer';
+
+interface LibraryItem {
+  id: number;
+  title: string;
+  category: string;
+  author: string;
+  createdAt: string;
+}
+
+interface QuestionItem {
+  id: number;
+  title: string;
+  categoryId: number;
+  authorName: string;
+  createdAt: string;
+}
+
+interface OpinionItem {
+  id: number;
+  title: string;
+  category: string;
+  authorName: string;
+  createdAt: string;
+  status: string;
+}
+
+interface ProgramItem {
+  id: number;
+  code: string;
+  description: string;
+  createdAt: string;
+}
 
 export default function Home() {
   const [activeNotices, setActiveNotices] = useState<any[]>([]);
   const [showNoticePopup, setShowNoticePopup] = useState(false);
   const [currentNoticeIndex, setCurrentNoticeIndex] = useState(0);
   const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
+  
+  // 최신 자료 상태
+  const [latestLibrary, setLatestLibrary] = useState<LibraryItem[]>([]);
+  const [latestQuestions, setLatestQuestions] = useState<QuestionItem[]>([]);
+  const [latestOpinions, setLatestOpinions] = useState<OpinionItem[]>([]);
+  const [latestPrograms, setLatestPrograms] = useState<ProgramItem[]>([]);
+  const [loadingLatest, setLoadingLatest] = useState(true);
 
   // 오늘 그만 보기 확인 함수
   const isNoticeDismissedToday = () => {
@@ -57,6 +98,55 @@ export default function Home() {
     };
 
     fetchActiveNotices();
+  }, []);
+
+  // 최신 자료 조회
+  useEffect(() => {
+    const fetchLatestItems = async () => {
+      setLoadingLatest(true);
+      try {
+        // Library 최신 5개
+        const libraryRes = await fetch(getApiUrl('/api/library?page=0&size=5'));
+        if (libraryRes.ok) {
+          const libraryData = await libraryRes.json();
+          setLatestLibrary(libraryData.content || []);
+        }
+
+        // Q&A 최신 5개
+        const questionsRes = await fetch(getApiUrl('/api/questions?page=0&size=5'));
+        if (questionsRes.ok) {
+          const questionsData = await questionsRes.json();
+          setLatestQuestions(questionsData.content || []);
+        }
+
+        // Research (Opinions) 최신 5개
+        const opinionsRes = await fetch(getApiUrl('/api/opinions'));
+        if (opinionsRes.ok) {
+          const opinionsData = await opinionsRes.json();
+          // 임시저장 제외하고 최신 5개만
+          const filtered = opinionsData
+            .filter((item: OpinionItem) => item.status !== '임시저장')
+            .sort((a: OpinionItem, b: OpinionItem) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )
+            .slice(0, 5);
+          setLatestOpinions(filtered);
+        }
+
+        // Learning - Program 최신 5개 (서버에서 정렬된 데이터 가져오기)
+        const programsRes = await fetch(getApiUrl('/api/learning-programs/latest?limit=5'));
+        if (programsRes.ok) {
+          const programsData = await programsRes.json();
+          setLatestPrograms(programsData || []);
+        }
+      } catch (error) {
+        console.error('최신 자료 조회 실패:', error);
+      } finally {
+        setLoadingLatest(false);
+      }
+    };
+
+    fetchLatestItems();
   }, []);
 
   const handleCloseNoticePopup = () => {
@@ -152,21 +242,22 @@ export default function Home() {
         <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-fuchsia-800 to-purple-900 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#d946ef,#c026d3)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-600 via-fuchsia-500 to-purple-600 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#d946ef,#c026d3)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="relative px-4 sm:px-6 lg:px-8 py-[19px]">
           <div className="flex items-end gap-4 mb-4">
             <div className="w-12 h-12 bg-fuchsia-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiGlobe className="w-6 h-6 text-white" />
@@ -185,110 +276,150 @@ export default function Home() {
               </p>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
-      {/* Services Grid */}
+      {/* Latest Items Section */}
       <div className="py-20 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
-            {/* Library Card */}
-            <Link href="/library" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-blue-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-500">
-                    <FiBook className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Library 최신 5개 */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <FiBook className="w-5 h-5 text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-4">Library</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT 교육, 기술과혁신 웹진 등 MOT 관련 자료 Repository</p>
+                  <h3 className="text-xl font-bold text-slate-900">Library</h3>
                 </div>
+                <Link href="/library" className="text-blue-600 hover:text-blue-700 transition-colors">
+                  <FiArrowRight className="w-5 h-5" />
+                </Link>
               </div>
-            </Link>
+              {loadingLatest ? (
+                <div className="text-center text-gray-400 py-8">로딩 중...</div>
+              ) : latestLibrary.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">등록된 자료가 없습니다.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {latestLibrary.map((item) => (
+                    <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
+                      <Link href={`/library/${item.id}`} className="block group">
+                        <h4 className="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-1">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{item.category}</span>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            {/* Learning Card */}
-            <Link href="/learning" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-green-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-500 transition-all duration-500">
-                    <FiUsers className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
+            {/* Learning - Program 최신 5개 */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <FiUsers className="w-5 h-5 text-green-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-green-600 transition-colors mb-4">Learning</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영(MOT) 교육과목 구성에 대한 전반적인 소개와 개설된 교육프로그램 소개</p>
+                  <h3 className="text-xl font-bold text-slate-900">Learning</h3>
                 </div>
+                <Link href="/learning" className="text-green-600 hover:text-green-700 transition-colors">
+                  <FiArrowRight className="w-5 h-5" />
+                </Link>
               </div>
-            </Link>
+              {loadingLatest ? (
+                <div className="text-center text-gray-400 py-8">로딩 중...</div>
+              ) : latestPrograms.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">등록된 Program이 없습니다.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {latestPrograms.map((item) => (
+                    <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
+                      <Link href="/learning" className="block group">
+                        <h4 className="text-sm font-medium text-slate-900 group-hover:text-green-600 transition-colors line-clamp-2">
+                          {item.code}: {item.description}
+                        </h4>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            {/* Q&A Card */}
-            <Link href="/qna" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-purple-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-500 transition-all duration-500">
-                    <FiMessageSquare className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors" />
+            {/* Research 최신 5개 */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <FiEdit3 className="w-5 h-5 text-amber-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-purple-600 transition-colors mb-4">Q&A</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">기술경영, R&D 시스템 관련한 다양한 이슈, 타사 사례 등에 대한 정보공유 장터</p>
+                  <h3 className="text-xl font-bold text-slate-900">Research</h3>
                 </div>
+                <Link href="/opinions" className="text-amber-600 hover:text-amber-700 transition-colors">
+                  <FiArrowRight className="w-5 h-5" />
+                </Link>
               </div>
-            </Link>
+              {loadingLatest ? (
+                <div className="text-center text-gray-400 py-8">로딩 중...</div>
+              ) : latestOpinions.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">등록된 기고가 없습니다.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {latestOpinions.map((item) => (
+                    <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
+                      <Link href={`/opinions/${item.id}`} className="block group">
+                        <h4 className="text-sm font-medium text-slate-900 group-hover:text-amber-600 transition-colors line-clamp-2 mb-1">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{item.category}</span>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-            {/* Dialogue Card */}
-            <Link href="/dialogue" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-blue-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-500">
-                    <FiMessageSquare className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
+            {/* Q&A 최신 5개 */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <FiMessageSquare className="w-5 h-5 text-purple-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-4">Dialogue</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">질문과 대답을 대화식으로 하는 공간으로 전문가들과 실시간 소통</p>
+                  <h3 className="text-xl font-bold text-slate-900">Q&A</h3>
                 </div>
+                <Link href="/qna" className="text-purple-600 hover:text-purple-700 transition-colors">
+                  <FiArrowRight className="w-5 h-5" />
+                </Link>
               </div>
-            </Link>
-
-            {/* Agora Card (was Opinions) */}
-            <Link href="/opinions" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-amber-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500 transition-all duration-500">
-                    <FiEdit3 className="w-8 h-8 text-amber-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-amber-600 transition-colors mb-4">Agora</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT/R&D 관련한 다양한 의견교환 및 Initiative 활동을 위한 토론마당</p>
-                </div>
-              </div>
-            </Link>
-
-            {/* Community Card (was News) - 숨김 처리 */}
-            {/* <Link href="/news" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-rose-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-rose-500 transition-all duration-500">
-                    <FiGlobe className="w-8 h-8 text-rose-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-rose-600 transition-colors mb-4">Community</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">공지사항, Library, Learning, Q&A, Agora 메뉴의 등록 정보 등 각종 새소식 공유 창</p>
-                </div>
-              </div>
-            </Link> */}
-
-            {/* Expert Card */}
-            <Link href="/expert" className="group">
-              <div className="relative bg-white rounded-3xl p-8 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-slate-100 overflow-hidden h-72 min-w-0">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <div className="relative h-full flex flex-col">
-                  <div className="w-16 h-16 bg-indigo-100 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 group-hover:bg-indigo-500 transition-all duration-500">
-                    <FiAward className="w-8 h-8 text-indigo-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-4">Expert</h3>
-                  <p className="text-base text-slate-600 group-hover:text-slate-900 transition-colors leading-relaxed flex-grow">MOT Club에 동참하여 실무적 경험과 지식을 나누며 함께 성장하는 전문가</p>
-                </div>
-              </div>
-            </Link>
+              {loadingLatest ? (
+                <div className="text-center text-gray-400 py-8">로딩 중...</div>
+              ) : latestQuestions.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">등록된 질문이 없습니다.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {latestQuestions.map((item) => (
+                    <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
+                      <Link href={`/qna/${item.id}`} className="block group">
+                        <h4 className="text-sm font-medium text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2 mb-1">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{item.authorName}</span>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </div>

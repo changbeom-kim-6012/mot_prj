@@ -1,13 +1,14 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip, FiCalendar, FiTag, FiUpload, FiTrash2, FiDownload } from 'react-icons/fi';
+import { FiSearch, FiBookOpen, FiFileText, FiX, FiList, FiUser, FiPaperclip, FiCalendar, FiTag, FiUpload, FiTrash2, FiDownload, FiMessageSquare } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import FileViewer from '@/components/common/FileViewer';
+import InquiryListModal from '@/components/inquiries/InquiryListModal';
 import { getApiUrl } from '@/config/api';
 
 interface Article {
@@ -46,8 +47,10 @@ export default function OpinionsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [motStudyCategories, setMotStudyCategories] = useState<Category[]>([]);
+  const [researchCategories, setResearchCategories] = useState<Category[]>([]);
+  const [selectedMotStudyCategory, setSelectedMotStudyCategory] = useState('');
+  const [selectedResearchCategory, setSelectedResearchCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [attachments, setAttachments] = useState<{ [key: number]: Attachment[] }>({});
@@ -55,6 +58,60 @@ export default function OpinionsPage() {
   const [detailAttachments, setDetailAttachments] = useState<Attachment[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
+  
+  // 문의/요청 이력 모달 상태
+  const [inquiryListModalOpen, setInquiryListModalOpen] = useState(false);
+  
+  // 문의/요청 건수 상태 (articleId -> { inquiryCount: number, responseCount: number })
+  const [articleInquiryCounts, setArticleInquiryCounts] = useState<{ [key: number]: { inquiryCount: number; responseCount: number } }>({});
+
+  // Research 문의/요청 건수 조회 함수
+  const fetchArticleInquiryCounts = async (items: Article[]) => {
+    const counts: { [key: number]: { inquiryCount: number; responseCount: number } } = {};
+    
+    await Promise.all(
+      items.map(async (item) => {
+        try {
+          const url = getApiUrl(`/api/inquiries?refTable=opinions&refId=${item.id}`);
+          const response = await fetch(url);
+          
+          if (response.ok) {
+            const inquiries: any[] = await response.json();
+            const inquiryCount = inquiries.length;
+            
+            let responseCount = 0;
+            for (const inquiry of inquiries) {
+              if (inquiry.responses && Array.isArray(inquiry.responses) && inquiry.responses.length > 0) {
+                responseCount++;
+              } else {
+                try {
+                  const responseUrl = getApiUrl(`/api/inquiries/${inquiry.id}/responses`);
+                  const responseRes = await fetch(responseUrl);
+                  if (responseRes.ok) {
+                    const responses = await responseRes.json();
+                    if (responses && responses.length > 0) {
+                      responseCount++;
+                    }
+                  }
+                } catch (err) {
+                  console.error(`응답 조회 실패 (inquiry ${inquiry.id}):`, err);
+                }
+              }
+            }
+            
+            counts[item.id] = { inquiryCount, responseCount };
+          } else {
+            counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+          }
+        } catch (error) {
+          console.error(`문의/요청 건수 조회 실패 (article ${item.id}):`, error);
+          counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+        }
+      })
+    );
+    
+    setArticleInquiryCounts(counts);
+  };
   
   // 페이징 상태
   const [currentPage, setCurrentPage] = useState(0);
@@ -106,6 +163,9 @@ export default function OpinionsPage() {
         setArticles(sortedArticles);
         setFilteredArticles(sortedArticles); // 최초 전체 목록
         
+        // 문의/요청 건수 조회
+        fetchArticleInquiryCounts(sortedArticles);
+        
         // 초기 페이징 정보 설정
         const totalPages = Math.ceil(filteredArticles.length / pageSize);
         setTotalPages(totalPages);
@@ -150,36 +210,75 @@ export default function OpinionsPage() {
 
   // 자동 검색 제거 - 엔터키나 검색버튼 클릭 시에만 검색
 
-  // Agora 카테고리 불러오기
+  // MOT Study와 Research분야 카테고리 불러오기
   useEffect(() => {
-    console.log('Fetching categories from API...');
-    fetch(getApiUrl('/api/codes/agora-details'), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    })
-      .then(res => {
-        console.log('Category API response status:', res.status);
-        console.log('Category API response headers:', res.headers);
-        return res.json();
-      })
-      .then(data => {
-        console.log('Category API data:', data);
-        if (Array.isArray(data)) {
-          const categoryList = data.map((c:any) => ({ id: c.id, name: c.codeName }));
-          console.log('Processed categories:', categoryList);
-          setCategories(categoryList);
+    const fetchCategories = async () => {
+      try {
+        console.log('Fetching Research categories from API...');
+        const response = await fetch(getApiUrl('/api/codes?menuName=Research'));
+        if (response.ok) {
+          const allCodes = await response.json();
+          console.log('Research 공통코드 전체 데이터:', allCodes);
+          
+          // Research 메뉴의 1단계 코드 찾기
+          const researchMaster = allCodes.find((code: any) => 
+            code.menuName === 'Research' && !code.parentId
+          );
+          
+          if (researchMaster) {
+            // MOT Study 2단계 코드 찾기
+            const motStudyLevel2 = researchMaster.children?.find((code: any) => 
+              code.codeName === 'MOT Study'
+            );
+            
+            // Research분야 2단계 코드 찾기
+            const researchLevel2 = researchMaster.children?.find((code: any) => 
+              code.codeName === 'Research분야'
+            );
+            
+            // MOT Study의 3단계 카테고리 불러오기
+            if (motStudyLevel2 && motStudyLevel2.children) {
+              const motStudyLevel3 = motStudyLevel2.children
+                .filter((code: any) => code.menuName === 'Research')
+                .sort((a: any, b: any) => {
+                  const sortA = a.sortOrder != null ? a.sortOrder : 999;
+                  const sortB = b.sortOrder != null ? b.sortOrder : 999;
+                  return sortA - sortB;
+                });
+              setMotStudyCategories(motStudyLevel3.map((c: any) => ({ id: c.id, name: c.codeName })));
+            } else {
+              setMotStudyCategories([]);
+            }
+            
+            // Research분야의 3단계 카테고리 불러오기
+            if (researchLevel2 && researchLevel2.children) {
+              const researchLevel3 = researchLevel2.children
+                .filter((code: any) => code.menuName === 'Research')
+                .sort((a: any, b: any) => {
+                  const sortA = a.sortOrder != null ? a.sortOrder : 999;
+                  const sortB = b.sortOrder != null ? b.sortOrder : 999;
+                  return sortA - sortB;
+                });
+              setResearchCategories(researchLevel3.map((c: any) => ({ id: c.id, name: c.codeName })));
+            } else {
+              setResearchCategories([]);
+            }
+          }
+        } else {
+          console.error('Category API response failed:', response.status, response.statusText);
+          setMotStudyCategories([]);
+          setResearchCategories([]);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching categories:', error);
-        setCategories([]);
-      });
+        setMotStudyCategories([]);
+        setResearchCategories([]);
+      }
+    };
+    fetchCategories();
   }, []);
 
-  // 검색 및 필터링
+  // 검색 및 필터링 (AND 조건)
   const handleSearch = () => {
     // 먼저 현재 로그인 상태에 맞게 전체 articles를 다시 필터링
     const currentUserArticles = articles.filter(article => {
@@ -194,16 +293,47 @@ export default function OpinionsPage() {
       return false;
     });
 
-    // 그 다음 검색 및 카테고리 필터링 적용
+    // 그 다음 검색 및 카테고리 필터링 적용 (AND 조건)
     const filtered = currentUserArticles.filter(article => {
+      // 검색어 조건 (OR 조건: 제목, 초록, 저자, 키워드, 전문 중 하나라도 포함)
       const matchesSearch = searchTerm.trim() === '' || 
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         article.abstractText.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.authorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         article.keywords.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (article.fullText && article.fullText.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesCategory = !selectedCategory || article.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      
+      // 카테고리 조건 (AND 조건: MOT Study와 Research분야 모두 일치해야 함)
+      let matchesMotStudyCategory = true;
+      let matchesResearchCategory = true;
+      
+      if (selectedMotStudyCategory) {
+        // article.category 또는 motStudyCategory 필드 확인
+        const articleMotStudy = (article as any).motStudyCategory || '';
+        const categoryMotStudy = article.category?.split(' / ')[0] || '';
+        matchesMotStudyCategory = articleMotStudy === selectedMotStudyCategory || 
+                                  categoryMotStudy === selectedMotStudyCategory;
+      }
+      
+      if (selectedResearchCategory) {
+        // article.category 또는 researchCategory 필드 확인
+        const articleResearch = (article as any).researchCategory || '';
+        let categoryResearch = article.category?.split(' / ')[1] || '';
+        // "기타 > 내용" 형식 처리
+        if (categoryResearch.includes(' > ')) {
+          categoryResearch = categoryResearch.split(' > ')[0];
+        }
+        // selectedResearchCategory가 "기타"인 경우 "기타"로 시작하는지 확인
+        if (selectedResearchCategory === '기타') {
+          matchesResearchCategory = articleResearch.startsWith('기타') || categoryResearch === '기타';
+        } else {
+          matchesResearchCategory = articleResearch === selectedResearchCategory || 
+                                    categoryResearch === selectedResearchCategory;
+        }
+      }
+      
+      // AND 조건: 검색어 AND MOT Study 카테고리 AND Research분야 카테고리
+      return matchesSearch && matchesMotStudyCategory && matchesResearchCategory;
     });
     
     // 임시저장된 기고를 맨 앞으로 정렬
@@ -522,31 +652,33 @@ export default function OpinionsPage() {
       <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-amber-800 to-amber-900 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#d97706,#f59e0b)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-600 via-amber-500 to-amber-600 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#d97706,#f59e0b)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto py-[19px] px-4 sm:px-6 lg:px-8">
+          <div className="relative py-[19px] px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
               <FiBookOpen className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">논단, 칼럼, 시선 공유</h1>
+            <h1 className="text-2xl font-bold text-white">Research Reports, Book Reviews, Media Reviews, Opinions</h1>
           </div>
                      <p className="text-base text-amber-100 max-w-[1150px] text-right">
              R&D 및 MOT 관련하여 다양한 주제에 대해서<br/>
              다양한 분야의 전문가가 각자의 관점에서 다채롭게 전개하는 의견을 공유하는 광장입니다.
            </p>
+          </div>
         </div>
       </div>
 
@@ -558,73 +690,90 @@ export default function OpinionsPage() {
           transition={{ duration: 0.5 }}
           className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
         >
-          <div className="flex items-center gap-4">
-            {/* 카테고리 선택 */}
-            <div className="w-48">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full h-10 pl-3 pr-6 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              >
-                <option value="">모든 카테고리</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* 제목/키워드 선택, 단어검색, 검색 버튼을 중앙정렬 */}
-            <div className="flex-1 flex justify-center items-center gap-4">
-              {/* <div className="w-32">
-                <select 
+          <div className="flex justify-between items-center gap-4">
+            {/* 왼쪽: 필터 및 검색 */}
+            <div className="flex items-center gap-4 flex-1">
+              {/* 자료 유형 선택 */}
+              <div className="w-48">
+                <select
+                  value={selectedMotStudyCategory}
+                  onChange={(e) => setSelectedMotStudyCategory(e.target.value)}
                   className="w-full h-10 pl-3 pr-6 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  defaultValue="title"
                 >
-                  {searchTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                  <option value="">자료 유형</option>
+                  {motStudyCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
-              </div> */}
-              <div className="relative w-1/3">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch();
-                    }
-                  }}
-                  className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  placeholder="검색어를 입력하세요"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-4 w-4 text-gray-400" />
-                </div>
               </div>
-              <button 
-                onClick={handleSearch}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-              >
-                <FiSearch className="mr-2 h-4 w-4" />
-                검색
-              </button>
+              
+              {/* MOT 카테고리 선택 */}
+              <div className="w-48">
+                <select
+                  value={selectedResearchCategory}
+                  onChange={(e) => setSelectedResearchCategory(e.target.value)}
+                  className="w-full h-10 pl-3 pr-6 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="">MOT 카테고리</option>
+                  {researchCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* 제목/키워드 선택, 단어검색, 검색 버튼을 중앙정렬 */}
+              <div className="flex-1 flex justify-center items-center gap-4">
+                {/* <div className="w-32">
+                  <select 
+                    className="w-full h-10 pl-3 pr-6 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    defaultValue="title"
+                  >
+                    {searchTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div> */}
+                <div className="relative w-1/3">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    className="w-full h-10 pl-10 pr-4 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="검색어를 입력하세요"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiSearch className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+                <button 
+                  onClick={handleSearch}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                >
+                  <FiSearch className="mr-2 h-4 w-4" />
+                  검색
+                </button>
+              </div>
             </div>
             
-            {/* Opinion 등록 버튼 (현재 위치 그대로) */}
-            <div>
+            {/* 오른쪽: 자료등록 버튼 (리스트 버튼과 같은 라인에 정렬) */}
+            <div className="ml-[14.4px]">
               {user && (user.role === 'EXPERT' || user.role === 'ADMIN') ? (
                 <Link href="/opinions/register">
                   <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
                     <FiBookOpen className="mr-2 h-4 w-4" />
-                    Opinion 등록
+                    연구자료등록
                   </button>
                 </Link>
               ) : (
                 <div className="relative group">
                   <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed">
                     <FiBookOpen className="mr-2 h-4 w-4" />
-                    Opinion 등록
+                    연구자료등록
                   </button>
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
                     {!user ? '로그인 후 작성할 수 있습니다' : '전문가 또는 관리자만 작성할 수 있습니다'}
@@ -648,7 +797,7 @@ export default function OpinionsPage() {
           ) : error ? (
             <div className="text-center text-red-500 py-12">{error}</div>
           ) : filteredArticles.length === 0 ? (
-            <div className="text-center text-gray-400 py-12">등록된 Agora가 없습니다.</div>
+            <div className="text-center text-gray-400 py-12">등록된 Research가 없습니다.</div>
           ) : (() => {
             // 현재 페이지에 해당하는 기고만 표시
             const startIndex = currentPage * pageSize;
@@ -701,51 +850,59 @@ export default function OpinionsPage() {
                 </div>
                 
                   {/* 오른쪽: 버튼들 */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    {/* 임시저장된 기고는 수정 버튼 표시 */}
-                    {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
-                      <Link href={`/opinions/register?edit=${article.id}`}>
-                        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
-                          <FiUser className="mr-2 h-4 w-4" />
-                          계속 작성
-                        </button>
-                      </Link>
-                    ) : (
-                      /* 승인된 기고는 기존 버튼들 표시 */
-                      <button 
-                        onClick={() => handleAbstractView(article)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                      >
-                        <FiFileText className="mr-2 h-4 w-4" />
-                        초록/요약 보기
-                      </button>
+                  <div className="flex flex-col items-end space-y-2 ml-4">
+                    {/* 문의/요청 건수 표시 */}
+                    {articleInquiryCounts[article.id] && articleInquiryCounts[article.id].inquiryCount > 0 && (
+                      <span className="text-sm text-gray-600">
+                        문의/요청 : {articleInquiryCounts[article.id].responseCount}/{articleInquiryCounts[article.id].inquiryCount}
+                      </span>
                     )}
-                    {/* 임시저장된 기고가 아니고 전문이 있는 경우에만 전문 보기 버튼 표시 */}
-                    {article.status !== '임시저장' && article.fullText && (
-                      isAuthenticated && user ? (
-                        <button 
-                          onClick={() => handleFullTextView(article)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                        >
-                          <FiList className="mr-2 h-4 w-4" />
-                          전문 보기
-                        </button>
+                    <div className="flex items-center space-x-2">
+                      {/* 임시저장된 기고는 수정 버튼 표시 */}
+                      {article.status === '임시저장' && isAuthenticated && user && article.authorName.includes(user.email) ? (
+                        <Link href={`/opinions/register?edit=${article.id}`}>
+                          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
+                            <FiUser className="mr-2 h-4 w-4" />
+                            계속 작성
+                          </button>
+                        </Link>
                       ) : (
-                        <div className="relative group">
+                        /* 승인된 기고는 기존 버튼들 표시 */
+                        <button 
+                          onClick={() => handleAbstractView(article)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                        >
+                          <FiFileText className="mr-2 h-4 w-4" />
+                          초록/요약 보기
+                        </button>
+                      )}
+                      {/* 임시저장된 기고가 아니고 전문이 있는 경우에만 전문 보기 버튼 표시 */}
+                      {article.status !== '임시저장' && article.fullText && (
+                        isAuthenticated && user ? (
                           <button 
-                            disabled
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                            onClick={() => handleFullTextView(article)}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                           >
                             <FiList className="mr-2 h-4 w-4" />
                             전문 보기
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
-                            로그인 후 확인할 수 있습니다
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        ) : (
+                          <div className="relative group">
+                            <button 
+                              disabled
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-400 cursor-not-allowed"
+                            >
+                              <FiList className="mr-2 h-4 w-4" />
+                              전문 보기
+                            </button>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-50 pointer-events-none">
+                              로그인 후 확인할 수 있습니다
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    )}
+                        )
+                      )}
+                    </div>
                   </div>
               </div>
             </motion.div>
@@ -1137,17 +1294,29 @@ export default function OpinionsPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setSelectedArticleDetail(null);
-                    setDetailAttachments([]);
-                    setSelectedFileForUpload(null);
-                  }}
-                  className="text-white hover:text-gray-200 transition-colors duration-200"
-                >
-                  <FiX className="h-6 w-6" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* 관련 자료 문의/요청 버튼 */}
+                  {isAuthenticated && user && (
+                    <button
+                      onClick={() => setInquiryListModalOpen(true)}
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <FiMessageSquare className="w-4 h-4 mr-2" />
+                      관련 자료 문의/요청
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      setSelectedArticleDetail(null);
+                      setDetailAttachments([]);
+                      setSelectedFileForUpload(null);
+                    }}
+                    className="text-white hover:text-gray-200 transition-colors duration-200"
+                  >
+                    <FiX className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1317,7 +1486,7 @@ export default function OpinionsPage() {
             </div>
 
             {/* 모달 푸터 */}
-            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+            <div className="bg-gray-50 px-6 py-4 flex justify-end">
               <button
                 onClick={() => {
                   setShowDetailModal(false);
@@ -1332,6 +1501,18 @@ export default function OpinionsPage() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* 문의/요청 이력 모달 */}
+      {inquiryListModalOpen && selectedArticleDetail && user && (
+        <InquiryListModal
+          isOpen={inquiryListModalOpen}
+          onClose={() => setInquiryListModalOpen(false)}
+          refTable="opinions"
+          refId={selectedArticleDetail.id}
+          refTitle={selectedArticleDetail.title}
+          userEmail={user.email}
+        />
       )}
       </div>
     </main>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FiSave, FiArrowLeft, FiUpload, FiPaperclip, FiX, FiEye, FiDownload } from 'react-icons/fi';
+import { FiSave, FiArrowLeft, FiUpload, FiPaperclip, FiX, FiEye, FiDownload, FiSearch } from 'react-icons/fi';
 import { CodeSelectWithEtc } from '@/components/common/CodeSelectWithEtc';
 import { useAuth } from '@/context/AuthContext';
 import { getApiUrl } from '@/config/api';
+import KeywordSelectorModal from '@/components/common/KeywordSelectorModal';
 
 interface LibraryItem {
   id: number;
@@ -53,6 +54,7 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
   const [deletedFileNames, setDeletedFileNames] = useState<string[]>([]);
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -375,7 +377,7 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
           <label className="block text-base font-bold text-gray-700 mb-2">
             키워드
           </label>
-          <div className="pl-4">
+          <div className="pl-4 flex gap-2">
             <input
               type="text"
               name="keywords"
@@ -383,11 +385,24 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
               disabled={!canEdit}
-              className={`block w-full p-3 border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+              className={`block flex-1 p-3 border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                 canEdit ? 'bg-white' : 'bg-gray-100 cursor-not-allowed'
               }`}
               placeholder="쉼표(,)로 구분하여 키워드를 입력하세요"
             />
+            <button
+              type="button"
+              onClick={() => setShowKeywordModal(true)}
+              disabled={!canEdit}
+              className={`inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                canEdit
+                  ? 'text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                  : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+              }`}
+            >
+              <FiSearch className="w-4 h-4 mr-2" />
+              키워드 조회
+            </button>
           </div>
         </div>
 
@@ -695,10 +710,19 @@ export default function RegisterLibraryItemForm({ editItem, onClose, onSuccess }
                   취소
                 </button>
               </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* 키워드 선택 모달 */}
+        <KeywordSelectorModal
+          isOpen={showKeywordModal}
+          onClose={() => setShowKeywordModal(false)}
+          menuType="Library"
+          currentKeywords={keywords}
+          onSelectKeywords={(selectedKeywords) => setKeywords(selectedKeywords)}
+        />
     </div>
   );
 }

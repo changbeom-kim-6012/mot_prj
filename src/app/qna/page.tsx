@@ -12,6 +12,7 @@ import { apiGet, apiPost, apiDelete } from '@/utils/api';
 import { API_CONFIG } from '@/config/api';
 import FileViewer from '@/components/common/FileViewer';
 import { getApiUrl } from '@/config/api';
+import AllInquiriesModal from '@/components/inquiries/AllInquiriesModal';
 
 interface Question {
   id: number;
@@ -87,16 +88,86 @@ export default function QnaPage() {
   // 파일 뷰어 상태
   const [selectedFile, setSelectedFile] = useState<{ url: string; name: string } | null>(null);
 
-  // 카테고리 불러오기 (Library 패턴과 동일)
-  useEffect(() => {
-    apiGet(API_CONFIG.ENDPOINTS.QUESTION_CATEGORIES)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setCategories(data.map((c:any) => ({ id: c.id, name: c.codeName })));
+  // 전체 문의/요청 모달 상태
+  const [allInquiriesModalOpen, setAllInquiriesModalOpen] = useState(false);
+  
+  // 문의/요청 건수 상태 (questionId -> { inquiryCount: number, responseCount: number })
+  const [questionInquiryCounts, setQuestionInquiryCounts] = useState<{ [key: number]: { inquiryCount: number; responseCount: number } }>({});
+
+  // Q&A 문의/요청 건수 조회 함수
+  const fetchQuestionInquiryCounts = async (items: Question[]) => {
+    const counts: { [key: number]: { inquiryCount: number; responseCount: number } } = {};
+    
+    await Promise.all(
+      items.map(async (item) => {
+        try {
+          const url = getApiUrl(`/api/inquiries?refTable=questions&refId=${item.id}`);
+          const response = await fetch(url);
+          
+          if (response.ok) {
+            const inquiries: any[] = await response.json();
+            const inquiryCount = inquiries.length;
+            
+            let responseCount = 0;
+            for (const inquiry of inquiries) {
+              if (inquiry.responses && Array.isArray(inquiry.responses) && inquiry.responses.length > 0) {
+                responseCount++;
+              } else {
+                try {
+                  const responseUrl = getApiUrl(`/api/inquiries/${inquiry.id}/responses`);
+                  const responseRes = await fetch(responseUrl);
+                  if (responseRes.ok) {
+                    const responses = await responseRes.json();
+                    if (responses && responses.length > 0) {
+                      responseCount++;
+                    }
+                  }
+                } catch (err) {
+                  console.error(`응답 조회 실패 (inquiry ${inquiry.id}):`, err);
+                }
+              }
+            }
+            
+            counts[item.id] = { inquiryCount, responseCount };
+          } else {
+            counts[item.id] = { inquiryCount: 0, responseCount: 0 };
+          }
+        } catch (error) {
+          console.error(`문의/요청 건수 조회 실패 (question ${item.id}):`, error);
+          counts[item.id] = { inquiryCount: 0, responseCount: 0 };
         }
       })
-      .catch(() => setCategories([]));
+    );
+    
+    setQuestionInquiryCounts(counts);
+  };
+
+  // 카테고리 불러오기
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/codes/qna-details');
+        if (!response.ok) {
+          console.error('카테고리 API 응답 실패:', response.status, response.statusText);
+          setCategories([]);
+          return;
+        }
+        const data = await response.json();
+        console.log('Category API data:', data);
+        if (Array.isArray(data)) {
+          const categoryList = data.map((c: any) => ({ id: c.id, name: c.codeName }));
+          setCategories(categoryList);
+          console.log('카테고리 목록 로드 완료:', categoryList.length, '개');
+        } else {
+          console.warn('카테고리 데이터가 배열이 아닙니다:', data);
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error('카테고리 조회 실패:', error);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
   }, []);
 
   // 질문 목록 불러오기 (한 번만 실행)
@@ -137,6 +208,8 @@ export default function QnaPage() {
         setFilteredQuestions(processedData);
         setTotalElements(processedData.length);
         setTotalPages(Math.ceil(processedData.length / pageSize));
+        // 문의/요청 건수 조회
+        fetchQuestionInquiryCounts(processedData);
       } else {
         const errorText = await response.text();
         console.error('질문 목록 조회 실패:', response.status, response.statusText);
@@ -319,6 +392,8 @@ export default function QnaPage() {
         setFilteredQuestions(processedData);
         setTotalElements(processedData.length);
         setTotalPages(Math.ceil(processedData.length / pageSize));
+        // 문의/요청 건수 조회
+        fetchQuestionInquiryCounts(processedData);
       } else {
         const errorText = await response.text();
         console.error('카테고리별 질문 목록 조회 실패:', response.status, response.statusText);
@@ -631,31 +706,45 @@ export default function QnaPage() {
       <div className="pt-28">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-800 to-purple-900 text-white">
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#9333ea,#7c3aed)] opacity-30">
-            <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                  <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)"></rect>
-            </svg>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-[19px]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
-              <FiMessageSquare className="w-6 h-6 text-white" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-600 via-purple-500 to-purple-600 text-white rounded-2xl">
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#9333ea,#7c3aed)] opacity-30">
+              <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M0 32V.5H32" fill="none" stroke="rgba(255,255,255,0.1)"></path>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"></rect>
+              </svg>
             </div>
-            <h1 className="text-[24px] font-bold text-white">질문방</h1>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+          </div>
+          <div className="relative px-4 sm:px-6 lg:px-8 py-[19px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                <FiMessageSquare className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-[24px] font-bold text-white">MOT Q&A Archive</h1>
+            </div>
+            {/* 관리자/전문가용 문의/요청 통합관리 버튼 */}
+            {(user?.role === 'ADMIN' || user?.role === 'EXPERT') && (
+              <button
+                onClick={() => setAllInquiriesModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                <FiMessageSquare className="w-4 h-4 mr-2" />
+                문의/요청 통합관리
+              </button>
+            )}
           </div>
           <p className="text-base text-purple-50 max-w-[1150px] text-right">
             R&D 기획 및 관리 업무 관련하여 기업내 이슈 및 타사 사례등 궁금한 사항을 문의하고<br/>
             다양한 분야의 실무 경험과 지식을 갖춘 MOT 전문가의 답변을 받을 수 있는 Q&A 광장입니다.
           </p>
+          </div>
         </div>
       </div>
 
@@ -756,21 +845,29 @@ export default function QnaPage() {
                 <div key={question.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        {/* 상태 태그 숨김 처리 */}
-                        {/* <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
-                          {getStatusText(question.status)}
-                        </span> */}
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {question.category1}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          question.isPublic 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {question.isPublic ? '공개' : '비공개'}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          {/* 상태 태그 숨김 처리 */}
+                          {/* <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(question.status)}`}>
+                            {getStatusText(question.status)}
+                          </span> */}
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {question.category1}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            question.isPublic 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {question.isPublic ? '공개' : '비공개'}
+                          </span>
+                        </div>
+                        {/* 문의/요청 건수 표시 */}
+                        {questionInquiryCounts[question.id] && questionInquiryCounts[question.id].inquiryCount > 0 && (
+                          <span className="text-sm text-gray-600">
+                            문의/요청 : {questionInquiryCounts[question.id].responseCount}/{questionInquiryCounts[question.id].inquiryCount}
+                          </span>
+                        )}
                       </div>
                       
                       <div 
@@ -852,10 +949,9 @@ export default function QnaPage() {
                 <h3 className="text-lg font-medium text-gray-900">Q&A 상세</h3>
                 <button 
                   onClick={handleCloseDetailModal} 
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <FiArrowLeft className="w-4 h-4 mr-2" />
-                  목록으로 돌아가기
+                  <FiX className="w-6 h-6" />
                 </button>
               </div>
               
@@ -1213,6 +1309,14 @@ export default function QnaPage() {
           fileUrl={selectedFile.url}
           fileName={selectedFile.name}
           onClose={handleCloseFileViewer}
+        />
+      )}
+
+      {/* 전체 문의/요청 모달 */}
+      {allInquiriesModalOpen && (
+        <AllInquiriesModal
+          isOpen={allInquiriesModalOpen}
+          onClose={() => setAllInquiriesModalOpen(false)}
         />
       )}
     </main>

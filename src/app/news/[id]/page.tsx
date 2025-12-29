@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
-import { FiArrowLeft, FiFileText, FiDownload, FiEye, FiCalendar, FiUser, FiTag, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiFileText, FiDownload, FiEye, FiCalendar, FiUser, FiTag, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
@@ -137,9 +137,9 @@ export default function NewsDetailPage() {
             <p className="text-gray-600 mb-6">요청하신 뉴스가 존재하지 않거나 삭제되었습니다.</p>
             <button
               onClick={handleBack}
-              className="px-6 py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors duration-200"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              목록으로 돌아가기
+              <FiX className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -157,10 +157,9 @@ export default function NewsDetailPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={handleBack}
-          className="inline-flex items-center mb-6 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+          className="text-gray-400 hover:text-gray-600 transition-colors mb-6"
         >
-          <FiArrowLeft className="mr-2 h-4 w-4" />
-          목록으로 돌아가기
+          <FiX className="w-6 h-6" />
         </motion.button>
 
         {/* News Content */}
@@ -293,10 +292,9 @@ export default function NewsDetailPage() {
         >
           <button
             onClick={handleBack}
-            className="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors duration-200"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <FiArrowLeft className="mr-2 h-4 w-4" />
-            목록으로 돌아가기
+            <FiX className="w-6 h-6" />
           </button>
         </motion.div>
       </div>
