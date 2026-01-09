@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FiX, FiSearch, FiBook, FiUsers, FiMessageSquare, FiEdit3, FiFileText, FiCalendar, FiUser, FiDatabase } from 'react-icons/fi';
-import Link from 'next/link';
 import KeywordTableModal from './KeywordTableModal';
+import SearchDetailModal from './SearchDetailModal';
+import { searchUnified, UnifiedSearchResult, SearchItem } from '@/utils/unifiedSearchApi';
 
 interface UnifiedSearchModalProps {
   isOpen: boolean;
@@ -31,6 +32,11 @@ export default function UnifiedSearchModal({
   const [activeTab, setActiveTab] = useState<TabType>('Library');
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [showKeywordTableModal, setShowKeywordTableModal] = useState(false);
+  const [searchResults, setSearchResults] = useState<UnifiedSearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<{ category: TabType; id: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -41,84 +47,37 @@ export default function UnifiedSearchModal({
 
   useEffect(() => {
     setSearchQuery(initialQuery);
-  }, [initialQuery]);
+    // 모달이 열릴 때 검색 결과 초기화
+    if (isOpen && !initialQuery) {
+      setSearchResults([]);
+      setError(null);
+    }
+  }, [initialQuery, isOpen]);
+
+  // 검색 실행
+  const performSearch = async (query: string) => {
+    if (!query || !query.trim()) {
+      setSearchResults([]);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const results = await searchUnified(query.trim());
+      setSearchResults(results);
+    } catch (err) {
+      console.error('검색 오류:', err);
+      setError('검색 중 오류가 발생했습니다.');
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
-
-  // TODO: 실제 검색 API 연동 시 사용
-  const mockResults: Record<TabType, SearchResult[]> = {
-    'Library': [
-      {
-        id: 1,
-        title: '외부 교육자료 샘플 데이터',
-        description: '외부 교육자료 샘플 데이터 설명',
-        category: '기타 - 외부 교육자료',
-        author: 'guest23',
-        date: '2025.09.09',
-        href: '/library'
-      },
-      {
-        id: 2,
-        title: 'KOITA MOT 기술경영 부서장 교육 25년 9월',
-        description: '기술경영 부서장 교육 자료',
-        category: '기타 - 외부 교육자료',
-        author: 'admin',
-        date: '2025.09.10',
-        href: '/library'
-      }
-    ],
-    'Learning': [
-      {
-        id: 1,
-        title: 'z-10: 집에서 개발 테스트용 DB 확인용',
-        description: '개발 테스트용 학습 자료',
-        category: '기초 과정',
-        author: 'admin',
-        date: '2025.09.08',
-        href: '/learning'
-      }
-    ],
-    'Research': [
-      {
-        id: 1,
-        title: '기술전략수립과 기술로드맵의 활용',
-        description: '기술전략 수립 방법론 및 로드맵 활용에 대한 연구',
-        category: '기술전략',
-        author: '연구자1',
-        date: '2025.09.05',
-        href: '/opinions'
-      },
-      {
-        id: 2,
-        title: '기업의 환경분석 개념, 방법론 및 활용',
-        description: '기업 환경분석에 대한 개념과 방법론',
-        category: '환경분석',
-        author: '연구자2',
-        date: '2025.09.06',
-        href: '/opinions'
-      }
-    ],
-    'Q&A': [
-      {
-        id: 1,
-        title: 'R&D 관리체계의 혁신을 위한 접근 방법 (중견기업)',
-        description: '중견기업의 R&D 관리체계 혁신에 대한 질문',
-        category: 'R&D 관리',
-        author: 'user@example.com',
-        date: '2025.09.07',
-        href: '/qna'
-      },
-      {
-        id: 2,
-        title: '기술로드맵의 전개시 Layer의 구성 방법',
-        description: '기술로드맵 Layer 구성에 대한 질문',
-        category: '기술로드맵',
-        author: 'user2@example.com',
-        date: '2025.09.08',
-        href: '/qna'
-      }
-    ]
-  };
 
   const tabs: TabType[] = ['Library', 'Learning', 'Research', 'Q&A'];
   const tabIcons = {
@@ -134,11 +93,42 @@ export default function UnifiedSearchModal({
     'Q&A': 'text-violet-600 border-violet-600'
   };
 
-  const results = mockResults[activeTab];
+  // 현재 탭의 검색 결과 가져오기
+  const currentTabResult = searchResults.find(result => result.category === activeTab);
+  const results: SearchResult[] = currentTabResult?.items.map(item => {
+    let formattedDate: string | undefined;
+    if (item.createdAt) {
+      try {
+        const date = new Date(item.createdAt);
+        formattedDate = date.toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\./g, '.').replace(/\s/g, '');
+      } catch (e) {
+        formattedDate = undefined;
+      }
+    }
+    
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      author: item.author,
+      date: formattedDate,
+      href: item.href
+    };
+  }) || [];
+
+  const handleItemClick = (category: TabType, id: number) => {
+    setSelectedDetail({ category, id });
+    setDetailModalOpen(true);
+  };
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-      <div className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full h-[90vh] overflow-hidden flex flex-col">
         {/* 헤더 */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
           <div className="flex items-center justify-between mb-4">
@@ -164,8 +154,8 @@ export default function UnifiedSearchModal({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    // TODO: 검색 실행
                     e.preventDefault();
+                    performSearch(searchQuery);
                   }
                 }}
                 placeholder="검색어를 입력하세요..."
@@ -177,13 +167,9 @@ export default function UnifiedSearchModal({
             </div>
             {/* 검색 버튼 */}
             <button
-              onClick={() => {
-                // TODO: 검색 실행
-                if (searchQuery.trim()) {
-                  // 검색 로직 실행
-                }
-              }}
-              className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              onClick={() => performSearch(searchQuery)}
+              disabled={isLoading}
+              className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiSearch className="w-4 h-4 mr-2" />
               검색
@@ -222,14 +208,18 @@ export default function UnifiedSearchModal({
                   <div className="flex items-center gap-2">
                     <Icon className="w-4 h-4" />
                     <span>{tab}</span>
-                    {results.length > 0 && (
-                      <span className={`
-                        ml-2 px-2 py-0.5 rounded-full text-xs
-                        ${isActive ? 'bg-gray-100 text-gray-700' : 'bg-gray-200 text-gray-600'}
-                      `}>
-                        {results.length}
-                      </span>
-                    )}
+                    {(() => {
+                      const tabResult = searchResults.find(r => r.category === tab);
+                      const count = tabResult?.items.length || 0;
+                      return count > 0 ? (
+                        <span className={`
+                          ml-2 px-2 py-0.5 rounded-full text-xs
+                          ${isActive ? 'bg-gray-100 text-gray-700' : 'bg-gray-200 text-gray-600'}
+                        `}>
+                          {count}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 </button>
               );
@@ -239,7 +229,19 @@ export default function UnifiedSearchModal({
 
         {/* 검색 결과 영역 */}
         <div className="flex-1 overflow-y-auto p-6">
-          {!searchQuery.trim() ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-500 text-lg">검색 중...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiSearch className="w-8 h-8 text-red-400" />
+              </div>
+              <p className="text-red-500 text-lg">{error}</p>
+            </div>
+          ) : !searchQuery.trim() ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FiSearch className="w-8 h-8 text-gray-400" />
@@ -258,10 +260,9 @@ export default function UnifiedSearchModal({
           ) : (
             <div className="space-y-4">
               {results.map((result) => (
-                <Link
+                <div
                   key={result.id}
-                  href={result.href}
-                  onClick={onClose}
+                  onClick={() => handleItemClick(activeTab, result.id)}
                   className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
@@ -298,7 +299,7 @@ export default function UnifiedSearchModal({
                       <FiFileText className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
@@ -306,16 +307,16 @@ export default function UnifiedSearchModal({
 
         {/* 푸터 */}
         <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <div className="flex items-center gap-4">
-              {searchQuery.trim() && (
-                <>
-                  <span>전체 결과: {Object.values(mockResults).flat().length}개</span>
-                  <span className="text-gray-400">|</span>
-                  <span>{activeTab} 결과: {results.length}개</span>
-                </>
-              )}
-            </div>
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-4">
+                {searchQuery.trim() && (
+                  <>
+                    <span>전체 결과: {searchResults.reduce((sum, r) => sum + r.items.length, 0)}개</span>
+                    <span className="text-gray-400">|</span>
+                    <span>{activeTab} 결과: {results.length}개</span>
+                  </>
+                )}
+              </div>
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -355,6 +356,19 @@ export default function UnifiedSearchModal({
             }, 100);
           }}
         />
+
+        {/* 상세 조회 모달 */}
+        {selectedDetail && (
+          <SearchDetailModal
+            isOpen={detailModalOpen}
+            onClose={() => {
+              setDetailModalOpen(false);
+              setSelectedDetail(null);
+            }}
+            category={selectedDetail.category}
+            itemId={selectedDetail.id}
+          />
+        )}
       </div>
     </div>
   );

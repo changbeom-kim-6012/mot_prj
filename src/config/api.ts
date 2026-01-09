@@ -51,10 +51,6 @@ export const API_CONFIG = {
     QUESTION_CATEGORIES: '/api/codes/menu/qna/details',
     QUESTION_SEARCH: '/api/questions/search',
     
-    // 뉴스 관련
-    NEWS: '/api/news',
-    NEWS_DETAIL: '/api/news',
-    
     // 의견 관련
     OPINIONS: '/api/opinions',
     OPINION_DETAIL: '/api/opinions',

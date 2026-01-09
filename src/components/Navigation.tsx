@@ -33,7 +33,6 @@ export default function Navigation() {
     { name: 'Q&A', href: '/qna' },
     // { name: 'Dialogue', href: '/dialogue' }, // Dialogue 메뉴 숨김
     { name: 'Research', href: '/opinions' },
-    // { name: 'Community', href: '/news' }, // Community 메뉴 숨김
     { name: 'Expert', href: '/expert' },
   ];
 

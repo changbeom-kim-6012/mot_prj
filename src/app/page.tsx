@@ -15,8 +15,7 @@ import {
   FiEye,
   FiDownload,
   FiFileText,
-  FiArrowRight,
-  FiClock
+  FiArrowRight
 } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import FileViewer from '@/components/common/FileViewer';
@@ -196,44 +195,6 @@ export default function Home() {
   const handleCloseFileViewer = () => {
     setSelectedFile(null);
   };
-  // 새소식 데이터 - 숨김 처리로 인해 사용하지 않음
-  // const newsItems = [
-  //   {
-  //     id: 1,
-  //     category: '공지사항',
-  //     title: '2024년 MOT 플랫폼 서비스 개편 안내',
-  //     date: '2024.03.20',
-  //     isNew: true,
-  //   },
-  //   {
-  //     id: 2,
-  //     category: '뉴스',
-  //     title: '기술경영 전문가 초청 세미나 개최',
-  //     date: '2024.03.19',
-  //     isNew: true,
-  //   },
-  //   {
-  //     id: 3,
-  //     category: '공지사항',
-  //     title: '연구기획 관련 자료 업데이트 안내',
-  //     date: '2024.03.18',
-  //     isNew: false,
-  //   },
-  //   {
-  //     id: 4,
-  //     category: '뉴스',
-  //     title: '2024 기술경영 트렌드 리포트 발간',
-  //     date: '2024.03.17',
-  //     isNew: false,
-  //   },
-  //   {
-  //     id: 5,
-  //     category: '공지사항',
-  //     title: 'MOT 플랫폼 이용자 설문조사 실시',
-  //     date: '2024.03.16',
-  //     isNew: false,
-  //   },
-  // ];
 
   return (
     <>
@@ -423,61 +384,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* News & Announcements Section - 숨김 처리 */}
-      {/* <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                <FiBell className="w-6 h-6 text-blue-600" />
-              </div>
-              <h2 className="text-3xl font-bold text-slate-900">새소식</h2>
-            </div>
-            <Link 
-              href="/news/all" 
-              className="group inline-flex items-center gap-2 text-base font-medium text-blue-600 hover:text-blue-700"
-            >
-              전체보기
-              <FiArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {newsItems.map((item) => (
-              <Link key={item.id} href={`/news/${item.id}`} className="group">
-                <div className="bg-white rounded-2xl p-8 shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border border-slate-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full -mr-20 -mt-20 transition-transform group-hover:scale-150" />
-                  
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-6">
-                      <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
-                        item.category === '공지사항' 
-                          ? 'bg-indigo-100 text-indigo-700' 
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {item.category}
-                      </span>
-                      <span className="text-sm text-slate-500 flex items-center gap-2">
-                        <FiClock className="w-4 h-4" />
-                        {item.date}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
-                      {item.title}
-                    </h3>
-                    {item.isNew && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        NEW
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section> */}
       </div>
     </main>
 

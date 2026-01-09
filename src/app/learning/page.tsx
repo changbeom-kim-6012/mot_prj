@@ -9,9 +9,12 @@ import CourseOverviewModal from '@/components/common/CourseOverviewModal';
 import SubjectCreateModal from '@/components/learning/SubjectCreateModal';
 import SubjectEditModal from '@/components/learning/SubjectEditModal';
 import ProgramDetailModal from '@/components/learning/ProgramDetailModal';
+import CustomProgramCreateModal from '@/components/learning/CustomProgramCreateModal';
+import CustomProgramViewModal from '@/components/learning/CustomProgramViewModal';
 import { useAuth } from '@/context/AuthContext';
 import { fetchLearningPrograms } from '@/utils/learningProgramApi';
 import { LearningProgram } from '@/types/learningProgram';
+import { fetchCustomPrograms, CustomProgram } from '@/utils/customProgramApi';
 import { getApiUrl } from '@/config/api';
 
 interface RelatedMaterial {
@@ -84,8 +87,15 @@ export default function LearningPage() {
   const [programDetailModalOpen, setProgramDetailModalOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<any>(null);
   
+  // Custom Program 관련 상태
+  const [customPrograms, setCustomPrograms] = useState<CustomProgram[]>([]);
+  const [isLoadingCustomPrograms, setIsLoadingCustomPrograms] = useState(false);
+  const [customProgramCreateModalOpen, setCustomProgramCreateModalOpen] = useState(false);
+  const [customProgramEditModalOpen, setCustomProgramEditModalOpen] = useState(false);
+  const [selectedCustomProgram, setSelectedCustomProgram] = useState<CustomProgram | null>(null);
+  
   // Learning 카테고리 및 Subject 관련 상태
-  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM_PHASE' | 'PROGRAM_ROLE_LEVEL'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM(Level-based) / PROGRAM(Topic-based))
+  const [activeMainTab, setActiveMainTab] = useState<'SUBJECT' | 'PROGRAM_PHASE' | 'PROGRAM_ROLE_LEVEL' | 'PROGRAM_CUSTOM'>('SUBJECT'); // 메인 탭 (SUBJECT / PROGRAM(Level-based) / PROGRAM(Topic-based) / PROGRAM(Custom-tailored))
   const [activeTab, setActiveTab] = useState<number | null>(null); // 현재 선택된 카테고리 탭
   const [categories, setCategories] = useState<LearningCategory[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -95,6 +105,9 @@ export default function LearningPage() {
   // Learning Program 관련 상태
   const [programs, setPrograms] = useState<TransformedProgram[]>([]);
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(false);
+  
+  // Custom Program 검색 상태
+  const [customProgramSearchTerm, setCustomProgramSearchTerm] = useState('');
   
   // 문의/요청 건수 상태 (itemId -> { inquiryCount: number, responseCount: number })
   const [subjectInquiryCounts, setSubjectInquiryCounts] = useState<{ [key: number]: { inquiryCount: number; responseCount: number } }>({});
@@ -212,6 +225,13 @@ export default function LearningPage() {
   useEffect(() => {
     if (activeMainTab === 'PROGRAM_PHASE' || activeMainTab === 'PROGRAM_ROLE_LEVEL') {
       fetchPrograms();
+    }
+  }, [activeMainTab]);
+
+  // PROGRAM_CUSTOM 탭 활성화 시 Custom Program 데이터 로딩
+  useEffect(() => {
+    if (activeMainTab === 'PROGRAM_CUSTOM') {
+      fetchCustomProgramsData();
     }
   }, [activeMainTab]);
 
@@ -621,6 +641,43 @@ export default function LearningPage() {
     fetchPrograms();
   };
 
+  // Custom Program 데이터 가져오기
+  const fetchCustomProgramsData = async () => {
+    try {
+      setIsLoadingCustomPrograms(true);
+      const data = await fetchCustomPrograms();
+      setCustomPrograms(data);
+    } catch (error) {
+      console.error('Custom Program 데이터 조회 실패:', error);
+      setCustomPrograms([]);
+    } finally {
+      setIsLoadingCustomPrograms(false);
+    }
+  };
+
+  // Custom Program 생성 성공 핸들러
+  const handleCustomProgramCreateSuccess = () => {
+    fetchCustomProgramsData();
+  };
+
+  // Custom Program 수정 성공 핸들러
+  const handleCustomProgramUpdateSuccess = () => {
+    fetchCustomProgramsData();
+  };
+
+  // Custom Program 삭제 성공 핸들러
+  const handleCustomProgramDeleteSuccess = () => {
+    fetchCustomProgramsData();
+  };
+
+  // Custom Program 클릭 시 수정 모달 열기
+  const handleCustomProgramClick = (program: CustomProgram) => {
+    if (isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT')) {
+      setSelectedCustomProgram(program);
+      setCustomProgramEditModalOpen(true);
+    }
+  };
+
   // 디버깅용 useEffect
   useEffect(() => {
     console.log('=== Learning 페이지 디버깅 ===');
@@ -734,6 +791,16 @@ export default function LearningPage() {
             }`}
           >
             PROGRAM(Topic-based)
+          </button>
+          <button
+            onClick={() => setActiveMainTab('PROGRAM_CUSTOM')}
+            className={`px-6 py-3 text-[18px] font-bold transition-all duration-200 ${
+              activeMainTab === 'PROGRAM_CUSTOM'
+                ? 'text-emerald-600 border-b-2 border-emerald-600 -mb-[2px]'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            PROGRAM(Custom-tailored)
           </button>
         </div>
       </div>
@@ -1241,6 +1308,151 @@ export default function LearningPage() {
             </div>
           </section>
         )}
+
+        {/* PROGRAM(Custom-tailored) 탭 내용 */}
+        {activeMainTab === 'PROGRAM_CUSTOM' && (
+          <section className="mb-12">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-8">
+                {/* 검색 및 등록 버튼 */}
+                <div className="mb-6 flex gap-3">
+                  <div className="relative flex-1">
+                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="고객사, 과정명, 기획자/강사, 과정소개, 비고로 검색..."
+                      value={customProgramSearchTerm}
+                      onChange={(e) => setCustomProgramSearchTerm(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          // 검색 실행 (실시간 필터링이므로 별도 처리 불필요)
+                        }
+                      }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    />
+                    {customProgramSearchTerm && (
+                      <button
+                        onClick={() => setCustomProgramSearchTerm('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <span className="text-xl">×</span>
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      // 검색 실행 (실시간 필터링이므로 별도 처리 불필요, 또는 검색 로그 등 추가 기능 가능)
+                    }}
+                    className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                  >
+                    <FiSearch className="w-5 h-5" />
+                    검색
+                  </button>
+                  {isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') && (
+                    <button
+                      onClick={() => {
+                        setSelectedCustomProgram(null);
+                        setCustomProgramCreateModalOpen(true);
+                      }}
+                      className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                    >
+                      <FiPlus className="w-5 h-5" />
+                      등록
+                    </button>
+                  )}
+                </div>
+
+                {/* Custom Program 리스트 */}
+                <div className="space-y-4">
+                  {isLoadingCustomPrograms ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                      <p className="mt-4 text-gray-600">Custom Program 목록을 불러오는 중...</p>
+                    </div>
+                  ) : (() => {
+                    // 검색어로 필터링
+                    const filteredCustomPrograms = customPrograms.filter((program) => {
+                      if (!customProgramSearchTerm.trim()) {
+                        return true;
+                      }
+                      const searchLower = customProgramSearchTerm.toLowerCase();
+                      return (
+                        program.customerName.toLowerCase().includes(searchLower) ||
+                        program.programName.toLowerCase().includes(searchLower) ||
+                        (program.plannerInstructor && program.plannerInstructor.toLowerCase().includes(searchLower)) ||
+                        (program.programIntroduction && program.programIntroduction.toLowerCase().includes(searchLower)) ||
+                        (program.note && program.note.toLowerCase().includes(searchLower)) ||
+                        (program.keywords && program.keywords.toLowerCase().includes(searchLower))
+                      );
+                    });
+                    
+                    return filteredCustomPrograms.length > 0 ? (
+                      <>
+                        {customProgramSearchTerm && (
+                          <div className="mb-4 text-sm text-gray-600">
+                            검색 결과: <span className="font-semibold text-emerald-600">{filteredCustomPrograms.length}</span>개
+                          </div>
+                        )}
+                        {filteredCustomPrograms.map((program) => (
+                        <div
+                          key={program.id}
+                          className={`p-6 border border-gray-200 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200 ${
+                            isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT') ? 'cursor-pointer' : ''
+                          }`}
+                          onClick={() => handleCustomProgramClick(program)}
+                        >
+                          {/* 첫 번째 줄: 업체명, 과정명, 기획자/강사 */}
+                          <div className="flex items-center gap-4 mb-3">
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-medium rounded-full whitespace-nowrap">
+                              {program.customerName}
+                            </span>
+                            <h4 className={`text-lg font-semibold flex-1 ${
+                              isAuthenticated && user && (user.role === 'ADMIN' || user.role === 'EXPERT')
+                                ? 'text-gray-900 hover:text-emerald-600'
+                                : 'text-gray-900'
+                            }`}>
+                              {program.programName}
+                            </h4>
+                            {program.plannerInstructor && (
+                              <div className="flex items-center gap-2 text-gray-600 whitespace-nowrap">
+                                <FiUsers className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                <span className="text-sm">{program.plannerInstructor}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* 두 번째 줄: 과정소개 */}
+                          {program.programIntroduction && (
+                            <div className="pl-4 border-l-4 border-emerald-200">
+                              <p className="text-gray-700 leading-relaxed pl-4">
+                                {program.programIntroduction}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        {customProgramSearchTerm ? (
+                          <>
+                            <p className="text-gray-500">검색 결과가 없습니다.</p>
+                            <p className="text-sm text-gray-400 mt-2">다른 검색어를 입력해보세요.</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-gray-500">등록된 Custom Program이 없습니다.</p>
+                            <p className="text-sm text-gray-400 mt-2">위의 "등록" 버튼을 클릭하여 추가하세요.</p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* 파일 보기 모달 */}
@@ -1345,6 +1557,28 @@ export default function LearningPage() {
              }
            }
          }}
+       />
+
+       {/* Custom Program 추가 모달 */}
+       <CustomProgramCreateModal
+         isOpen={customProgramCreateModalOpen}
+         onClose={() => {
+           setCustomProgramCreateModalOpen(false);
+           setSelectedCustomProgram(null);
+         }}
+         onSuccess={handleCustomProgramCreateSuccess}
+       />
+
+       {/* Custom Program 조회 모달 */}
+       <CustomProgramViewModal
+         isOpen={customProgramEditModalOpen}
+         onClose={() => {
+           setCustomProgramEditModalOpen(false);
+           setSelectedCustomProgram(null);
+         }}
+         onSuccess={handleCustomProgramUpdateSuccess}
+         onDelete={handleCustomProgramDeleteSuccess}
+         program={selectedCustomProgram}
        />
        </div>
      </main>
