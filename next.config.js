@@ -27,8 +27,6 @@ const nextConfig = {
   },
   // Turbopack 설정 (Next.js 16에서 webpack과 함께 사용 시 필요)
   turbopack: {},
-  // 빌드 최적화 설정
-  swcMinify: true,
   // 컴파일러 캐시 비활성화 (에러 발생 시)
   // onDemandEntries: {
   //   maxInactiveAge: 25 * 1000,
