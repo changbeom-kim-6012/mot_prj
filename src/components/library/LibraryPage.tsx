@@ -514,15 +514,15 @@ export default function LibraryPage() {
         </div>
 
         {/* 자료 목록 - 원래 테이블 구조 */}
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="bg-white shadow-md rounded-lg overflow-hidden overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="w-[110px] px-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">카테고리</th>
-                <th scope="col" className="flex-1 px-6 py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">제목</th>
-                <th scope="col" className="w-[110px] pl-[74px] pr-[4px] py-3 text-left text-[16px] font-bold text-gray-700 uppercase tracking-wider">저자/강사</th>
-                <th scope="col" className="w-[110px] pl-[4px] pr-6 py-3 text-center text-[16px] font-bold text-gray-700 uppercase tracking-wider">등록일</th>
-                <th scope="col" className="w-[120px] px-6 py-3 text-center text-[16px] font-bold text-gray-700 uppercase tracking-wider">문의/요청</th>
+                <th scope="col" className="w-[10%] min-w-[80px] px-3 lg:px-6 py-3 text-left text-sm lg:text-[16px] font-bold text-gray-700 whitespace-nowrap">카테고리</th>
+                <th scope="col" className="w-auto px-3 lg:px-6 py-3 text-left text-sm lg:text-[16px] font-bold text-gray-700 whitespace-nowrap">제목</th>
+                <th scope="col" className="w-[12%] min-w-[80px] px-3 lg:px-6 py-3 text-center text-sm lg:text-[16px] font-bold text-gray-700 whitespace-nowrap">저자/강사</th>
+                <th scope="col" className="w-[10%] min-w-[80px] px-3 lg:px-6 py-3 text-center text-sm lg:text-[16px] font-bold text-gray-700 whitespace-nowrap">등록일</th>
+                <th scope="col" className="w-[10%] min-w-[76px] px-3 lg:px-6 py-3 text-center text-sm lg:text-[16px] font-bold text-gray-700 whitespace-nowrap">문의/요청</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -535,23 +535,23 @@ export default function LibraryPage() {
               ) : (
                 libraryItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="w-[110px] px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {item.category.startsWith('기타') ? item.category : item.category}
-                        </span>
-                      </td>
-                  <td className="flex-1 px-6 py-4">
-                    <div className="text-[16px] font-medium text-gray-900 cursor-pointer hover:text-blue-600 truncate" onClick={() => handleViewDetail(item)} title={item.title}>
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate max-w-full">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="px-3 lg:px-6 py-4">
+                    <div className="text-sm lg:text-[16px] font-medium text-gray-900 cursor-pointer hover:text-blue-600 truncate" onClick={() => handleViewDetail(item)} title={item.title}>
                       {item.title}
                     </div>
                   </td>
-                  <td className="w-[110px] pl-[74px] pr-[4px] py-4 whitespace-nowrap">
-                    <span className="text-[16px] text-gray-900">{item.author}</span>
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
+                    <span className="text-sm lg:text-[16px] text-gray-900 truncate block">{item.author}</span>
                   </td>
-                  <td className="w-[110px] pl-[4px] pr-6 py-4 whitespace-nowrap">
-                    <span className="text-[16px] text-gray-900">{formatDate(item.createdAt)}</span>
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center">
+                    <span className="text-sm lg:text-[16px] text-gray-900">{formatDate(item.createdAt)}</span>
                   </td>
-                  <td className="w-[120px] px-6 py-4 whitespace-nowrap text-center text-[16px] text-gray-900">
+                  <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-center text-sm lg:text-[16px] text-gray-900">
                     {inquiryCounts[item.id] && inquiryCounts[item.id].inquiryCount > 0 ? (
                       <span className="text-blue-600 font-medium">
                         {inquiryCounts[item.id].responseCount}/{inquiryCounts[item.id].inquiryCount}
