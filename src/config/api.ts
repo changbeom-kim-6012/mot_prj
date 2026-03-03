@@ -77,7 +77,13 @@ export const API_CONFIG = {
 } as const;
 
 // API URL 생성 헬퍼 함수
+// 브라우저(클라이언트)에서는 상대경로 사용 → 같은 서버에서 서빙하므로 프로토콜/호스트 불일치 문제 없음
+// 서버(SSR)에서는 절대 URL 사용 → 서버 간 통신이므로 절대경로 필요
 export const getApiUrl = (endpoint: string): string => {
+  if (typeof window !== 'undefined') {
+    // 브라우저: 상대경로 사용 (Mixed Content / CORS 문제 방지)
+    return endpoint;
+  }
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 

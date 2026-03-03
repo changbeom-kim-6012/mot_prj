@@ -86,9 +86,7 @@ export default function OpinionDetailPage() {
         console.log('현재 페이지 경로:', window.location.pathname);
         
         // 환경에 따라 다른 API URL 사용
-        const apiUrl = (process.env.NODE_ENV as string) === 'production' 
-          ? `http://www.motclub.co.kr/api/opinions/${articleId}`
-          : `http://localhost:8084/api/opinions/${articleId}`;
+        const apiUrl = `/api/opinions/${articleId}`;
         
         console.log('사용할 API URL:', apiUrl);
         console.log('API 호출 시작...');
@@ -113,9 +111,7 @@ export default function OpinionDetailPage() {
         
         setArticle(articleData);
         // 첨부파일 목록도 불러오기
-        const attApiUrl = (process.env.NODE_ENV as string) === 'production' 
-          ? 'http://www.motclub.co.kr/api/attachments'
-          : 'http://localhost:8084/api/attachments';
+        const attApiUrl = '/api/attachments';
         
         const attRes = await axios.get(attApiUrl, {
           params: { refTable: 'opinions', refId: articleId },
@@ -188,9 +184,7 @@ export default function OpinionDetailPage() {
               <p><strong>Article ID:</strong> {articleId}</p>
               <p><strong>NODE_ENV:</strong> {process.env.NODE_ENV}</p>
               <p><strong>현재 URL:</strong> {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
-              <p><strong>API URL:</strong> {(process.env.NODE_ENV as string) === 'production' 
-                ? `http://www.motclub.co.kr/api/opinions/${articleId}`
-                : `http://localhost:8084/api/opinions/${articleId}`}</p>
+              <p><strong>API URL:</strong> {`/api/opinions/${articleId}`}</p>
               <p><strong>에러:</strong> {error}</p>
             </div>
           )}

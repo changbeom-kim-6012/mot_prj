@@ -406,9 +406,7 @@ export default function OpinionsPage() {
   const handleDetailView = async (article: Article) => {
     try {
       // 상세 정보를 가져오는 API 호출
-      const apiUrl = (process.env.NODE_ENV as string) === 'production' 
-        ? `http://www.motclub.co.kr/api/opinions/${article.id}`
-        : `http://localhost:8084/api/opinions/${article.id}`;
+      const apiUrl = `/api/opinions/${article.id}`;
       
       const response = await axios.get(apiUrl, {
         headers: {

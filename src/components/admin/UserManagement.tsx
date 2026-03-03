@@ -207,10 +207,22 @@ export default function UserManagement() {
         body: JSON.stringify(usersToAdd),
       });
       if (!response.ok) throw new Error('일괄 등록에 실패했습니다.');
-      const newUsers = await response.json();
+      const result = await response.json();
+      const newUsers = result.created || [];
+      const skippedEmails: string[] = result.skipped || [];
+      const createdCount: number = result.createdCount || 0;
+      const skippedCount: number = result.skippedCount || 0;
+
       setUsers([...newUsers, ...users]);
       setBulkUsers([]);
       setShowBulkModal(false);
+
+      // 결과 메시지 표시
+      let message = `${createdCount}명 등록 완료.`;
+      if (skippedCount > 0) {
+        message += `\n${skippedCount}명은 이메일 중복으로 건너뛰었습니다.\n(${skippedEmails.join(', ')})`;
+      }
+      alert(message);
     } catch (err: any) {
       alert(err.message);
     }

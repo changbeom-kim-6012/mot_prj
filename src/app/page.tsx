@@ -266,7 +266,7 @@ export default function Home() {
                 <ul className="space-y-3">
                   {latestLibrary.map((item) => (
                     <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
-                      <Link href={`/library/${item.id}`} className="block group">
+                      <Link href="/library" className="block group">
                         <h4 className="text-sm font-medium text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-1">
                           {item.title}
                         </h4>
@@ -333,7 +333,7 @@ export default function Home() {
                 <ul className="space-y-3">
                   {latestOpinions.map((item) => (
                     <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
-                      <Link href={`/opinions/${item.id}`} className="block group">
+                      <Link href="/opinions" className="block group">
                         <h4 className="text-sm font-medium text-slate-900 group-hover:text-amber-600 transition-colors line-clamp-2 mb-1">
                           {item.title}
                         </h4>
@@ -368,7 +368,7 @@ export default function Home() {
                 <ul className="space-y-3">
                   {latestQuestions.map((item) => (
                     <li key={item.id} className="border-b border-gray-100 pb-3 last:border-0">
-                      <Link href={`/qna/${item.id}`} className="block group">
+                      <Link href="/qna" className="block group">
                         <h4 className="text-sm font-medium text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2 mb-1">
                           {item.title}
                         </h4>
